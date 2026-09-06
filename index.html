@@ -1,0 +1,2418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Honor your daily promise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Gowun+Batang:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap">
+  <style>
+    :root{
+      --ground:#fbfaf8; --panel:#ffffff; --sunken:#f4f2ee;
+      --ink:#16171a; --ink-2:#5a5c60; --ink-3:#93949a;
+      --line:#e7e5e0; --line-soft:#f0eeea;
+      --accent:#265a4d; --accent-2:#3d7a6a; --accent-soft:rgba(38,90,77,.13);
+      --ok:#2b6152; --mid:#8a6a2f; --bad:#9c453a;
+      --font-ui:"IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                "Malgun Gothic", sans-serif;
+      --font-say:"Gowun Batang", "Apple SD Gothic Neo", "Malgun Gothic", serif;
+      --font-title:"Instrument Serif", "Gowun Batang", Georgia, serif;
+    }
+    @media (prefers-color-scheme: dark){
+      :root:not([data-theme="light"]){
+        --ground:#141518; --panel:#191b1e; --sunken:#202327;
+        --ink:#eceded; --ink-2:#a8aaae; --ink-3:#74767b;
+        --line:#2c2f34; --line-soft:#232629;
+        --accent:#5d9b8a; --accent-2:#79b3a2; --accent-soft:rgba(93,155,138,.22);
+        --ok:#6fae9c; --mid:#c8a266; --bad:#d98a7e;
+      }
+    }
+    :root[data-theme="dark"]{
+      --ground:#141518; --panel:#191b1e; --sunken:#202327;
+      --ink:#eceded; --ink-2:#a8aaae; --ink-3:#74767b;
+      --line:#2c2f34; --line-soft:#232629;
+      --accent:#5d9b8a; --accent-2:#79b3a2; --accent-soft:rgba(93,155,138,.22);
+      --ok:#6fae9c; --mid:#c8a266; --bad:#d98a7e;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:var(--ground); color:var(--ink);
+      font-family:var(--font-ui); font-size:16px; line-height:1.6;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
+    .wrap{max-width:1180px; margin:0 auto; padding:22px 24px 64px}
+    .wrap[hidden]{display:none}
+
+    /* ---------- 머리말 ---------- */
+    header{margin-bottom:16px; display:inline-block; cursor:pointer}
+    header:hover h1{color:var(--accent)}
+    header:focus-visible{outline:1px solid var(--accent); outline-offset:6px}
+    header h1{transition:color .15s}
+    h1{
+      font-family:var(--font-title); font-weight:400; font-size:1.85rem;
+      line-height:1.05; letter-spacing:-.015em; margin:0 0 4px;
+      text-wrap:balance;
+    }
+    .sub{
+      margin:0; color:var(--ink-3); font-size:.8rem; font-style:italic;
+      letter-spacing:.02em;
+    }
+
+    .layout{display:grid; grid-template-columns:minmax(0,1fr); gap:26px; align-items:start}
+    .layout > *{min-width:0}
+    @media (min-width:900px){
+      .layout{grid-template-columns:196px minmax(0,1fr)}
+    }
+
+    /* ---------- 달력 ---------- */
+    @media (min-width:900px){ .cal-col{position:sticky; top:18px} }
+    .cal-head{display:flex; align-items:center; gap:4px; margin-bottom:14px}
+    .cal-head .ym{
+      flex:1; font-size:.78rem; font-weight:600; letter-spacing:.04em;
+      color:var(--ink-2); font-variant-numeric:tabular-nums;
+    }
+    .nav{
+      background:none; border:none; color:var(--ink-3);
+      width:22px; height:22px; font-size:.95rem; line-height:1;
+      cursor:pointer; flex:none; padding:0; border-radius:4px;
+    }
+    .nav:hover{color:var(--ink); background:var(--sunken)}
+
+    /* 맨 앞 한 칸은 주간 복습 버튼 자리 */
+    .grid{display:grid; grid-template-columns:19px repeat(7,minmax(0,1fr));
+          gap:1px; min-width:0}
+    .wk{
+      height:27px; padding:0; border:none; background:none; border-radius:4px;
+      color:var(--ink-3); font-size:.66rem; line-height:1; cursor:pointer;
+    }
+    .wk:hover:not(.none){color:var(--accent); background:var(--sunken)}
+    .wk.none{opacity:.22; cursor:default}
+    .wk.done{color:var(--ok)}
+    .cell.blank{visibility:hidden; cursor:default}
+    .dow{
+      text-align:center; font-size:.6rem; font-weight:600; color:var(--ink-3);
+      padding:0 0 7px; min-width:0; letter-spacing:.04em;
+    }
+    #cal-grid{grid-auto-rows:27px}
+    .cell{
+      height:27px; min-width:0; padding:0; position:relative;
+      border:none; background:none; color:var(--ink-3); cursor:pointer;
+      font-size:.74rem; font-variant-numeric:tabular-nums; border-radius:4px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .cell.has{color:var(--ink-2); font-weight:500}
+    .cell:hover{background:var(--sunken); color:var(--ink)}
+    /* 문장이 있는 날은 밑줄 한 획으로만 표시합니다. */
+    .cell.has::after{
+      content:""; position:absolute; bottom:3px; left:50%; margin-left:-5px;
+      width:10px; height:1px; background:var(--accent); opacity:.55;
+    }
+    .cell.today{color:var(--ink); font-weight:600}
+    .cell.on{background:var(--ink); color:var(--ground); font-weight:600}
+    .cell.on::after{background:var(--ground); opacity:.7}
+
+    /* 자물쇠 화면 */
+    .gate{
+      position:fixed; inset:0; z-index:60; background:var(--ground);
+      display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .gate[hidden]{display:none}
+    .gate-box{width:100%; max-width:320px; text-align:left}
+    .gate-box h1{
+      font-family:var(--font-title); font-weight:400;
+      font-size:clamp(1.7rem, 4vw, 2.2rem); line-height:1.1; margin:0 0 6px;
+    }
+    .gate-sub{margin:0 0 22px; font-size:.84rem; color:var(--ink-3)}
+    .gate-box input{
+      width:100%; padding:12px 14px; margin-bottom:14px;
+      font-family:var(--font-ui); font-size:1.1rem; letter-spacing:.3em;
+      color:var(--ink); background:var(--paper);
+      border:1px solid var(--line); border-radius:6px;
+    }
+    .gate-box input:focus{outline:none; border-color:var(--accent)}
+    .gate-box .btn-go{width:100%; justify-content:center}
+    .gate-msg{margin:12px 0 0; font-size:.8rem; color:var(--bad); min-height:1.2em}
+
+    .scopes{
+      margin-top:20px; padding-top:16px; border-top:1px solid var(--line);
+      display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+    }
+    .scopes button{
+      background:none; border:none; padding:3px 0; cursor:pointer;
+      color:var(--ink-3); font-size:.8rem; text-align:left;
+    }
+    .scopes[hidden]{display:none}
+    .scopes button:hover{color:var(--ink)}
+    .scopes button.on{color:var(--ink); font-weight:600}
+    .scopes button.on::before{content:"— "; color:var(--accent)}
+    .tally{margin-top:16px; font-size:.72rem; color:var(--ink-3);
+           font-variant-numeric:tabular-nums; letter-spacing:.02em}
+
+    /* ---------- 노트 ---------- */
+    .notes{margin-top:26px}
+    .notes[hidden]{display:none}
+    .note-head{
+      display:flex; align-items:baseline; gap:8px;
+      padding-bottom:7px; border-bottom:1px solid var(--line); margin-bottom:12px;
+    }
+    .note-head h3{
+      margin:0; font-size:.8rem; font-weight:600; letter-spacing:.04em; color:var(--ink);
+    }
+    .note-head .day{font-size:.74rem; color:var(--ink-3);
+                    font-variant-numeric:tabular-nums}
+    .note-head .grow{flex:1}
+    li.note-sep{
+      border:none; padding:18px 0 4px; font-size:.66rem; font-weight:600;
+      letter-spacing:.09em; color:var(--ink-3); text-transform:uppercase;
+    }
+    .note-head .n{font-size:.72rem; color:var(--ink-3);
+                  font-variant-numeric:tabular-nums}
+
+    /* 표에 바로 써 내려갑니다 */
+
+    .note-grid{
+      border:1px solid var(--line); border-radius:6px; overflow:hidden;
+      background:var(--panel);
+    }
+    .nrow{display:grid; grid-template-columns:62px minmax(0,1fr) minmax(0,1fr);
+          border-bottom:1px solid var(--line-soft)}
+    .nrow:last-child{border-bottom:none}
+    .nrow.head span{
+      padding:6px 9px; font-size:.63rem; font-weight:600; letter-spacing:.09em;
+      color:var(--ink-3); text-transform:uppercase; background:var(--sunken);
+    }
+    .nrow.head span{border-right:1px solid var(--line-soft)}
+    .nrow.head span:last-child{border-right:none}
+
+    /* 줄 손잡이 — 번호, 그리고 마우스를 올리면 넣기·빼기 */
+    .nh{
+      display:flex; align-items:center; gap:2px; padding:0 4px 0 7px;
+      background:var(--sunken); border-right:1px solid var(--line-soft);
+    }
+    .nh .rn{
+      flex:1; font-size:.68rem; font-weight:400; color:var(--ink-3);
+      font-variant-numeric:tabular-nums;
+    }
+    .nh .rb{
+      opacity:0; width:17px; height:17px; padding:0; border-radius:4px;
+      font-size:.8rem; line-height:1; color:var(--ink-3); background:transparent;
+    }
+    .nrow:hover .nh .rb{opacity:1}
+    .nh .rb:hover{background:var(--line); color:var(--ink)}
+    .nrow input{
+      width:100%; min-width:0; font:inherit; font-size:.85rem; color:var(--ink);
+      border:none; border-radius:0; background:transparent;
+      padding:7px 9px; line-height:1.45;
+    }
+    .nrow input:first-child{border-right:1px solid var(--line-soft)}
+    .nrow input:focus{outline:none; background:var(--sunken)}
+    .nrow input.sel{background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--accent)}
+    /* 고른 칸을 담아두는 자리. 안 보이지만 여기에 커서가 갑니다. */
+    .nclip{
+      position:fixed; top:0; left:0; width:1px; height:1px;
+      opacity:0; z-index:-1; border:none; padding:0; resize:none;
+    }
+    .nrow input.nko{font-family:var(--font-say)}
+
+    .note-save{display:flex; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap}
+    .note-save .tip{font-size:.7rem; color:var(--ink-3)}
+    .note-save .grow{flex:1}
+    .note-save .state{font-size:.74rem; color:var(--ink-3)}
+    .note-save .state.dirty{color:var(--mid)}
+    .note-save .state.saved{color:var(--ok)}
+    /* ---------- 모드 탭 ---------- */
+    .modes{display:flex; gap:22px; margin-bottom:12px}
+    .mode{
+      background:none; border:none; padding:0 0 9px; cursor:pointer;
+      font-size:.92rem; color:var(--ink-3); font-weight:500;
+      border-bottom:2px solid transparent; border-radius:0;
+    }
+    .mode:hover{color:var(--ink-2)}
+    .mode.on{color:var(--ink); font-weight:600; border-bottom-color:var(--ink)}
+    #quiz-panel[hidden], #diary-panel[hidden]{display:none}
+
+    /* ---------- 영어 일기 ---------- */
+    .diary-head{
+      display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+      padding-bottom:12px; border-bottom:1px solid var(--ink);
+    }
+    .diary-head h2{
+      margin:0; font-family:var(--font-title); font-weight:400;
+      font-size:1.5rem; letter-spacing:-.01em;
+      font-variant-numeric:tabular-nums;
+    }
+    .diary-head .dw{font-size:.76rem; color:var(--ink-3)}
+    .diary-head .grow{flex:1}
+    .diary-head .count{font-size:.74rem; color:var(--ink-3);
+                       font-variant-numeric:tabular-nums; letter-spacing:.03em}
+
+    .diary-body{padding-top:22px}
+    /* 세 칸을 나란히, 크기도 똑같이 */
+    .dgrid{display:flex; flex-direction:column; gap:18px}
+    .dcell{display:flex; flex-direction:column; min-width:0}
+    .dcell textarea{
+      width:100%; height:190px; resize:vertical;
+      font-size:.88rem; line-height:1.7; font-family:var(--font-ui);
+    }
+    .dcell.ko textarea{font-family:var(--font-say); font-size:.9rem}
+    .dhead{display:flex; align-items:baseline; gap:10px; margin-bottom:7px}
+    .dhead .grow{flex:1}
+    .dhead .state{font-size:.72rem; color:var(--ink-3)}
+    .dhead .state.dirty{color:var(--mid)}
+    .dhead .state.saved{color:var(--ok)}
+    .dlabel{
+      margin:0 0 7px; font-size:.66rem; font-weight:600;
+      letter-spacing:.09em; color:var(--ink-3); text-transform:uppercase;
+    }
+    .dhead .dlabel{margin:0}
+    .dsave{
+      display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+      margin-top:20px; padding-top:18px; border-top:1px solid var(--line);
+    }
+    .dsave .grow{flex:1}
+    .dsave .state{font-size:.76rem; color:var(--ink-3)}
+    .dsave .state.dirty{color:var(--mid)}
+    .dsave .state.saved{color:var(--ok)}
+
+    /* ---------- 테스트 머리 ---------- */
+    .quiz-head{
+      display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+      padding-bottom:9px; border-bottom:1px solid var(--ink);
+      font-size:.74rem; color:var(--ink-3);
+      font-variant-numeric:tabular-nums; letter-spacing:.03em;
+    }
+    .quiz-head .where{
+      color:var(--ink); font-weight:600; font-size:.8rem; letter-spacing:.01em;
+    }
+    .quiz-head .grow{flex:1}
+    .score b{color:var(--ok); font-weight:600}
+    .score i{font-style:normal; color:var(--bad)}
+    .bar{height:1px; background:var(--line)}
+    .bar > div{height:100%; background:var(--accent); transition:width .25s}
+
+    .msg{margin:0; padding:14px 0 0; font-size:.8rem; min-height:1em}
+    .msg:empty{padding:0}
+    .msg.err{color:var(--bad)}
+    .msg.ok{color:var(--ok)}
+
+    /* ---------- 문제 ---------- */
+    .stage{padding:0}
+    ul.qlist{list-style:none; margin:0; padding:0}
+    li.q{
+      display:grid; grid-template-columns:30px minmax(0,1fr);
+      padding:12px 0; border-bottom:1px solid var(--line-soft);
+    }
+    li.q > *{grid-column:2}
+    /* 문제 번호 자리의 체크박스 */
+    .pick{display:inline-flex; align-items:center; gap:5px; cursor:pointer; user-select:none}
+    .pick input{position:absolute; opacity:0; width:0; height:0}
+    .pick .box{
+      width:13px; height:13px; flex:none; border-radius:3px;
+      border:1px solid var(--line); background:var(--panel); position:relative;
+    }
+    .pick:hover .box{border-color:var(--ink-3)}
+    .pick input:checked + .box{background:var(--ink); border-color:var(--ink)}
+    .pick input:checked + .box::after{
+      content:""; position:absolute; left:4px; top:1px;
+      width:4px; height:8px; border:solid var(--ground);
+      border-width:0 1.5px 1.5px 0; transform:rotate(42deg);
+    }
+    .pick input:focus-visible + .box{outline:1px solid var(--accent); outline-offset:2px}
+    .pick .num{font-size:.7rem}
+    .page-acts .note.dirty{color:var(--mid)}
+    .page-acts .note.saved{color:var(--ok)}
+
+    .qn{
+      grid-column:1; grid-row:1; align-self:start; padding-top:3px;
+      font-size:.7rem; font-weight:600; color:var(--ink-3);
+      font-variant-numeric:tabular-nums; letter-spacing:.04em;
+    }
+    li.q.done .qn{color:var(--accent)}
+    .qtop{display:flex; align-items:flex-start; gap:14px}
+    .qtop .qko{flex:1; min-width:0}
+    .qsave{
+      flex:none; margin-top:2px; padding:2px 0; font-size:.73rem;
+      color:var(--ink-3); border-bottom:1px solid transparent;
+    }
+    .qsave:hover:not(:disabled){color:var(--ink); border-bottom-color:var(--line)}
+    .qsave.done{color:var(--ok)}
+    .qsave.hist{margin-right:4px}
+    .hist-box{
+      margin-top:9px; padding:3px 0 3px 12px;
+      border-left:2px solid var(--line); font-size:.8rem;
+    }
+    .hist-box.quiet{color:var(--ink-3)}
+    .hrow{display:flex; gap:12px; padding:2px 0; align-items:baseline}
+    .hrow .hd{
+      flex:none; width:42px; color:var(--ink-3); font-size:.72rem;
+      font-variant-numeric:tabular-nums;
+    }
+    .hrow .hm{flex:1; color:var(--ink-2); word-break:break-word}
+    .qko{
+      font-family:var(--font-say); font-size:1.11rem; line-height:1.45;
+      letter-spacing:-.003em; word-break:keep-all; margin:0; color:var(--ink);
+    }
+    .qnote{
+      font-size:.76rem; color:var(--ink-2); margin:6px 0 0;
+      padding:1px 0 1px 12px; border-left:2px solid var(--line); line-height:1.55;
+    }
+
+    textarea{
+      display:block; width:100%; font:inherit; font-family:var(--font-ui);
+      font-size:1rem; line-height:1.6; color:var(--ink);
+      background:var(--panel); border:1px solid var(--line); border-radius:6px;
+      padding:9px 12px; resize:vertical; min-height:46px;
+      transition:border-color .15s;
+    }
+    textarea:focus{outline:none; border-color:var(--accent)}
+    textarea[readonly]{background:var(--sunken); color:var(--ink-2)}
+    ::placeholder{color:var(--ink-3)}
+    .ans{margin-top:8px}
+
+    .acts{display:flex; align-items:center; gap:16px; margin-top:7px}
+    .acts .grow{flex:1}
+
+    button{font:inherit; font-family:var(--font-ui); cursor:pointer;
+           border:none; background:none; border-radius:6px}
+    button:disabled{opacity:.4; cursor:default}
+    button:focus-visible{outline:1px solid var(--accent); outline-offset:3px}
+
+    /* 본 동작 하나만 채웁니다. 나머지는 글자 버튼으로. */
+    .btn-go{
+      background:var(--ink); color:var(--ground); padding:11px 24px;
+      font-size:.86rem; font-weight:600; letter-spacing:.01em;
+    }
+    .btn-go:hover:not(:disabled){background:var(--accent)}
+    .btn-text{
+      color:var(--ink-3); font-size:.8rem; padding:2px 0;
+      border-bottom:1px solid transparent;
+    }
+    .btn-text:hover:not(:disabled){color:var(--ink); border-bottom-color:var(--line)}
+    .btn-text.lead{color:var(--accent)}
+    .btn-text.lead:hover:not(:disabled){border-bottom-color:var(--accent)}
+
+    /* 힌트 — 색 블록 대신 왼쪽 획 하나 */
+    .hintbox{
+      margin-top:10px; padding:1px 0 1px 12px;
+      border-left:2px solid var(--mid); color:var(--ink-2);
+      font-size:.85rem; line-height:1.55;
+    }
+    .hintbox .tag{
+      display:block; font-size:.62rem; font-weight:600; letter-spacing:.09em;
+      color:var(--mid); text-transform:uppercase; margin-bottom:3px;
+    }
+
+    /* 답을 펼쳤을 때 고르는 두 버튼 */
+    .btn-go.sm{padding:9px 20px; font-size:.82rem}
+    .btn-mid{
+      padding:9px 18px; font-size:.82rem; font-weight:600;
+      color:var(--ink); background:var(--sunken);
+      box-shadow:inset 0 0 0 1px var(--line);
+    }
+    .btn-mid:hover:not(:disabled){background:var(--line)}
+
+    /* 문장 옆에 붙는 지금 상태 */
+    .qtop .tag{
+      flex:0 0 auto; margin-left:2px;
+      font-size:.62rem; font-weight:600; letter-spacing:.06em;
+      padding:2px 7px; border-radius:99px; white-space:nowrap;
+      color:var(--ink-3); background:var(--sunken);
+    }
+    .qtop .tag.ok{color:var(--ok); box-shadow:inset 0 0 0 1px var(--ok)}
+    .qtop .tag.rv{color:var(--mid); box-shadow:inset 0 0 0 1px var(--mid)}
+    .qsave.undo{margin-left:6px; font-size:.7rem}
+    li.q.done .qko{color:var(--ink-2)}
+
+    /* 5문제를 스크롤하며 풀어도 채점 버튼은 늘 화면에 붙어 있습니다. */
+    .page-acts{
+      position:sticky; bottom:0; z-index:5;
+      display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+      margin-top:6px; padding:13px 0 15px;
+      border-top:1px solid var(--ink); background:var(--ground);
+    }
+    .page-acts::before{
+      content:""; position:absolute; left:0; right:0; top:-22px; height:22px;
+      background:linear-gradient(to bottom, transparent, var(--ground));
+      pointer-events:none;
+    }
+    .page-acts .grow{flex:1}
+    .page-acts .note{font-size:.76rem; color:var(--ink-3);
+                     font-variant-numeric:tabular-nums}
+
+    .done-panel{padding:64px 0; text-align:left}
+    .done-panel .big{
+      font-family:var(--font-title); font-size:2rem; margin-bottom:8px;
+      letter-spacing:-.01em;
+    }
+    .done-panel .line{
+      color:var(--ink-3); font-size:.84rem; margin-bottom:26px;
+      font-variant-numeric:tabular-nums; letter-spacing:.02em;
+    }
+    .blank{padding:64px 0; color:var(--ink-3); font-size:.86rem}
+    .blank strong{
+      display:block; font-family:var(--font-title); font-weight:400;
+      color:var(--ink-2); font-size:1.5rem; margin-bottom:8px;
+    }
+
+    /* ---------- 주간 복습 팝업 ---------- */
+    #modal{
+      position:fixed; inset:0; z-index:50; display:flex;
+      align-items:center; justify-content:center; padding:24px;
+      background:rgba(22,23,26,.44);
+    }
+    #modal[hidden]{display:none}
+    .sheet{
+      width:100%; max-width:560px; background:var(--ground);
+      border:1px solid var(--line); border-radius:10px;
+      box-shadow:0 18px 50px rgba(0,0,0,.22); overflow:hidden;
+    }
+    .sheet-head{
+      display:flex; align-items:center; gap:10px;
+      padding:14px 18px; border-bottom:1px solid var(--ink);
+      font-size:.78rem; color:var(--ink-3);
+    }
+    .sheet-head b{color:var(--ink); font-size:.86rem; letter-spacing:.01em}
+    .sheet-head .wl{margin-left:8px; font-variant-numeric:tabular-nums}
+    .sheet-head .grow{flex:1}
+    .sheet-head .cnt{font-variant-numeric:tabular-nums}
+    .sheet-head .x{
+      color:var(--ink-3); font-size:1.2rem; line-height:1; padding:0 2px;
+    }
+    .sheet-head .x:hover{color:var(--ink)}
+
+    .sheet-body{padding:26px 18px 18px}
+    .rq{
+      font-family:var(--font-say); font-size:1.3rem; line-height:1.5;
+      margin:0 0 4px; word-break:keep-all; text-wrap:balance;
+    }
+    .rn{font-size:.74rem; color:var(--ink-3); margin:0 0 14px}
+    .rq + textarea{margin-top:14px}
+    .rans{
+      margin-top:14px; padding:2px 0 2px 12px; border-left:2px solid var(--ok);
+      font-size:.98rem; color:var(--ink);
+    }
+    .rans b{
+      display:block; font-size:.62rem; font-weight:600; letter-spacing:.09em;
+      color:var(--ink-3); text-transform:uppercase; margin-bottom:3px;
+    }
+    .rans .rh{display:flex; align-items:baseline; gap:12px; margin-bottom:3px}
+    .rans .rh b{margin-bottom:0}
+    .rans .rh .btn-text{font-size:.7rem}
+    .sheet-acts{display:flex; align-items:center; gap:16px; margin-top:16px; flex-wrap:wrap}
+    .sheet-acts .grow{flex:1}
+    .sheet-acts .cnt{font-size:.74rem; color:var(--ink-3);
+                     font-variant-numeric:tabular-nums}
+    .sheet-body.done{text-align:left; padding:34px 18px 22px}
+    .sheet-body.done .big{
+      font-family:var(--font-title); font-size:2.4rem; line-height:1;
+      margin-bottom:8px; font-variant-numeric:tabular-nums;
+    }
+    .sheet-body.done .line{color:var(--ink-2); font-size:.86rem;
+                           font-variant-numeric:tabular-nums}
+    .sheet-body.done .prev{margin-top:6px; font-size:.76rem; color:var(--ink-3)}
+
+    footer{
+      margin-top:44px; padding-top:18px; border-top:1px solid var(--line);
+      display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+      font-size:.74rem; color:var(--ink-3); letter-spacing:.02em;
+    }
+    footer .grow{flex:1}
+    footer .ai-on{color:var(--ok); font-weight:600}
+    .mini{
+      background:none; border:none; color:var(--ink-3); padding:2px 0;
+      font-size:.74rem; cursor:pointer; border-bottom:1px solid transparent;
+    }
+    .mini:hover{color:var(--ink); border-bottom-color:var(--line)}
+
+    /* ---------- 손전화 ---------- */
+    @media (max-width:640px){
+      .wrap{padding:16px 14px 80px}
+      header h1{font-size:clamp(1.6rem, 8vw, 2.2rem)}
+      .layout{gap:20px}
+      /* 달력은 접어두고, 문제부터 보이게 */
+      .cal-col{order:2}
+      .layout > section{order:1}
+      .grid{grid-template-columns:22px repeat(7,minmax(0,1fr))}
+      #cal-grid{grid-auto-rows:32px}
+      .cell, .wk{height:32px}
+      .cell{font-size:.8rem}
+      .scopes{flex-direction:row; flex-wrap:wrap; gap:6px 16px}
+      .qko{font-size:1.05rem}
+      .qtop{flex-wrap:wrap; gap:8px}
+      .acts{flex-wrap:wrap; gap:12px}
+      .page-acts{gap:12px; padding:11px 0 13px}
+      .page-acts .note{width:100%; order:9}
+      /* 노트 표: 줄 손잡이를 좁히고 두 칸을 나란히 */
+      .nrow{grid-template-columns:38px minmax(0,1fr) minmax(0,1fr)}
+      .nh{padding:0 2px 0 4px; gap:0}
+      .nh .rn{font-size:.62rem}
+      .nh .rb{width:15px; height:15px; font-size:.72rem}
+      .nrow input{font-size:.8rem; padding:8px 6px}
+      .note-save .tip{width:100%; order:9}
+      .dcell textarea{height:150px}
+      #modal{padding:12px}
+      .sheet{max-height:88vh; overflow-y:auto}
+    }
+    /* 손가락으로 쓰는 화면에는 마우스를 올릴 수가 없습니다 */
+    @media (hover:none){
+      .nh .rb{opacity:1}
+    }
+
+    @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+  </style>
+</head>
+<body>
+  <div class="gate" id="gate" hidden>
+    <form class="gate-box" id="gate-form">
+      <h1>Honor your daily promise</h1>
+      <p class="gate-sub">비밀번호를 넣어주세요.</p>
+      <input id="gate-pw" type="password" inputmode="numeric"
+             autocomplete="current-password" placeholder="● ● ● ● ● ●">
+      <button class="btn-go" id="gate-go" type="submit">들어가기</button>
+      <p class="gate-msg" id="gate-msg"></p>
+    </form>
+  </div>
+
+  <div class="wrap" id="wrap" hidden>
+    <header id="home" role="button" tabindex="0" title="처음으로">
+      <h1>Honor your daily promise</h1>
+      <p class="sub">Remember the US business trip, Yeeun.</p>
+    </header>
+
+    <div class="layout" id="layout">
+      <div class="cal-col">
+        <section class="box cal">
+          <div class="cal-head">
+            <button class="nav" id="prev" title="지난 달">‹</button>
+            <span class="ym" id="ym">—</span>
+            <button class="nav" id="next" title="다음 달">›</button>
+          </div>
+          <div class="grid" id="dow-row"></div>
+          <div class="grid" id="cal-grid"></div>
+          <div class="scopes" id="scopes">
+            <button data-scope="all">전체</button>
+            <button data-scope="today">오늘</button>
+            <button data-scope="week">최근 7일</button>
+            <button data-scope="review">복습 필요</button>
+            <button data-scope="done">암기 완료</button>
+          </div>
+          <div class="tally" id="tally">—</div>
+        </section>
+      </div>
+
+      <section>
+        <div class="modes" role="tablist">
+          <button class="mode on" id="mode-quiz">테스트</button>
+          <button class="mode" id="mode-diary">영어 일기</button>
+        </div>
+
+        <div id="quiz-panel">
+          <div class="quiz-head">
+            <span class="where" id="where">—</span>
+            <span id="progress"></span>
+            <span class="grow"></span>
+            <span class="score" id="score"></span>
+            <button class="mini" id="restart">다시 섞기</button>
+          </div>
+          <div class="bar"><div id="bar" style="width:0%"></div></div>
+          <div id="stage"></div>
+        </div>
+
+        <div id="diary-panel" hidden></div>
+
+        <p class="msg" id="msg"></p>
+      </section>
+
+    </div>
+
+    <footer>
+      <span id="ai-state">—</span>
+      <button class="mini" id="ai-test">AI 연결 확인</button>
+      <span class="grow"></span>
+      <button class="mini" id="reload">시트에서 다시 읽기</button>
+      <button class="mini" id="open-sheet">시트 열기</button>
+    </footer>
+    <div id="modal" hidden></div>
+  </div>
+
+<script>
+  /* 시트를 읽고 쓰는 창구 주소입니다. 이 파일을 어디에 올려두든 여기로 말을 겁니다. */
+  window.STUDY_API = 'https://script.google.com/macros/s/AKfycbz_plDVKaKU8FzDwGsc-_byWFNnF0XVSTUfodo8hVb3FtyfVF-fAzUZ3TdEDB454EnT/exec';
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  var DOW = ['일', '월', '화', '수', '목', '금', '토'];
+  var now = new Date();
+
+  var state = {
+    token: '',
+    items: [], hasKey: false, loading: true,
+    y: now.getFullYear(), m: now.getMonth(),
+    scope: 'all',       // all | today | week | review | done | date
+    selDate: '',
+    queue: [],          // 문제 순서 (items 의 인덱스)
+    page: 0,            // 몇 번째 묶음
+    pageSize: 5,        // 한 화면에 몇 문제
+    answers: {},        // items 인덱스 -> 내가 쓴 답
+    hints: {},          // items 인덱스 -> {text, level, ai}
+    checked: {},        // 되돌리려고 고른 문제
+    noteOpen: {},       // 메모를 펼쳐둔 문제
+    saved: {},          // 시트에 넣어둔 답 (점검 전)
+    revealed: {},       // 답을 펼쳐둔 문제
+    marked: {},         // items 인덱스 -> {status}  (이번에 고른 것)
+    busy: false,
+    focusIx: null,      // 다시 그린 뒤 여기로 커서를 보냅니다
+    tab: 'quiz',        // quiz | diary
+    diary: {},          // 날짜 -> {text, note}
+    diaryFor: null,     // 지금 화면에 띄운 일기 날짜
+    diaryDirty: false,
+    notes: [],          // 노트 목록
+    noteFor: null,      // 지금 표에 띄운 노트 날짜
+    noteRows: [],       // 표에 적힌 것 (화면 그대로)
+    reviews: [],        // 주간 복습 기록
+    history: {},        // 한글 -> [{date, mine}] (펼칠 때 받아옵니다)
+    histOpen: {},       // 이력을 펼쳐둔 문제
+    dirtyAnswers: false,
+    tally: { done: 0, review: 0 },
+    missed: {}          // 틀린 문제 기억 (한글 기준)
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  /* ---------- 유틸 ---------- */
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function keyOf(y, m, d) { return y + '-' + pad(m + 1) + '-' + pad(d); }
+  function todayKey() {
+    var t = new Date();
+    return keyOf(t.getFullYear(), t.getMonth(), t.getDate());
+  }
+  function daysAgoKey(n) {
+    var t = new Date();
+    t.setDate(t.getDate() - n);
+    return keyOf(t.getFullYear(), t.getMonth(), t.getDate());
+  }
+  function dateLabel(key) {
+    if (!key) return '날짜 없음';
+    var p = key.split('-');
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return (+p[1]) + '월 ' + (+p[2]) + '일' +
+           (isNaN(d.getTime()) ? '' : ' ' + DOW[d.getDay()] + '요일');
+  }
+  function msg(text, kind) {
+    var el = $('msg');
+    el.textContent = text || '';
+    el.className = 'msg' + (kind ? ' ' + kind : '');
+  }
+  function errText(e) {
+    return (e && e.message) ? e.message : '문제가 생겼어요. 잠시 뒤에 다시 해보세요.';
+  }
+
+  /* ---------- 서버 ---------- */
+  /*
+   * 화면이 어디에 있든(구글이든 다른 곳이든) 아래 창구 하나로만 말을 겁니다.
+   * 글 종류를 text/plain 으로 두는 게 중요합니다. 그래야 브라우저가
+   * 미리 물어보는 절차 없이 곧장 보냅니다. (앱스 스크립트는 그 절차를 못 받습니다)
+   */
+  var API = window.STUDY_API || '';
+
+  function serverOk() { return !!API; }
+
+  function post(fn, args, ok, bad) {
+    if (!API) {
+      bad(new Error('서버 주소가 없어요. STUDY_API 를 넣어주세요.'));
+      return;
+    }
+    fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fn: fn, args: args })
+    })
+      .then(function (r) { return r.text(); })
+      .then(function (t) {
+        var res;
+        try { res = JSON.parse(t); }
+        catch (e) { throw new Error('서버가 이상한 답을 보냈어요.'); }
+        if (!res.ok) {
+          if (/LOCKED/.test(res.error || '')) { lockUp(); return; }
+          throw new Error(res.error || '문제가 생겼어요.');
+        }
+        ok(res.data);
+      })
+      .catch(function (e) {
+        bad(e && e.message ? e : new Error('연결이 안 돼요. 잠시 뒤에 다시 해보세요.'));
+      });
+  }
+
+  /** 자물쇠 표를 앞에 붙여서 보냅니다. */
+  function call(fn, args, ok, bad) {
+    post(fn, [state.token].concat(args), ok, bad);
+  }
+
+  function load(quiet) {
+    if (!quiet) { state.loading = true; render(); }
+    call('listAll', [], function (data) {
+      state.items = (data && data.items) || [];
+      state.diary = {};
+      ((data && data.diary) || []).forEach(function (e) {
+        state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
+      });
+      state.notes = (data && data.notes) || [];
+      state.reviews = (data && data.reviews) || [];
+      state.hasKey = !!(data && data.hasKey);
+      state.loading = false;
+      build();
+      render();
+    }, function (e) {
+      state.loading = false;
+      render();
+      msg(errText(e), 'err');
+    });
+  }
+
+  /* ---------- 문제 고르기 ---------- */
+  function inScope(it) {
+    if (state.scope === 'all') return true;
+    if (state.scope === 'today') return it.date === todayKey();
+    if (state.scope === 'week') return it.date && it.date >= daysAgoKey(6);
+    if (state.scope === 'review') return it.status === '복습 필요';
+    if (state.scope === 'done') return it.status === '암기 완료';
+    if (state.scope === 'date') return it.date === state.selDate;
+    return true;
+  }
+
+  /** 같은 문장을 두 번 내지 않으려고 지문을 만듭니다. */
+  function fingerOf(it) {
+    var ko = String(it.korean || '').replace(/s+/g, '');
+    var en = String(it.answer || '').toLowerCase()
+               .replace(/[^a-z0-9]+/g, '');
+    return ko + '|' + en;
+  }
+
+  /** 지금 범위에 드는 문장들. 겹치는 건 하나만 남깁니다. */
+  function pickIdx() {
+    var out = [], seen = {};
+    for (var i = 0; i < state.items.length; i++) {
+      var it = state.items[i];
+      if (!inScope(it)) continue;
+      var k = fingerOf(it);
+      if (seen[k]) continue;
+      seen[k] = 1;
+      out.push(i);
+    }
+    return out;
+  }
+
+  function build() {
+    var idx = pickIdx();
+    for (var j = idx.length - 1; j > 0; j--) {   // 섞기
+      var k = Math.floor(Math.random() * (j + 1));
+      var t = idx[j]; idx[j] = idx[k]; idx[k] = t;
+    }
+    state.queue = idx;
+    state.page = 0;
+    state.answers = {};
+    state.saved = {};
+    // 써두고 아직 점검 안 한 답은 그대로 다시 띄웁니다.
+    for (var q = 0; q < state.items.length; q++) {
+      var it0 = state.items[q];
+      if (it0.mine && !it0.status) {
+        state.answers[q] = it0.mine;
+        state.saved[q] = true;
+      }
+    }
+    state.checked = {};
+    state.noteOpen = {};
+    state.revealed = {};
+    state.marked = {};
+    state.dirtyAnswers = false;
+    state.hints = {};
+    state.tally = { done: 0, review: 0 };
+  }
+
+  /** 지금 화면에 띄울 문제들 (items 의 인덱스) */
+  function pageIdx() {
+    var from = state.page * state.pageSize;
+    return state.queue.slice(from, from + state.pageSize);
+  }
+
+
+  function scopeLabel() {
+    if (state.scope === 'all') return '전체';
+    if (state.scope === 'today') return '오늘';
+    if (state.scope === 'week') return '최근 7일';
+    if (state.scope === 'review') return '복습 필요';
+    if (state.scope === 'done') return '암기 완료';
+    return dateLabel(state.selDate);
+  }
+
+  /* ---------- 달력 ---------- */
+  function countByDate() {
+    var map = {};
+    state.items.forEach(function (r) {
+      if (!r.date) return;
+      map[r.date] = (map[r.date] || 0) + 1;
+    });
+    return map;
+  }
+
+  function renderCal() {
+    // 맨 앞 칸은 '그 주 복습' 자리입니다.
+    var head = '<div class="dow"></div>';
+    for (var i = 0; i < 7; i++) {
+      head += '<div class="dow' + (i === 0 ? ' sun' : '') + '">' + DOW[i] + '</div>';
+    }
+    $('dow-row').innerHTML = head;
+    $('ym').textContent = state.y + '년 ' + (state.m + 1) + '월';
+
+    var counts = state.tab === 'diary' ? diaryCounts() : countByDate();
+    var today = todayKey();
+
+    // 그 달 첫 주의 일요일부터 한 주씩 내려갑니다.
+    var cur = new Date(state.y, state.m, 1);
+    cur.setDate(cur.getDate() - cur.getDay());
+    var endOfMonth = new Date(state.y, state.m + 1, 0);
+
+    var html = '';
+    while (cur <= endOfMonth) {
+      var wk = keyOf(cur.getFullYear(), cur.getMonth(), cur.getDate());
+      var n = itemsInWeek(wk).length;
+      var done = lastReviewOf(wk);
+      html += '<button class="wk' + (n ? '' : ' none') + (done ? ' done' : '') +
+        '" data-week="' + wk + '" title="' +
+        (n ? (weekLabel(wk) + ' 복습 (' + n + '문장)') : '이 주엔 문장이 없어요') +
+        '">' + (done ? '✓' : '↻') + '</button>';
+
+      for (var i2 = 0; i2 < 7; i2++) {
+        var dd = new Date(cur);
+        dd.setDate(dd.getDate() + i2);
+        if (dd.getMonth() !== state.m) {
+          html += '<div class="cell blank"></div>';
+          continue;
+        }
+        var key = keyOf(dd.getFullYear(), dd.getMonth(), dd.getDate());
+        var c = counts[key] || 0;
+        html += '<button class="cell' + (c ? ' has' : '') +
+          (state.tab === 'diary' && key === state.selDate ? ' on' : '') +
+          (state.tab !== 'diary' && state.scope === 'date' && key === state.selDate ? ' on' : '') +
+          (key === today ? ' today' : '') +
+          '" data-day="' + key + '" title="' + (c ? c + '개' : '') + '">' +
+          dd.getDate() + '</button>';
+      }
+      cur.setDate(cur.getDate() + 7);
+    }
+    $('cal-grid').innerHTML = html;
+
+    var miss = 0;
+    for (var mi = 0; mi < state.items.length; mi++) {
+      if (state.items[mi].status === '복습 필요') miss++;
+    }
+    var days = 0;
+    for (var dk in state.diary) { if (state.diary.hasOwnProperty(dk)) days++; }
+    $('tally').textContent = state.loading
+      ? '불러오는 중…'
+      : (state.tab === 'diary'
+          ? ('일기 ' + days + '일치')
+          : ('시트에 ' + state.items.length + '문장' + (miss ? ' · 복습 필요 ' + miss : '')));
+  }
+  /* ---------- 영어 일기 ---------- */
+  /** 2026-09-05 -> { title: "2026년 9월 5일", dow: "토요일" } */
+  function diaryTitle(key) {
+    var p = String(key || '').split('-');
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return {
+      title: (+p[0]) + '년 ' + (+p[1]) + '월 ' + (+p[2]) + '일',
+      dow: isNaN(d.getTime()) ? '' : DOW[d.getDay()] + '요일'
+    };
+  }
+
+  function diaryOf(d) {
+    return state.diary[d] || { text: '', note: '', fix: '' };
+  }
+
+  function wordCount(t) {
+    var w = String(t || '').trim();
+    if (!w) return 0;
+    return w.split(/\s+/).length;
+  }
+
+  function setDiaryState(kind) {
+    var el = $('d-state');
+    if (!el) return;
+    if (kind === 'dirty') { el.textContent = '저장 안 됨'; el.className = 'state dirty'; }
+    else if (kind === 'saved') { el.textContent = '저장했어요'; el.className = 'state saved'; }
+    else if (kind === 'saving') { el.textContent = '저장하는 중…'; el.className = 'state'; }
+    else { el.textContent = ''; el.className = 'state'; }
+  }
+
+  function updateDiaryCount() {
+    var el = $('d-count');
+    var ta = $('d-text');
+    if (el && ta) el.textContent = wordCount(ta.value) + ' 단어';
+  }
+
+  /** 칸 머리줄: 이름 + 저장 버튼 + 저장 상태 */
+  function dHead(label, key) {
+    return '<div class="dhead">' +
+      '<span class="dlabel">' + esc(label) + '</span>' +
+      '<span class="grow"></span>' +
+      '<span class="state" id="ds-' + key + '"></span>' +
+      '<button class="qsave" data-dsave="' + key + '">저장</button>' +
+      '</div>';
+  }
+
+  function renderDiary(force) {
+    var d = state.selDate || todayKey();
+    var el = $('diary-panel');
+
+    // 쓰는 중에 다시 그리면 커서가 날아갑니다. 날짜가 바뀔 때만 새로 그립니다.
+    if (!force && state.diaryFor === d && el.firstChild) {
+      updateDiaryCount();
+      return;
+    }
+    state.diaryFor = d;
+    state.diaryDirty = false;
+    state.noteFor = null;    // 노트 표도 함께 새로 그립니다
+
+    var p = diaryTitle(d);
+    var entry = diaryOf(d);
+
+    el.innerHTML =
+      '<div class="diary-head">' +
+        '<h2>' + esc(p.title) + '</h2>' +
+        '<span class="dw">' + esc(p.dow) + '</span>' +
+        '<span class="grow"></span>' +
+        '<span class="count" id="d-count">0 단어</span>' +
+      '</div>' +
+      '<div class="diary-body">' +
+        '<div class="dgrid">' +
+          '<div class="dcell">' +
+            dHead('영어 일기 작문', 'text') +
+            '<textarea id="d-text" ' +
+            'placeholder="오늘 하루를 영어로 적어보세요. 틀려도 괜찮습니다.">' +
+            esc(entry.text) + '</textarea>' +
+          '</div>' +
+          '<div class="dcell">' +
+            dHead('첨삭', 'fix') +
+            '<textarea id="d-fix" ' +
+            'placeholder="고쳐 쓴 문장, 더 자연스러운 표현">' +
+            esc(entry.fix) + '</textarea>' +
+          '</div>' +
+          '<section class="notes">' +
+            '<div class="note-head">' +
+              '<h3>노트</h3>' +
+              '<span class="day" id="note-day"></span>' +
+              '<span class="grow"></span>' +
+              '<span class="n" id="note-sel"></span>' +
+              '<span class="n" id="note-n"></span>' +
+            '</div>' +
+            '<div class="note-grid" id="note-grid"></div>' +
+            '<textarea class="nclip" id="note-clip" aria-hidden="true"></textarea>' +
+            '<div class="note-save">' +
+              '<button class="btn-go sm" id="note-save">저장</button>' +
+              '<button class="btn-text" id="note-add">칸 추가</button>' +
+              '<span class="state" id="note-state"></span>' +
+              '<span class="grow"></span>' +
+              '<span class="tip">줄 번호에 + × · 끌어서 고르고 Ctrl+C · Ctrl+X · Ctrl+V</span>' +
+            '</div>' +
+          '</section>' +
+          '<div class="dcell ko">' +
+            dHead('한글 작문', 'note') +
+            '<textarea id="d-note" ' +
+            'placeholder="쓰고 싶었던 말을 우리말로 먼저 적어두세요">' +
+            esc(entry.note) + '</textarea>' +
+          '</div>' +
+        '</div>' +
+        '<div class="dsave">' +
+          '<button class="btn-go" id="d-save">세 칸 모두 저장</button>' +
+          '<span class="state" id="d-state"></span>' +
+          '<span class="grow"></span>' +
+          '<button class="btn-text" id="d-today">오늘로</button>' +
+        '</div>' +
+      '</div>';
+
+    updateDiaryCount();
+
+    function touched() {
+      state.diaryDirty = true;
+      setCellState('text'); setCellState('fix'); setCellState('note');
+      setDiaryState('dirty');
+      updateDiaryCount();
+    }
+    $('d-text').addEventListener('input', touched);
+    $('d-fix').addEventListener('input', touched);
+    $('d-note').addEventListener('input', touched);
+    $('d-save').addEventListener('click', saveDiaryNow);
+    $('d-today').addEventListener('click', function () {
+      state.selDate = todayKey();
+      var t = new Date();
+      state.y = t.getFullYear(); state.m = t.getMonth();
+      render();
+    });
+
+    $('d-text').addEventListener('keydown', function (e) {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'Enter')) {
+        e.preventDefault();
+        saveDiaryNow();
+      }
+    });
+  }
+
+  /** 칸 하나만 저장할 때 그 칸 옆에 알려줍니다. */
+  function setCellState(key, kind) {
+    var el = key && $('ds-' + key);
+    if (!el) return;
+    if (kind === 'saving') { el.textContent = '저장하는 중…'; el.className = 'state'; }
+    else if (kind === 'saved') { el.textContent = '저장했어요'; el.className = 'state saved'; }
+    else if (kind === 'dirty') { el.textContent = '저장 안 됨'; el.className = 'state dirty'; }
+    else { el.textContent = ''; el.className = 'state'; }
+  }
+
+  /**
+   * 일기를 저장합니다.
+   * key 를 주면 그 칸만 눌린 것처럼 보여주지만, 시트에는 세 칸이 함께 들어갑니다.
+   * (한 줄에 나란히 있는 값이라 따로 떼어 넣을 수 없습니다.)
+   */
+  function saveDiaryNow(key) {
+    var d = state.diaryFor;
+    var text = $('d-text') ? $('d-text').value : '';
+    var note = $('d-note') ? $('d-note').value : '';
+    var fix  = $('d-fix')  ? $('d-fix').value  : '';
+
+    $('d-save').disabled = true;
+    if (key) setCellState(key, 'saving'); else setDiaryState('saving');
+
+    call('saveDiary', [d, text, note, fix], function () {
+      $('d-save').disabled = false;
+      state.diary[d] = { text: text, note: note, fix: fix };
+      state.diaryDirty = false;
+      setCellState('text'); setCellState('fix'); setCellState('note');
+      if (key) { setCellState(key, 'saved'); setDiaryState(); }
+      else setDiaryState('saved');
+      renderCal();
+    }, function (e) {
+      $('d-save').disabled = false;
+      if (key) setCellState(key, 'dirty'); else setDiaryState('dirty');
+      msg(errText(e), 'err');
+    });
+  }
+
+  function diaryCounts() {
+    var map = {};
+    for (var d in state.diary) {
+      if (!state.diary.hasOwnProperty(d)) continue;
+      var e = state.diary[d];
+      if ((e.text || '').trim()) map[d] = 1;
+    }
+    return map;
+  }
+
+  /* ---------- 모드 바꾸기 ---------- */
+  function setTab(tab) {
+    state.tab = tab;
+    $('mode-quiz').className = 'mode' + (tab === 'quiz' ? ' on' : '');
+    $('mode-diary').className = 'mode' + (tab === 'diary' ? ' on' : '');
+    $('quiz-panel').hidden = tab !== 'quiz';
+    $('diary-panel').hidden = tab !== 'diary';
+    $('scopes').hidden = tab !== 'quiz';
+    if (tab === 'diary' && !state.selDate) state.selDate = todayKey();
+    msg('');
+    render();
+    if (tab === 'diary') {
+      var ta = $('d-text');
+      if (ta) ta.focus();
+    }
+  }
+
+  /* ---------- 주간 복습 ---------- */
+  // 그 주 일요일 날짜를 '주 열쇠'로 씁니다.
+  function weekStartOf(key) {
+    var p = String(key || '').split('-');
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    d.setDate(d.getDate() - d.getDay());
+    return keyOf(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  function weekEndOf(wk) {
+    var p = wk.split('-');
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    d.setDate(d.getDate() + 6);
+    return keyOf(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  function weekLabel(wk) {
+    var a = wk.split('-'), b = weekEndOf(wk).split('-');
+    return (+a[1]) + '.' + (+a[2]) + ' – ' + (+b[1]) + '.' + (+b[2]);
+  }
+  function itemsInWeek(wk) {
+    var end = weekEndOf(wk);
+    var out = [];
+    for (var i = 0; i < state.items.length; i++) {
+      var d = state.items[i].date;
+      if (d && d >= wk && d <= end) out.push(i);
+    }
+    return out;
+  }
+  function lastReviewOf(wk) {
+    for (var i = 0; i < state.reviews.length; i++) {
+      if (state.reviews[i].week === wk) return state.reviews[i];
+    }
+    return null;
+  }
+
+  /* ---------- 복습 창 ---------- */
+  var rv = {
+    open: false, week: '', queue: [], pos: 0,
+    shown: false, answer: '', right: 0, wrong: 0, missed: [], pending: [], saving: false,
+    hint: null, hintBusy: false
+  };
+
+  // 힌트는 시트에 적어둔 답에서 바로 뽑습니다. 서버에 안 다녀옵니다.
+  var RV_STOP = ' a an the i you he she it we they me him her us them my your his its our their is are am was were be been being do does did have has had will would can could should may might to of in on at for with by from as that this these those and or but if so not no ';
+
+  function localHint(ans, lv) {
+    var words = String(ans || '').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return '';
+    if (lv === 1) {
+      var kw = [];
+      for (var i = 0; i < words.length; i++) {
+        var b = words[i].toLowerCase().replace(/[^a-z']/g, '');
+        if (!b || RV_STOP.indexOf(' ' + b + ' ') !== -1) continue;
+        if (kw.indexOf(words[i]) === -1) kw.push(words[i]);
+        if (kw.length >= 4) break;
+      }
+      if (!kw.length) kw = words.slice(0, 2);
+      return '이런 단어를 써보세요 — ' + kw.join(', ');
+    }
+    if (lv === 2) {
+      var half = Math.max(1, Math.ceil(words.length / 2));
+      return words.slice(0, half).join(' ') + ' …';
+    }
+    return words.join(' ');
+  }
+
+  function openReview(wk) {
+    var idx = itemsInWeek(wk);
+    if (!idx.length) {
+      msg(weekLabel(wk) + ' 주에는 문장이 없어요.', 'err');
+      return;
+    }
+    for (var j = idx.length - 1; j > 0; j--) {
+      var k = Math.floor(Math.random() * (j + 1));
+      var t = idx[j]; idx[j] = idx[k]; idx[k] = t;
+    }
+    rv = { open: true, week: wk, queue: idx, pos: 0,
+           shown: false, answer: '', right: 0, wrong: 0, missed: [], pending: [], saving: false,
+           hint: null, hintBusy: false };
+    renderReview();
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeReview() {
+    rv.open = false;
+    $('modal').hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  function rvCurrent() {
+    if (rv.pos >= rv.queue.length) return null;
+    return state.items[rv.queue[rv.pos]];
+  }
+
+  function renderReview() {
+    var box = $('modal');
+    if (!rv.open) { box.hidden = true; return; }
+    box.hidden = false;
+
+    var total = rv.queue.length;
+    var q = rvCurrent();
+    var past = lastReviewOf(rv.week);
+
+    var h = '<div class="sheet"><div class="sheet-head">' +
+      '<div><b>주간 복습</b><span class="wl">' + esc(weekLabel(rv.week)) + '</span></div>' +
+      '<span class="grow"></span>' +
+      (q ? '<span class="cnt">' + (rv.pos + 1) + ' / ' + total + '</span>' : '') +
+      '<button class="x" id="rv-close" title="닫기">&times;</button>' +
+      '</div>';
+
+    if (!q) {
+      var rate = total ? Math.round(rv.right * 100 / total) : 0;
+      h += '<div class="sheet-body done">' +
+        '<div class="big">' + rate + '%</div>' +
+        '<div class="line">' + total + '문장 · 암기 완료 ' + rv.right +
+        ' · 복습 필요 ' + rv.wrong + '</div>' +
+        (past ? '<div class="prev">지난 복습 ' + esc(past.logged) + ' · 암기 ' +
+                past.right + '/' + past.total + '</div>' : '') +
+        '<div class="sheet-acts">' +
+        '<button class="btn-go" id="rv-save"' + (rv.saving ? ' disabled' : '') + '>' +
+        (rv.saving ? '저장하는 중…' : '결과 저장하고 닫기') + '</button>' +
+        '<button class="btn-text" id="rv-again">다시 풀기</button>' +
+        '<span class="grow"></span>' +
+        '<button class="btn-text" id="rv-skip">저장 없이 닫기</button>' +
+        '</div></div>';
+    } else {
+      h += '<div class="sheet-body">' +
+        '<p class="rq">' + esc(q.korean) + '</p>' +
+        (q.note
+          ? ('<button class="qsave" id="rv-note">' +
+             (rv.noteOpen ? '메모 닫기' : '메모') + '</button>' +
+             (rv.noteOpen ? '<p class="rn">' + esc(q.note) + '</p>' : ''))
+          : '') +
+        (rv.hint && rv.hint.text
+          ? '<div class="hintbox"><span class="tag">힌트 ' + rv.hint.level + '/3</span>' +
+            esc(rv.hint.text) + '</div>'
+          : '') +
+        '<textarea id="rv-ans" rows="2" placeholder="영어로 써보세요"' +
+        (rv.shown ? ' readonly' : '') + '>' + esc(rv.answer) + '</textarea>';
+
+      if (rv.shown) {
+        h += '<div class="rans"><b>적어둔 답</b>' +
+          (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</div>' +
+          '<div class="sheet-acts">' +
+          '<button class="btn-go" id="rv-ok">암기 완료</button>' +
+          '<button class="btn-mid" id="rv-no">복습 필요</button>' +
+          '<span class="grow"></span>' +
+          '<span class="cnt">암기 ' + rv.right + ' · 복습 ' + rv.wrong + '</span>' +
+          '</div>';
+      } else {
+        h += '<div class="sheet-acts">' +
+          '<button class="btn-go" id="rv-show">확인</button>' +
+          '<button class="btn-text lead" id="rv-hint"' +
+          (rv.hintBusy ? ' disabled' : '') + '>' +
+          (rv.hintBusy ? '생각하는 중…'
+            : (rv.hint ? (rv.hint.level >= 3 ? '힌트 다시' : '힌트 더') : '힌트')) +
+          '</button>' +
+          (rv.hint ? '<button class="btn-text" id="rv-nohint">힌트 닫기</button>' : '') +
+          '<span class="grow"></span>' +
+          '<span class="cnt">암기 ' + rv.right + ' · 복습 ' + rv.wrong + '</span>' +
+          '</div>';
+      }
+      h += '</div>';
+    }
+
+    h += '</div>';
+    box.innerHTML = h;
+
+    wire('rv-close', closeReview);
+    wire('rv-skip', closeReview);
+    wire('rv-show', rvShow);
+    wire('rv-note', function () { rv.noteOpen = !rv.noteOpen; renderReview(); });
+    wire('rv-hint', rvHint);
+    wire('rv-nohint', function () { rv.hint = null; renderReview(); });
+    wire('rv-ok', function () { rvMark(true); });
+    wire('rv-no', function () { rvMark(false); });
+    wire('rv-save', rvSave);
+    wire('rv-again', function () { openReview(rv.week); });
+
+    var ta = $('rv-ans');
+    if (ta) {
+      ta.addEventListener('input', function () { rv.answer = this.value; });
+      ta.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (!rv.shown) rvShow();
+        }
+      });
+      if (!rv.shown) ta.focus();
+    }
+  }
+
+  function rvHint() {
+    var q = rvCurrent();
+    if (!q) return;
+    var lv = rv.hint ? Math.min(3, rv.hint.level + 1) : 1;
+
+    // 시트에 답이 있으면 바로 만들어 보여줍니다.
+    var local = localHint(q.answer, lv);
+    if (local) {
+      rv.hint = { text: local, level: lv };
+      renderReview();
+      return;
+    }
+
+    // 답이 비어 있으면 그때만 서버에 물어봅니다.
+    rv.hintBusy = true;
+    renderReview();
+    call('getHint', [q.korean, q.answer, rv.answer, lv], function (res) {
+      rv.hintBusy = false;
+      rv.hint = { text: (res && res.text) || '', level: lv };
+      renderReview();
+    }, function (e) {
+      rv.hintBusy = false;
+      renderReview();
+      msg(errText(e), 'err');
+    });
+  }
+
+  function rvShow() {
+    rv.shown = true;
+    renderReview();
+  }
+
+  function rvMark(ok) {
+    var q = rvCurrent();
+    if (q) {
+      if (ok) { rv.right++; delete state.missed[q.korean]; }
+      else { rv.wrong++; rv.missed.push(q.korean); state.missed[q.korean] = true; }
+      // 복습에서 고른 것도 시트의 상태 칸에 그대로 남깁니다.
+      var st = ok ? '암기 완료' : '복습 필요';
+      q.status = st;
+      rv.pending.push({ row: q.row, korean: q.korean, mine: rv.answer, status: st });
+    }
+    rv.pos++;
+    rv.shown = false;
+    rv.answer = '';
+    rv.noteOpen = false;
+    rv.hint = null;
+    renderReview();
+  }
+
+  function rvSave() {
+    rv.saving = true;
+    renderReview();
+    if (rv.pending.length) {
+      call('markMany', [rv.pending], function () {}, function () {});
+      rv.pending = [];
+    }
+    call('saveReview', [rv.week, rv.queue.length, rv.right, rv.wrong, rv.missed],
+      function (rows) {
+        state.reviews = rows || state.reviews;
+        rv.saving = false;
+        closeReview();
+        render();
+        msg('주간 복습 결과를 저장했어요.', 'ok');
+      },
+      function (e) {
+        rv.saving = false;
+        renderReview();
+        msg(errText(e), 'err');
+      });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && rv.open) closeReview();
+  });
+
+  /* ---------- 테스트 ---------- */
+  var ST_REVIEW = '복습 필요';
+  var ST_DONE = '암기 완료';
+
+  function statusOf(ix) {
+    var m = state.marked[ix];
+    if (m) return m;
+    return state.items[ix].status || '';
+  }
+
+  function cardHtml(ix, num) {
+    var q = state.items[ix];
+    var ans = state.answers[ix] || '';
+    var hint = state.hints[ix];
+    var open = !!state.revealed[ix];
+    var st = statusOf(ix);
+    var n2 = num < 10 ? ('0' + num) : String(num);
+
+    var h = '<li class="q' + (state.marked[ix] ? ' done' : '') + '">' +
+      '<span class="qn">' +
+      (st ? '<label class="pick" title="되돌릴 문장 고르기">' +
+            '<input type="checkbox" data-pick="' + ix + '"' +
+            (state.checked[ix] ? ' checked' : '') + '>' +
+            '<span class="box"></span><span class="num">' + n2 + '</span></label>'
+          : n2) +
+      '</span>' +
+      '<div class="qtop">' +
+        '<p class="qko">' + esc(q.korean) + '</p>' +
+        (st ? '<span class="tag ' + (st === ST_DONE ? 'ok' : 'rv') + '">' +
+              esc(st) + '</span>' +
+              '<button class="qsave undo" data-unmark="' + ix + '" ' +
+              'title="표시를 지우고 안 한 상태로 되돌립니다">되돌리기</button>' : '') +
+        (q.note ? '<button class="qsave" data-note="' + ix + '">' +
+                  (state.noteOpen[ix] ? '메모 닫기' : '메모') + '</button>' : '') +
+        '<button class="qsave hist" data-hist="' + ix + '">' +
+        (state.histOpen[ix] ? '이력 닫기' : '이력') + '</button>' +
+      '</div>' +
+      (q.note && state.noteOpen[ix] ? '<p class="qnote">' + esc(q.note) + '</p>' : '') +
+      (state.histOpen[ix] ? histHtml(q.korean) : '');
+
+    if (hint && hint.text) {
+      h += '<div class="hintbox"><span class="tag">힌트 ' + hint.level + '/3' +
+           (hint.ai ? '' : ' · 기본') + '</span>' + esc(hint.text) + '</div>';
+    }
+
+    h += '<textarea class="ans" data-ans="' + ix + '" rows="2" ' +
+         'placeholder="영어로 써보세요">' + esc(ans) + '</textarea>';
+
+    if (open) {
+      h += '<div class="rans">' +
+        '<span class="rh"><b>적어둔 답</b>' +
+        '<button class="btn-text" data-hide="' + ix + '">가리기</button></span>' +
+        (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</div>' +
+        '<div class="acts">' +
+        '<button class="btn-go sm" data-mark="' + ST_DONE + ':' + ix + '">암기 완료</button>' +
+        '<button class="btn-mid" data-mark="' + ST_REVIEW + ':' + ix + '">복습 필요</button>' +
+        '</div>';
+    } else {
+      h += '<div class="acts">' +
+        '<button class="btn-text lead" data-hint="' + ix + '"' +
+        (state.busy ? ' disabled' : '') + '>' +
+        (hint ? (hint.level >= 3 ? '힌트 다시' : '힌트 더') : '힌트') + '</button>' +
+        (hint ? '<button class="btn-text" data-nohint="' + ix + '">힌트 닫기</button>' : '') +
+        '<button class="btn-text" data-show="' + ix + '">답 보기</button>' +
+        '<span class="grow"></span>' +
+        '<button class="qsave' + (state.saved[ix] ? ' done' : '') +
+        '" data-save="' + ix + '">' +
+        (state.saved[ix] ? '저장됨' : '저장') + '</button>' +
+        '</div>';
+    }
+    return h + '</li>';
+  }
+
+  /** 이 쪽에서 표시가 붙어 있는 문장들 */
+  function markedOnPage() {
+    return pageIdx().filter(function (ix) { return !!statusOf(ix); });
+  }
+  /** 그 중 네모를 친 것들 */
+  function pickedOnPage() {
+    return markedOnPage().filter(function (ix) { return !!state.checked[ix]; });
+  }
+  /** 지금 범위 전체에서 표시가 붙어 있는 문장들 */
+  function scopeMarkedAll() {
+    return state.queue.filter(function (ix) { return !!statusOf(ix); });
+  }
+
+  function pageMarked() {
+    var p = pageIdx();
+    if (!p.length) return false;
+    for (var i = 0; i < p.length; i++) {
+      if (!state.marked[p[i]]) return false;
+    }
+    return true;
+  }
+
+  function renderQuiz() {
+    var total = state.queue.length;
+    var p = pageIdx();
+    var from = state.page * state.pageSize;
+
+    $('where').textContent = scopeLabel();
+    $('progress').textContent = total
+      ? ((from + 1) + '–' + Math.min(from + p.length, total) + ' / ' + total)
+      : '';
+    $('score').innerHTML = (state.tally.done || state.tally.review)
+      ? ('<b>암기 ' + state.tally.done + '</b> · <i>복습 ' + state.tally.review + '</i>')
+      : '';
+    $('bar').style.width = total ? ((from + p.length) * 100 / total) + '%' : '0%';
+
+    var el = $('stage');
+
+    if (state.loading) {
+      el.innerHTML = '<div class="blank">불러오는 중…</div>';
+      return;
+    }
+    if (!state.items.length) {
+      el.innerHTML = '<div class="blank"><strong>시트가 비어 있어요</strong>' +
+        '아래 <b>시트 열기</b>를 눌러 문장을 적어주세요.</div>';
+      return;
+    }
+    if (!total) {
+      el.innerHTML = '<div class="blank"><strong>여기엔 문장이 없어요</strong>' +
+        '왼쪽에서 다른 범위를 골라보세요.</div>';
+      return;
+    }
+    if (!p.length) {
+      el.innerHTML = '<div class="done-panel">' +
+        '<div class="big">한 바퀴 끝</div>' +
+        '<div class="line">' + total + '문장 · 암기 ' + state.tally.done +
+        ' · 복습 필요 ' + state.tally.review + '</div>' +
+        '<button class="btn-go" id="again">다시 돌기</button>' +
+        '</div>';
+      wire('again', function () { build(); render(); });
+      return;
+    }
+
+    var h = '<div class="stage"><ul class="qlist">';
+    for (var i = 0; i < p.length; i++) h += cardHtml(p[i], from + i + 1);
+    h += '</ul>';
+
+    var rest = total - from - p.length;
+    var marks = markedOnPage();
+    var picks = pickedOnPage();
+    var unsaved = unsavedOnPage();
+
+    h += '<div class="page-acts">' +
+      (rest > 0
+        ? ('<button class="btn-go" id="next-page">다음 ' +
+           Math.min(state.pageSize, rest) + '문장 →</button>')
+        : '<button class="btn-go" id="next-page">마무리 →</button>') +
+      (picks.length
+        ? ('<button class="btn-mid" id="undo-picked">고른 ' + picks.length +
+           '개 되돌리기</button>')
+        : unsaved.length
+        ? ('<button class="btn-mid" id="save-page">쓴 ' + unsaved.length +
+           '개 저장</button>')
+        : (pageMarked() ? ''
+           : '<span class="note">답을 쓰고 저장하거나, 답을 펼쳐 점검하세요</span>')) +
+      '<span class="grow"></span>' +
+      (marks.length
+        ? ('<button class="btn-text" id="pick-all">' +
+           (picks.length === marks.length ? '고른 것 풀기' : '이 쪽 전부 고르기') +
+           '</button>')
+        : '') +
+      (scopeMarkedAll().length
+        ? ('<button class="btn-text" id="undo-scope">' + scopeLabel() + ' 전부 되돌리기 (' +
+           scopeMarkedAll().length + ')</button>')
+        : '') +
+      (state.page > 0 ? '<button class="btn-text" id="prev-page">← 이전</button>' : '') +
+      '<button class="btn-text" id="reveal-all">전부 펼치기</button>' +
+      '</div></div>';
+
+    // 다시 그려도 보던 자리에 그대로 있어야 합니다.
+    var keepY = window.scrollY || window.pageYOffset || 0;
+    el.innerHTML = h;
+    wire('next-page', nextPage);
+    wire('prev-page', prevPage);
+    wire('reveal-all', function () {
+      pageIdx().forEach(function (ix) { state.revealed[ix] = true; });
+      render();
+    });
+    wire('undo-picked', function () { undoMany(pickedOnPage()); });
+    wire('save-page', function () { saveThese(unsavedOnPage(), this); });
+    wire('pick-all', function () {
+      var all = markedOnPage();
+      var on = pickedOnPage().length !== all.length;
+      all.forEach(function (ix) {
+        if (on) state.checked[ix] = true; else delete state.checked[ix];
+      });
+      render();
+    });
+    wire('undo-scope', function () {
+      var all = scopeMarkedAll();
+      if (!all.length) return;
+      if (!window.confirm(scopeLabel() + ' 에 있는 ' + all.length +
+          '문장의 표시를 모두 지울까요?')) return;
+      undoMany(all);
+    });
+
+    // 커서는 부탁받았을 때만 옮깁니다. 그래야 화면이 안 튑니다.
+    var want = null;
+    if (state.focusIx !== null) {
+      want = el.querySelector('textarea[data-ans="' + state.focusIx + '"]');
+      state.focusIx = null;
+    }
+    if (want && !state.busy) {
+      try { want.focus({ preventScroll: true }); } catch (e) { want.focus(); }
+    }
+    window.scrollTo(0, keepY);
+  }
+
+  function wire(id, fn) {
+    var el = $(id);
+    if (el) el.addEventListener('click', fn);
+  }
+
+  function renderFoot() {
+    $('ai-state').innerHTML = state.hasKey
+      ? '<span class="ai-on">AI 힌트 켜짐</span>'
+      : 'AI 힌트 꺼짐 — 시트에 적어둔 답으로 힌트를 만듭니다';
+  }
+
+
+  /** 왼쪽 범위 버튼에 지금 고른 것과 문장 수를 표시합니다. */
+  function renderScopes() {
+    var box = $('scopes');
+    if (!box) return;
+    var save = state.scope;
+    var btns = box.querySelectorAll('[data-scope]');
+    for (var i = 0; i < btns.length; i++) {
+      var sc = btns[i].getAttribute('data-scope');
+      state.scope = sc;
+      var n = pickIdx().length;
+      btns[i].className = (sc === save ? 'on' : '');
+      var lab = btns[i].getAttribute('data-label');
+      if (!lab) { lab = btns[i].textContent; btns[i].setAttribute('data-label', lab); }
+      btns[i].textContent = lab + (n ? ' (' + n + ')' : '');
+    }
+    state.scope = save;
+  }
+
+  function render() {
+    renderCal();
+    renderScopes();
+    if (state.tab === 'diary') renderDiary();
+    else renderQuiz();
+    renderNotes();
+    renderFoot();
+  }
+
+
+  /* ---------- 표시하기 ---------- */
+  function markOne(ix, status) {
+    var it = state.items[ix];
+    if (!it) return;
+    var mine = state.answers[ix] || '';
+
+    // 화면은 바로 바꾸고, 저장은 뒤에서 합니다.
+    if (state.marked[ix]) {
+      if (state.marked[ix].status === ST_DONE) state.tally.done--;
+      else state.tally.review--;
+    }
+    if (status) {
+      state.marked[ix] = { status: status };
+      if (status === ST_DONE) state.tally.done++; else state.tally.review++;
+      delete state.revealed[ix];
+      delete state.hints[ix];
+      delete state.saved[ix];
+      state.answers[ix] = '';
+    } else {
+      delete state.marked[ix];
+      state.focusIx = ix;
+    }
+    it.status = status;
+    render();
+
+    call('markItem', [it.row, it.korean, mine, status], function (res) {
+      it.checkedOn = (res && res.checkedOn) || '';
+      if (status) { it.mine = mine; delete state.history[it.korean]; }
+    }, function (e) {
+      msg(errText(e), 'err');
+    });
+  }
+
+  /** 아직 안 넣어둔, 뭔가 써놓은 문장들 */
+  function unsavedOnPage() {
+    return pageIdx().filter(function (ix) {
+      return (state.answers[ix] || '').trim() && !state.saved[ix];
+    });
+  }
+
+  /** 써둔 답을 시트에 넣어둡니다. 점검(암기 완료 / 복습 필요)은 나중에. */
+  function saveThese(list, btn) {
+    var send = [], done = [];
+    (list || []).forEach(function (ix) {
+      var it = state.items[ix];
+      if (!it || !it.row) return;
+      var mine = state.answers[ix] || '';
+      if (!mine.trim()) return;
+      it.mine = mine;
+      state.saved[ix] = true;
+      done.push(ix);
+      delete state.history[it.korean];
+      send.push({ row: it.row, korean: it.korean, mine: mine });
+    });
+    if (!send.length) { msg('쓴 답이 없어요.', 'err'); return; }
+
+    if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
+    call('saveAnswers', [send], function () {
+      render();
+      msg(send.length + '개를 넣어뒀어요. 점검은 나중에 하셔도 됩니다.', 'ok');
+    }, function (e) {
+      done.forEach(function (ix) { delete state.saved[ix]; });
+      render();
+      msg(errText(e), 'err');
+    });
+  }
+
+  /** 고른 문장들의 표시를 한 번에 지웁니다. */
+  function undoMany(list) {
+    if (!list || !list.length) return;
+    var send = [];
+    list.forEach(function (ix) {
+      var it = state.items[ix];
+      if (!it) return;
+      if (state.marked[ix]) {
+        if (state.marked[ix].status === ST_DONE) state.tally.done--;
+        else state.tally.review--;
+        delete state.marked[ix];
+      }
+      it.status = '';
+      it.checkedOn = '';
+      delete state.checked[ix];
+      // 시트에 넣어둔 답은 그대로 두고 다시 띄워줍니다.
+      if (it.mine) { state.answers[ix] = it.mine; state.saved[ix] = true; }
+      send.push({ row: it.row, korean: it.korean, mine: '', status: '' });
+    });
+    render();
+    msg(send.length + '문장을 되돌렸어요.', 'ok');
+    call('markMany', [send], function () {}, function (e) {
+      msg(errText(e), 'err');
+    });
+  }
+
+  function doHint(ix) {
+    var q = state.items[ix];
+    if (!q) return;
+    var lv = state.hints[ix] ? Math.min(3, state.hints[ix].level + 1) : 1;
+
+    // 시트에 답이 있으면 서버에 안 물어보고 바로 만듭니다.
+    var local = localHint(q.answer, lv);
+    if (local) {
+      state.hints[ix] = { text: local, level: lv, ai: false };
+      render();
+      return;
+    }
+
+    state.busy = true;
+    state.hints[ix] = { text: '생각하는 중…', level: lv, ai: state.hasKey };
+    render();
+
+    call('getHint', [q.korean, q.answer, state.answers[ix] || '', lv], function (res) {
+      state.busy = false;
+      state.hints[ix] = { text: (res && res.text) || '', level: lv, ai: !!(res && res.ai) };
+      render();
+    }, function (e) {
+      state.busy = false;
+      delete state.hints[ix];
+      render();
+      msg(errText(e), 'err');
+    });
+  }
+
+  function prevPage() {
+    if (state.page <= 0) return;
+    state.page--;
+    msg('');
+    render();
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+  }
+
+  function nextPage() {
+    state.page++;
+    msg('');
+    render();
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+  }
+
+  /* ---------- 이력 ---------- */
+  function histHtml(korean) {
+    var rows = state.history[korean];
+    if (rows === undefined) {
+      return '<div class="hist-box quiet">이력을 불러오는 중…</div>';
+    }
+    if (!rows.length) {
+      return '<div class="hist-box quiet">아직 기록이 없어요.</div>';
+    }
+    var h = '<div class="hist-box">';
+    rows.forEach(function (r) {
+      var p = String(r.date || '').split('-');
+      h += '<div class="hrow">' +
+        '<span class="hd">' + (p.length > 2 ? ((+p[1]) + '. ' + (+p[2]) + '.') : '—') +
+        '</span>' +
+        '<span class="hm">' + (esc(r.mine) || '—') + '</span>' +
+        '</div>';
+    });
+    return h + '</div>';
+  }
+
+  function fetchHist(korean) {
+    call('getHistory', [korean], function (rows) {
+      state.history[korean] = rows || [];
+      render();
+    }, function (e) {
+      state.history[korean] = [];
+      render();
+      msg(errText(e), 'err');
+    });
+  }
+
+  function toggleHist(ix) {
+    var ko = state.items[ix].korean;
+    if (state.histOpen[ix]) {
+      delete state.histOpen[ix];
+      render();
+      return;
+    }
+    state.histOpen[ix] = true;
+    render();
+    if (state.history[ko] === undefined) fetchHist(ko);
+  }
+  /* ---------- 노트 (날짜별 표) ---------- */
+  /*
+   * 표는 state.noteRows 를 그대로 그린 것입니다.
+   * 글자를 칠 때는 다시 그리지 않고(커서가 날아가니까) 값만 담아둡니다.
+   * 줄을 끼우거나 지우거나 붙여넣을 때만 다시 그립니다.
+   */
+  var NOTE_MIN_ROWS = 6;
+  var NOTE_COLS = 2;
+
+  // 드래그로 고른 칸 범위
+  var nsel = { on: false, r1: 0, c1: 0, r2: 0, c2: 0, live: false };
+
+  function noteRowsFor(d) {
+    var rows = state.notes
+      .filter(function (n) { return n.date === d; })
+      .map(function (n) { return { en: n.en, ko: n.ko }; });
+    while (rows.length < NOTE_MIN_ROWS) rows.push({ en: '', ko: '' });
+    return rows;
+  }
+
+  function noteCellVal(r, c) {
+    var row = state.noteRows[r];
+    if (!row) return '';
+    return (c === 0 ? row.en : row.ko) || '';
+  }
+  function setNoteCell(r, c, v) {
+    while (state.noteRows.length <= r) state.noteRows.push({ en: '', ko: '' });
+    if (c === 0) state.noteRows[r].en = v; else state.noteRows[r].ko = v;
+  }
+
+  function noteRowHtml(r, i) {
+    return '<div class="nrow" data-r="' + i + '">' +
+      '<span class="nh">' +
+        '<b class="rn">' + (i + 1) + '</b>' +
+        '<button class="rb" data-ins="' + i + '" title="아래에 칸 넣기">+</button>' +
+        '<button class="rb" data-del="' + i + '" title="이 칸 지우기">&times;</button>' +
+      '</span>' +
+      '<input class="nen" data-r="' + i + '" data-c="0" value="' + esc(r.en) + '">' +
+      '<input class="nko" data-r="' + i + '" data-c="1" value="' + esc(r.ko) + '">' +
+      '</div>';
+  }
+
+  function setNoteState(kind) {
+    var el = $('note-state');
+    if (!el) return;
+    if (kind === 'dirty') { el.textContent = '저장 안 됨'; el.className = 'state dirty'; }
+    else if (kind === 'saved') { el.textContent = '저장했어요'; el.className = 'state saved'; }
+    else if (kind === 'saving') { el.textContent = '저장하는 중…'; el.className = 'state'; }
+    else { el.textContent = ''; el.className = 'state'; }
+  }
+
+  /** state.noteRows 를 화면에 그립니다. (커서 자리는 알려주면 되살립니다) */
+  function drawNoteGrid(focusR, focusC) {
+    var grid = $('note-grid');
+    if (!grid) return;
+
+    var h = '<div class="nrow head">' +
+      '<span class="nh"></span><span>영어</span><span>풀이</span></div>';
+    for (var i = 0; i < state.noteRows.length; i++) {
+      h += noteRowHtml(state.noteRows[i], i);
+    }
+    grid.innerHTML = h;
+
+    var filled = state.noteRows.filter(function (r) { return r.en || r.ko; }).length;
+    if ($('note-n')) $('note-n').textContent = filled ? (filled + '개') : '';
+
+    paintSel();
+
+    if (focusR !== undefined && focusR !== null) {
+      var el = grid.querySelector(
+        'input[data-r="' + focusR + '"][data-c="' + (focusC || 0) + '"]');
+      if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+    }
+  }
+
+  function renderNotes(force) {
+    var grid = $('note-grid');
+    if (!grid) return;                      // 테스트 쪽에는 노트가 없습니다
+    var d = state.selDate || todayKey();
+
+    if (!force && state.noteFor === d) return;
+    state.noteFor = d;
+
+    var p = diaryTitle(d);
+    if ($('note-day')) $('note-day').textContent = p.title.split('년 ')[1];
+
+    state.noteRows = noteRowsFor(d);
+    nsel.on = false;
+    drawNoteGrid();
+    setNoteState();
+  }
+
+  /* ---------- 줄 넣고 빼기 ---------- */
+  function insertNoteRow(at) {
+    var i = Math.max(0, Math.min(state.noteRows.length, Number(at) + 1));
+    state.noteRows.splice(i, 0, { en: '', ko: '' });
+    nsel.on = false;
+    setNoteState('dirty');
+    drawNoteGrid(i, 0);
+  }
+
+  function deleteNoteRow(at) {
+    var i = Number(at);
+    if (i < 0 || i >= state.noteRows.length) return;
+    state.noteRows.splice(i, 1);
+    if (!state.noteRows.length) state.noteRows.push({ en: '', ko: '' });
+    nsel.on = false;
+    setNoteState('dirty');
+    drawNoteGrid(Math.min(i, state.noteRows.length - 1), 0);
+  }
+
+  function addNoteRow(focus) {
+    state.noteRows.push({ en: '', ko: '' });
+    setNoteState('dirty');
+    drawNoteGrid(focus ? state.noteRows.length - 1 : null, 0);
+  }
+
+  /* ---------- 칸 고르기 (엑셀처럼 끌어서) ---------- */
+  function selBox() {
+    return {
+      r1: Math.min(nsel.r1, nsel.r2), r2: Math.max(nsel.r1, nsel.r2),
+      c1: Math.min(nsel.c1, nsel.c2), c2: Math.max(nsel.c1, nsel.c2)
+    };
+  }
+  function selCount() {
+    if (!nsel.on) return 0;
+    var b = selBox();
+    return (b.r2 - b.r1 + 1) * (b.c2 - b.c1 + 1);
+  }
+  function paintSel() {
+    var grid = $('note-grid');
+    if (!grid) return;
+    var all = grid.querySelectorAll('input[data-r]');
+    var b = nsel.on ? selBox() : null;
+    for (var i = 0; i < all.length; i++) {
+      var r = +all[i].getAttribute('data-r');
+      var c = +all[i].getAttribute('data-c');
+      var inside = b && r >= b.r1 && r <= b.r2 && c >= b.c1 && c <= b.c2;
+      all[i].className = (c === 0 ? 'nen' : 'nko') + (inside ? ' sel' : '');
+    }
+    var tag = $('note-sel');
+    if (tag) {
+      var k = selCount();
+      tag.textContent = k > 1 ? (k + '칸 고름 · Ctrl+C 복사') : '';
+    }
+  }
+  function clearSel() {
+    if (!nsel.on) return;
+    nsel.on = false;
+    paintSel();
+  }
+
+  /** 고른 칸들을 엑셀이 알아듣는 글자(탭·줄바꿈)로 만듭니다. */
+  function selText() {
+    var b = selBox(), lines = [];
+    for (var r = b.r1; r <= b.r2; r++) {
+      var cells = [];
+      for (var c = b.c1; c <= b.c2; c++) cells.push(noteCellVal(r, c));
+      lines.push(cells.join(String.fromCharCode(9)));
+    }
+    return lines.join(String.fromCharCode(10));
+  }
+
+  /**
+   * 여러 칸을 골랐으면 그 내용을 안 보이는 칸에 담고 커서를 옮깁니다.
+   * 그러면 Ctrl+C · Ctrl+X 를 브라우저가 알아서 처리합니다.
+   * (앱스 스크립트 틀 안에서는 우리가 직접 복사하는 길이 막혀 있습니다.)
+   */
+  function armClip() {
+    var clip = $('note-clip');
+    if (!clip) return;
+    if (selCount() < 2) return;
+    clip.value = selText();
+    clip.focus();
+    clip.select();
+  }
+
+  /** 붙여넣은 글자를 (r, c) 자리부터 깝니다. 모자라면 줄을 늘립니다. */
+  function pasteAt(r0, c0, text) {
+    var NL = String.fromCharCode(10);
+    var body = String(text || '').replace(/\r\n/g, NL).replace(/\r/g, NL);
+    var lines = body.split(NL);
+    while (lines.length && lines[lines.length - 1] === '') lines.pop();
+    if (!lines.length) return;
+
+    for (var i = 0; i < lines.length; i++) {
+      var cells = lines[i].split(String.fromCharCode(9));
+      for (var j = 0; j < cells.length; j++) {
+        var c = c0 + j;
+        if (c >= NOTE_COLS) break;          // 두 칸까지만
+        setNoteCell(r0 + i, c, cells[j]);
+      }
+    }
+
+    nsel.on = true;
+    nsel.r1 = r0; nsel.c1 = c0;
+    nsel.r2 = r0 + lines.length - 1;
+    nsel.c2 = Math.min(NOTE_COLS - 1, c0 + lines[0].split(String.fromCharCode(9)).length - 1);
+
+    setNoteState('dirty');
+    drawNoteGrid();
+    armClip();
+  }
+
+  function clearSelCells() {
+    var b = selBox();
+    for (var r = b.r1; r <= b.r2; r++) {
+      for (var c = b.c1; c <= b.c2; c++) setNoteCell(r, c, '');
+    }
+    setNoteState('dirty');
+    drawNoteGrid();
+  }
+
+  /* ---------- 저장 ---------- */
+  function saveNotesNow() {
+    var d = state.noteFor || state.selDate || todayKey();
+    var rows = state.noteRows.map(function (r) {
+      return { en: r.en || '', ko: r.ko || '' };
+    });
+
+    if ($('note-save')) $('note-save').disabled = true;
+    setNoteState('saving');
+
+    call('saveNotes', [d, rows], function (notes) {
+      if ($('note-save')) $('note-save').disabled = false;
+      state.notes = notes || [];
+      // 화면에 적은 대로 그대로 둡니다. 빈 줄도 그대로 남겨둡니다.
+      setNoteState('saved');
+    }, function (e) {
+      if ($('note-save')) $('note-save').disabled = false;
+      setNoteState('dirty');
+      msg(errText(e), 'err');
+    });
+  }
+
+  /* ---------- 표에서 일어나는 일 (위임으로 한 번만) ---------- */
+  var dp = $('diary-panel');
+
+  dp.addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    if (e.target.closest('#note-save')) { saveNotesNow(); return; }
+    if (e.target.closest('#note-add')) { addNoteRow(true); return; }
+
+    var ins = e.target.closest('[data-ins]');
+    if (ins) { insertNoteRow(ins.getAttribute('data-ins')); return; }
+    var del = e.target.closest('[data-del]');
+    if (del) { deleteNoteRow(del.getAttribute('data-del')); return; }
+
+    var db = e.target.closest('[data-dsave]');
+    if (db) { saveDiaryNow(db.getAttribute('data-dsave')); return; }
+  });
+
+  dp.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t.getAttribute || t.getAttribute('data-r') === null) return;
+    setNoteCell(+t.getAttribute('data-r'), +t.getAttribute('data-c'), t.value);
+    setNoteState('dirty');
+    var filled = state.noteRows.filter(function (r) { return r.en || r.ko; }).length;
+    if ($('note-n')) $('note-n').textContent = filled ? (filled + '개') : '';
+    // 마지막 줄을 쓰기 시작하면 빈 줄을 하나 더 깔아둡니다.
+    if (+t.getAttribute('data-r') === state.noteRows.length - 1) {
+      state.noteRows.push({ en: '', ko: '' });
+      $('note-grid').insertAdjacentHTML('beforeend',
+        noteRowHtml({ en: '', ko: '' }, state.noteRows.length - 1));
+    }
+  });
+
+  // 끌어서 칸 고르기
+  dp.addEventListener('mousedown', function (e) {
+    var t = e.target;
+    if (!t.getAttribute || t.getAttribute('data-r') === null) { clearSel(); return; }
+    nsel.r1 = nsel.r2 = +t.getAttribute('data-r');
+    nsel.c1 = nsel.c2 = +t.getAttribute('data-c');
+    nsel.on = false;      // 한 칸만 누른 거면 그냥 글자 고치기입니다
+    nsel.live = true;
+    paintSel();
+  });
+
+  dp.addEventListener('mouseover', function (e) {
+    if (!nsel.live) return;
+    var t = e.target;
+    if (!t.getAttribute || t.getAttribute('data-r') === null) return;
+    var r = +t.getAttribute('data-r');
+    var c = +t.getAttribute('data-c');
+    if (r === nsel.r2 && c === nsel.c2) return;
+    nsel.r2 = r; nsel.c2 = c;
+    nsel.on = true;
+    // 끌 때 브라우저가 글자를 따로 잡는 걸 막습니다.
+    try { window.getSelection().removeAllRanges(); } catch (err) {}
+    paintSel();
+  });
+
+  document.addEventListener('mouseup', function () {
+    if (!nsel.live) return;
+    nsel.live = false;
+    armClip();          // 끌기를 마치면 바로 복사할 수 있게 담아둡니다
+  });
+
+  /* 안 보이는 칸에서 벌어지는 일 */
+  dp.addEventListener('cut', function (e) {
+    if (e.target.id !== 'note-clip' || selCount() < 2) return;
+    // 브라우저가 글자를 가져간 뒤에 표를 비웁니다.
+    setTimeout(function () {
+      var k = selCount();
+      clearSelCells();
+      msg(k + '칸을 잘라냈어요.', 'ok');
+    }, 0);
+  });
+
+  dp.addEventListener('copy', function (e) {
+    if (e.target.id !== 'note-clip' || selCount() < 2) return;
+    msg(selCount() + '칸을 복사했어요.', 'ok');
+  });
+
+  dp.addEventListener('paste', function (e) {
+    if (e.target.id !== 'note-clip') return;
+    var text = (e.clipboardData || window.clipboardData).getData('text');
+    e.preventDefault();
+    if (!text) return;
+    var b = selBox();
+    pasteAt(b.r1, b.c1, text);
+  });
+
+  dp.addEventListener('keydown', function (e) {
+    if (e.target.id !== 'note-clip') return;
+    if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'Enter')) {
+      e.preventDefault(); saveNotesNow(); return;
+    }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault(); clearSelCells(); return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      var b = selBox();
+      clearSel();
+      drawNoteGrid(b.r1, b.c1);
+    }
+  });
+
+  dp.addEventListener('keydown', function (e) {
+    var t = e.target;
+    if (!t.getAttribute || t.getAttribute('data-r') === null) return;
+    var r = +t.getAttribute('data-r');
+    var c = +t.getAttribute('data-c');
+
+    // 저장
+    if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'Enter')) {
+      e.preventDefault(); saveNotesNow(); return;
+    }
+    if (e.key === 'Escape') { clearSel(); return; }
+
+    // 줄 넣기 / 빼기
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { return; }
+    if (e.altKey && e.key === 'Enter') { e.preventDefault(); insertNoteRow(r); return; }
+
+    // 칸 사이 옮겨 다니기
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (r + 1 >= state.noteRows.length) addNoteRow(false);
+      clearSel();
+      drawNoteGrid(r + 1, c);
+      return;
+    }
+    if (e.key === 'ArrowDown' && r + 1 < state.noteRows.length) {
+      e.preventDefault(); clearSel(); drawNoteGrid(r + 1, c); return;
+    }
+    if (e.key === 'ArrowUp' && r > 0) {
+      e.preventDefault(); clearSel(); drawNoteGrid(r - 1, c); return;
+    }
+  });
+
+  // 엑셀·구글 시트에서 그대로 붙여넣기
+  dp.addEventListener('paste', function (e) {
+    var t = e.target;
+    if (!t.getAttribute || t.getAttribute('data-r') === null) return;
+    var text = (e.clipboardData || window.clipboardData).getData('text');
+    if (!text || (text.indexOf(String.fromCharCode(9)) < 0 &&
+                  text.indexOf(String.fromCharCode(10)) < 0)) {
+      return;                       // 한 칸짜리는 그냥 평소대로 붙습니다
+    }
+    e.preventDefault();
+    pasteAt(+t.getAttribute('data-r'), +t.getAttribute('data-c'), text);
+  });
+
+  /* ---------- 카드 안 버튼·입력 (위임으로 한 번만) ---------- */
+  $('stage').addEventListener('input', function (e) {
+    var ix = e.target.getAttribute && e.target.getAttribute('data-ans');
+    if (ix === null || ix === undefined) return;
+    state.answers[ix] = e.target.value;
+    state.dirtyAnswers = true;
+    if (state.saved[ix]) {
+      delete state.saved[ix];
+      var card = e.target.closest('li.q');
+      var sb = card && card.querySelector('[data-save]');
+      if (sb) { sb.textContent = '저장'; sb.className = 'qsave'; }
+    }
+  });
+
+  $('stage').addEventListener('change', function (e) {
+    var ix = e.target.getAttribute && e.target.getAttribute('data-pick');
+    if (ix === null || ix === undefined) return;
+    if (e.target.checked) state.checked[ix] = true;
+    else delete state.checked[ix];
+    render();
+  });
+
+  $('stage').addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    var b = e.target.closest('button');
+    if (!b) return;
+    var ix = b.getAttribute('data-hist');
+    if (ix !== null) { toggleHist(ix); return; }
+    ix = b.getAttribute('data-note');
+    if (ix !== null) {
+      if (state.noteOpen[ix]) delete state.noteOpen[ix];
+      else state.noteOpen[ix] = true;
+      render();
+      return;
+    }
+    ix = b.getAttribute('data-hint');
+    if (ix !== null) { doHint(ix); return; }
+    ix = b.getAttribute('data-save');
+    if (ix !== null) { saveThese([ix], b); return; }
+    ix = b.getAttribute('data-nohint');
+    if (ix !== null) { delete state.hints[ix]; state.focusIx = ix; render(); return; }
+    ix = b.getAttribute('data-show');
+    if (ix !== null) { state.revealed[ix] = true; render(); return; }
+    ix = b.getAttribute('data-hide');
+    if (ix !== null) { delete state.revealed[ix]; state.focusIx = ix; render(); return; }
+    ix = b.getAttribute('data-unmark');
+    if (ix !== null) { markOne(ix, ''); return; }
+    var mk = b.getAttribute('data-mark');
+    if (mk !== null) {
+      var cut = mk.lastIndexOf(':');
+      markOne(mk.slice(cut + 1), mk.slice(0, cut));
+      return;
+    }
+  });
+
+  /* ---------- 처음으로 ---------- */
+  function goHome() {
+    var t = new Date();
+    state.y = t.getFullYear();
+    state.m = t.getMonth();
+    state.selDate = todayKey();
+    if (state.scope !== 'all') { state.scope = 'all'; build(); }
+    else { state.page = 0; }
+    msg('');
+    setTab('quiz');
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+  }
+
+  /* ---------- 이벤트 ---------- */
+  $('home').addEventListener('click', goHome);
+  $('home').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goHome(); }
+  });
+  $('mode-quiz').addEventListener('click', function () { setTab('quiz'); });
+  $('mode-diary').addEventListener('click', function () { setTab('diary'); });
+
+  $('prev').addEventListener('click', function () {
+    state.m--; if (state.m < 0) { state.m = 11; state.y--; }
+    renderCal();
+  });
+  $('next').addEventListener('click', function () {
+    state.m++; if (state.m > 11) { state.m = 0; state.y++; }
+    renderCal();
+  });
+  $('cal-grid').addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    var wkb = e.target.closest('[data-week]');
+    if (wkb) { if (!wkb.classList.contains('none')) openReview(wkb.getAttribute('data-week')); return; }
+    var btn = e.target.closest('[data-day]');
+    if (!btn) return;
+    state.selDate = btn.getAttribute('data-day');
+    if (state.tab === 'diary') { msg(''); render(); return; }
+    state.scope = 'date';
+    build(); msg(''); render();
+  });
+  $('scopes').addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-scope]');
+    if (!btn) return;
+    state.scope = btn.getAttribute('data-scope');
+    build(); msg(''); render();
+  });
+  $('restart').addEventListener('click', function () { build(); msg(''); render(); });
+
+
+  $('ai-test').addEventListener('click', function () {
+    msg('확인하는 중…');
+    call('testAiKey', [], function (res) {
+      state.hasKey = !!(res && res.ok);
+      renderFoot();
+      msg((res && res.message) || '', (res && res.ok) ? 'ok' : 'err');
+    }, function (e) { msg(errText(e), 'err'); });
+  });
+
+  $('reload').addEventListener('click', function () {
+    msg('시트에서 다시 읽는 중…');
+    call('listAll', [], function (data) {
+      state.items = (data && data.items) || [];
+      state.diary = {};
+      ((data && data.diary) || []).forEach(function (e) {
+        state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
+      });
+      state.notes = (data && data.notes) || [];
+      state.hasKey = !!(data && data.hasKey);
+      build();
+      state.diaryFor = null;
+      render();
+      msg(state.items.length + '문장 불러왔어요.', 'ok');
+    }, function (e) { msg(errText(e), 'err'); });
+  });
+
+  $('open-sheet').addEventListener('click', function () {
+    msg('시트 주소를 가져오는 중…');
+    call('showSpreadsheetUrl', [], function (url) {
+      msg('');
+      if (url) window.open(url, '_blank');
+    }, function (e) { msg(errText(e), 'err'); });
+  });
+
+  /* ---------- 자물쇠 ---------- */
+  var PASS_STORE = 'study.pass';
+
+  function gateMsg(t) {
+    var el = $('gate-msg');
+    if (el) el.textContent = t || '';
+  }
+
+  function lockUp(text) {
+    state.token = '';
+    try { localStorage.removeItem(PASS_STORE); } catch (e) {}
+    $('wrap').hidden = true;
+    $('gate').hidden = false;
+    gateMsg(text || '');
+    var pw = $('gate-pw');
+    if (pw) { pw.value = ''; pw.focus(); }
+  }
+
+  function letIn(token, day) {
+    state.token = token;
+    try {
+      localStorage.setItem(PASS_STORE,
+        JSON.stringify({ token: token, day: day || todayKey() }));
+    } catch (e) {}
+    $('gate').hidden = true;
+    $('wrap').hidden = false;
+    load();
+  }
+
+  $('gate-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var pw = $('gate-pw').value;
+    if (!pw) { gateMsg('비밀번호를 넣어주세요.'); return; }
+    if (!serverOk()) {
+      gateMsg('서버 주소가 아직 안 들어갔어요.');
+      return;
+    }
+    $('gate-go').disabled = true;
+    gateMsg('확인하는 중…');
+    post('login', [pw], function (res) {
+      $('gate-go').disabled = false;
+      if (res && res.ok) { gateMsg(''); letIn(res.token, res.day); }
+      else {
+        gateMsg((res && res.message) || '비밀번호가 달라요.');
+        var el = $('gate-pw'); el.value = ''; el.focus();
+      }
+    }, function (err) {
+      $('gate-go').disabled = false;
+      gateMsg(errText(err));
+    });
+  });
+
+  /* ---------- 시작 ---------- */
+  // 오늘 이미 들어온 적이 있으면 그냥 열어줍니다. 하루가 지나면 다시 물어봅니다.
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem(PASS_STORE) || 'null'); } catch (e) {}
+  if (saved && saved.token && saved.day === todayKey()) letIn(saved.token, saved.day);
+  else lockUp();
+})();
+</script>
+</body>
+</html>
