@@ -685,6 +685,13 @@
 
   function $(id) { return document.getElementById(id); }
 
+  /** 마우스로 쓰는 기계인지. 폰이면 false 라서 커서를 함부로 안 옮깁니다. */
+  function finePointer() {
+    try {
+      return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    } catch (e) { return true; }
+  }
+
   /* ---------- 유틸 ---------- */
   function esc(s) {
     return String(s == null ? '' : s)
@@ -728,29 +735,48 @@
 
   function serverOk() { return !!API; }
 
-  function post(fn, args, ok, bad) {
+  /*
+   * 구글이 가끔 JSON 대신 엉뚱한 쪽지를 보냅니다. 그럴 땐 잠깐 쉬고 다시 묻습니다.
+   * 서버에 남기는 일은 같은 값을 덮어쓰는 방식이라, 두 번 가도 문제가 없습니다.
+   */
+  function post(fn, args, ok, bad, left) {
     if (!API) {
-      bad(new Error('서버 주소가 없어요. STUDY_API 를 넣어주세요.'));
+      bad(new Error('서버 주소가 없어요.'));
       return;
     }
+    var tries = (left === undefined) ? 3 : left;
+    function again() {
+      if (tries <= 1) return false;
+      setTimeout(function () { post(fn, args, ok, bad, tries - 1); }, 800);
+      return true;
+    }
+
     fetch(API, {
       method: 'POST',
+      cache: 'no-store',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ fn: fn, args: args })
     })
       .then(function (r) { return r.text(); })
       .then(function (t) {
-        var res;
-        try { res = JSON.parse(t); }
-        catch (e) { throw new Error('서버가 이상한 답을 보냈어요.'); }
+        var res = null;
+        try { res = JSON.parse(t); } catch (e) { res = null; }
+
+        if (!res) {                       // JSON 이 아니면 다시 묻습니다
+          if (again()) return;
+          bad(new Error('구글이 답을 안 주네요. 잠시 뒤에 새로고침해 주세요.'));
+          return;
+        }
         if (!res.ok) {
           if (/LOCKED/.test(res.error || '')) { lockUp(); return; }
-          throw new Error(res.error || '문제가 생겼어요.');
+          bad(new Error(res.error || '문제가 생겼어요.'));
+          return;
         }
         ok(res.data);
       })
-      .catch(function (e) {
-        bad(e && e.message ? e : new Error('연결이 안 돼요. 잠시 뒤에 다시 해보세요.'));
+      .catch(function () {
+        if (again()) return;
+        bad(new Error('연결이 안 돼요. 잠시 뒤에 다시 해보세요.'));
       });
   }
 
@@ -1128,7 +1154,7 @@
     if (tab === 'diary' && !state.selDate) state.selDate = todayKey();
     msg('');
     render();
-    if (tab === 'diary') {
+    if (tab === 'diary' && finePointer()) {
       var ta = $('d-text');
       if (ta) ta.focus();
     }
@@ -1600,10 +1626,12 @@
       undoMany(all);
     });
 
-    // 커서는 부탁받았을 때만 옮깁니다. 그래야 화면이 안 튑니다.
+    // 커서는 부탁받았을 때만, 그리고 마우스로 쓰는 기계에서만 옮깁니다.
     var want = null;
     if (state.focusIx !== null) {
-      want = el.querySelector('textarea[data-ans="' + state.focusIx + '"]');
+      if (finePointer()) {
+        want = el.querySelector('textarea[data-ans="' + state.focusIx + '"]');
+      }
       state.focusIx = null;
     }
     if (want && !state.busy) {
