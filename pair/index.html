@@ -118,6 +118,15 @@
     text-indent:.55em;padding:14px 12px;font-variant-numeric:tabular-nums}
   .gate-err{font-size:13px;color:var(--danger);min-height:20px;margin:11px 0 5px;font-weight:500}
 
+  .pwnow{font-size:32px;font-weight:800;letter-spacing:.2em;text-indent:.2em;
+    font-variant-numeric:tabular-nums;line-height:1.2;margin:0 0 4px}
+  .pwnow.off{font-size:19px;letter-spacing:-.02em;text-indent:0;color:var(--muted)}
+  .pwrow{display:flex;gap:8px;align-items:stretch}
+  .pwrow input{flex:1;text-align:center;font-size:22px;font-weight:700;
+    letter-spacing:.3em;text-indent:.3em;font-variant-numeric:tabular-nums}
+  .pwrow button{flex:none;padding-inline:22px}
+  .saved{color:var(--ok);font-weight:600}
+
   /* 달력 */
   .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
   .calhead b{font-size:18px;font-weight:700;letter-spacing:-.03em}
@@ -213,24 +222,29 @@
 
   <!-- ── 설정 ── -->
   <section id="scSetup" hidden>
-    <div id="setupErr"></div>
     <div class="card">
-      <h2>비밀번호 바꾸기</h2>
-      <p class="note">회원들이 사이트에 들어올 때 쓰는 네 자리 숫자입니다.
-        바꾸면 회원 전원이 다음에 들어올 때 다시 입력하게 됩니다.</p>
+      <h2>모임 비밀번호</h2>
+      <div class="pwnow" id="pwNow">—</div>
+      <p class="note">회원들이 사이트에 들어올 때 입력하는 번호입니다.
+        아래에서 숫자를 고치고 저장하면, 회원 전원이 다음에 들어올 때
+        새 번호를 입력하게 됩니다.</p>
 
-      <label class="fl" style="margin-top:16px">관리자 비밀번호</label>
-      <input id="inpAdmin" type="password" autocomplete="off" placeholder="모임장만 아는 비밀번호">
-
-      <label class="fl" style="margin-top:13px">새 비밀번호 (숫자 4자리)</label>
-      <input id="inpNewPw" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="예: 1234">
-      <div class="hint">비워두고 변경하면 잠금이 풀려 누구나 들어올 수 있습니다.</div>
-
-      <div class="row" style="margin-top:16px">
-        <button class="btn-primary" id="btnSetPw">변경</button>
-        <button class="btn-ghost" id="btnCancelSetup" hidden>닫기</button>
+      <div class="pwrow" style="margin-top:16px">
+        <input id="inpPw" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000">
+        <button class="btn-primary" id="btnSavePw">저장</button>
       </div>
       <div class="hint" id="pwMsg"></div>
+
+      <div id="adminWrap" style="margin-top:18px">
+        <label class="fl">관리자 비밀번호</label>
+        <input id="inpAdmin" type="password" autocomplete="off" placeholder="모임장만 아는 비밀번호">
+        <div class="hint">저장할 때 한 번만 확인합니다. 이후엔 이 기기에서 다시 묻지 않습니다.</div>
+      </div>
+
+      <div class="row" style="margin-top:18px">
+        <button class="btn-ghost btn-sm" id="btnCancelSetup">닫기</button>
+        <button class="btn-ghost btn-sm" id="btnUnlock">잠금 해제</button>
+      </div>
     </div>
 
     <div class="card">
@@ -326,12 +340,13 @@ var LS = {
   get:function(k,d){ try{var v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
   set:function(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
 };
-var K_CACHE='em.cache', K_PASS='em.pass';
+var K_CACHE='em.cache', K_PASS='em.pass', K_ADMIN='em.admin';
 
 var state = {
   sheetId:'', members:[], decks:{}, byDate:{}, syncedAt:0,
   calY:0, calM:0, selDate:null, selNames:[], selMember:null, limit:20, session:null,
-  locked:false                              // 서버에 비밀번호가 걸려 있는지
+  locked:false,                             // 서버에 비밀번호가 걸려 있는지
+  admin:false                               // 이 기기가 관리자 화면을 볼 수 있는지
 };
 
 function $(id){ return document.getElementById(id); }
@@ -342,7 +357,8 @@ var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz'];
 function show(s){
   SCREENS.forEach(function(x){ $(x).hidden = (x!==s); });
   $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate');
-  $('btnSetup').hidden = (s==='scGate');       // 잠금 상태에선 설정도 못 연다
+  // 관리자가 아니면 설정 버튼 자체가 없다 (회원에게는 이 화면이 존재하지 않는다)
+  $('btnSetup').hidden = (s==='scGate') || !state.admin;
   window.scrollTo(0,0);
 }
 
@@ -562,35 +578,55 @@ $('btnLogo').onclick = function(){
   if(!state.members.length || !$('scGate').hidden) return;
   renderCal(); show('scCal');
 };
-$('btnSetup').onclick = function(){
-  $('inpAdmin').value = ''; $('inpNewPw').value = ''; $('pwMsg').textContent = '';
-  $('btnCancelSetup').hidden = !state.members.length;
-  $('setupErr').innerHTML = '';
-  show('scSetup');
-};
+function renderAdmin(){
+  var pw = LS.get(K_PASS, '');
+  $('pwNow').textContent = state.locked ? (pw || '(이 기기엔 저장 안 됨)') : '잠금 없음';
+  $('pwNow').className = 'pwnow' + (state.locked && pw ? '' : ' off');
+  $('inpPw').value = state.locked ? pw : '';
+  $('inpAdmin').value = '';
+  $('adminWrap').hidden = !!LS.get(K_ADMIN, '');   // 이미 확인했으면 안 묻는다
+  $('btnUnlock').hidden = !state.locked;
+  $('pwMsg').textContent = '';
+}
+$('btnSetup').onclick = function(){ renderAdmin(); show('scSetup'); };
 $('btnCancelSetup').onclick = function(){ renderCal(); show('scCal'); };
 
-$('btnSetPw').onclick = function(){
-  var admin = $('inpAdmin').value.trim();
-  var np = $('inpNewPw').value.trim();
+function savePw(np){
+  var admin = LS.get(K_ADMIN, '') || $('inpAdmin').value.trim();
   if(!admin){ $('pwMsg').textContent = '관리자 비밀번호를 입력하세요.'; return; }
-  if(np && !/^\d{4}$/.test(np)){ $('pwMsg').textContent = '숫자 네 자리로 입력하세요.'; return; }
 
-  $('btnSetPw').disabled = true; $('pwMsg').textContent = '바꾸는 중…';
+  $('btnSavePw').disabled = true;
+  $('pwMsg').className = 'hint';
+  $('pwMsg').textContent = '저장 중…';
+
   callApi({ action:'setpw', admin: admin, newpw: np }).then(function(j){
     if(!j.ok){
       $('pwMsg').textContent = (j.error === 'BAD_ADMIN')
-        ? '관리자 비밀번호가 맞지 않습니다.' : '바꾸지 못했습니다: ' + (j.error || '');
+        ? '관리자 비밀번호가 맞지 않습니다.' : '저장하지 못했습니다: ' + (j.error || '');
       return;
     }
+    LS.set(K_ADMIN, admin);            // 확인됐으니 이 기기에선 다시 안 묻는다
+    LS.set(K_PASS, np);
     state.locked = !!j.locked;
-    LS.set(K_PASS, np);                        // 내 브라우저는 새 비번으로 통과
-    $('inpAdmin').value = ''; $('inpNewPw').value = '';
-    $('pwMsg').textContent = np ? ('비밀번호를 ' + np + ' 로 바꿨습니다.') : '잠금을 해제했습니다.';
+    renderAdmin();
+    $('pwMsg').className = 'hint saved';
+    $('pwMsg').textContent = np ? '저장됐습니다. 이제 비밀번호는 ' + np + ' 입니다.'
+                                : '잠금을 해제했습니다. 누구나 들어올 수 있습니다.';
   }).catch(function(e){
     $('pwMsg').textContent = e.message;
-  }).then(function(){ $('btnSetPw').disabled = false; });
+  }).then(function(){ $('btnSavePw').disabled = false; });
+}
+$('btnSavePw').onclick = function(){
+  var np = $('inpPw').value.trim();
+  if(!/^\d{4}$/.test(np)){ $('pwMsg').className='hint'; $('pwMsg').textContent = '숫자 네 자리로 입력하세요.'; return; }
+  savePw(np);
 };
+$('btnUnlock').onclick = function(){
+  if(!confirm('잠금을 해제하면 비밀번호 없이 누구나 들어올 수 있습니다. 계속할까요?')) return;
+  savePw('');
+};
+$('inpPw').onkeydown = function(e){ if(e.key === 'Enter') $('btnSavePw').onclick(); };
+$('inpAdmin').onkeydown = function(e){ if(e.key === 'Enter') $('btnSavePw').onclick(); };
 
 $('btnReload').onclick = function(){
   $('btnReload').disabled = true; $('calMsg').innerHTML='';
@@ -638,6 +674,10 @@ document.addEventListener('keydown', function(e){
 
 /* ───────── 시작 ───────── */
 (function init(){
+  // 관리자 진입: 주소에 ?admin 을 붙이거나, 이 기기에서 이미 확인한 적이 있으면
+  var q = new URLSearchParams(location.search);
+  state.admin = q.has('admin') || !!LS.get(K_ADMIN, '');
+
   var saved = LS.get(K_PASS, '');
   var cached = loadCache();
   if(cached) enterApp();                       // 캐시가 있으면 먼저 보여주고
