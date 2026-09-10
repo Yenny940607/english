@@ -362,7 +362,12 @@ function isMemberTab(n){
   var s = String(n==null?'':n).trim();
   if(!s || s.charAt(0)==='_' || s.charAt(0)==='[') return false;
   var low = s.toLowerCase();
-  for(var i=0;i<SKIP.length;i++) if(low === SKIP[i].toLowerCase()) return false;
+  for(var i=0;i<SKIP.length;i++){
+    var k = SKIP[i].toLowerCase();
+    // 정확히 일치하거나, 그 말로 시작하면 제외.
+    // "양식(복사해서 시트만드세요 - 시트명은 이름)" 처럼 뒤에 설명이 붙어도 걸러진다.
+    if(low === k || low.indexOf(k) === 0) return false;
+  }
   return true;
 }
 function colIdx(head, keys, fb){
