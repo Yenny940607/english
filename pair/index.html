@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>영어모임 암기테스트</title>
+<style>
+  :root{
+    --bg:#f6f5f2; --surface:#ffffff; --surface2:#f0efec;
+    --text:#1a1a1a; --muted:#6f6f6f; --line:#e2e0da;
+    --accent:#3b5bdb; --accent-soft:#e7ecfd;
+    --ok:#2f9e44; --mid:#e8890c; --bad:#e03131;
+    --radius:14px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#141416; --surface:#1e1e22; --surface2:#26262b;
+      --text:#ededed; --muted:#9a9a9f; --line:#31313a;
+      --accent:#7d95fb; --accent-soft:#252b45;
+      --ok:#51cf66; --mid:#ffa94d; --bad:#ff6b6b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",system-ui,sans-serif;
+    font-size:15px; line-height:1.55;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:620px; margin:0 auto; padding:0 16px 48px}
+  header{
+    position:sticky; top:0; z-index:20; background:var(--bg);
+    border-bottom:1px solid var(--line);
+    padding-block:12px; margin-bottom:18px;
+  }
+  header .inner{max-width:620px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:10px}
+  header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:-.01em;flex:1}
+  header .sub{font-size:12px;color:var(--muted);font-weight:400}
+
+  button{font-family:inherit;font-size:15px;cursor:pointer;border-radius:10px;border:1px solid var(--line);
+    background:var(--surface);color:var(--text);padding:10px 14px;transition:.12s}
+  button:hover{border-color:var(--accent)}
+  button:disabled{opacity:.45;cursor:default}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .btn-primary:hover{filter:brightness(1.08)}
+  .btn-ghost{background:transparent}
+  .btn-sm{padding:6px 11px;font-size:13px;border-radius:8px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+
+  input,select{font-family:inherit;font-size:15px;padding:10px 12px;border-radius:10px;
+    border:1px solid var(--line);background:var(--surface);color:var(--text);width:100%}
+  label.fl{display:block;font-size:12px;color:var(--muted);margin:0 0 5px;font-weight:600}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+  .card h2{font-size:14px;margin:0 0 12px;font-weight:700}
+  .note{font-size:13px;color:var(--muted);line-height:1.6}
+  .err{background:#e0313114;border:1px solid var(--bad);color:var(--bad);padding:11px 13px;border-radius:10px;font-size:13.5px;margin-bottom:12px;white-space:pre-wrap}
+  .ok-msg{background:#2f9e4414;border:1px solid var(--ok);color:var(--ok);padding:9px 13px;border-radius:10px;font-size:13.5px;margin-bottom:12px}
+
+  /* 덱 선택 */
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface);
+    font-size:14px;cursor:pointer;transition:.12s}
+  .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .chip small{opacity:.65;font-weight:400;margin-left:4px}
+
+  .toggle{display:flex;align-items:center;gap:9px;padding:9px 0;cursor:pointer;font-size:14px}
+  .toggle input{width:auto;margin:0;width:17px;height:17px;accent-color:var(--accent)}
+
+  /* 퀴즈 */
+  .quiz-top{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:13px;color:var(--muted)}
+  .progress{flex:1;height:5px;background:var(--surface2);border-radius:99px;overflow:hidden}
+  .progress i{display:block;height:100%;background:var(--accent);transition:width .2s}
+  .stage{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px 20px;min-height:230px;display:flex;flex-direction:column;justify-content:center;margin-bottom:14px}
+  .ko{font-size:clamp(21px,5.4vw,29px);font-weight:700;line-height:1.45;letter-spacing:-.02em;word-break:keep-all}
+  .owner{font-size:12px;color:var(--muted);margin-bottom:12px;font-weight:600}
+  .en{margin-top:20px;padding-top:18px;border-top:1px dashed var(--line);
+    font-size:clamp(17px,4.2vw,21px);line-height:1.5;color:var(--accent);font-weight:500;word-break:break-word}
+  .memo{margin-top:10px;font-size:13px;color:var(--muted)}
+  .timer{height:4px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-bottom:14px}
+  .timer i{display:block;height:100%;background:var(--ok);width:100%;transition:width .1s linear}
+  .timer.over i{background:var(--bad)}
+  .grade{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .grade button{padding:15px 6px;font-size:15px;font-weight:700;border-width:1.5px}
+  .g-o{color:var(--ok);border-color:var(--ok)}
+  .g-m{color:var(--mid);border-color:var(--mid)}
+  .g-x{color:var(--bad);border-color:var(--bad)}
+  .g-o:hover{background:#2f9e4416}.g-m:hover{background:#e8890c16}.g-x:hover{background:#e0313116}
+
+  /* 결과 */
+  .score{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+  .score div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 8px;text-align:center}
+  .score b{display:block;font-size:27px;line-height:1.2;font-variant-numeric:tabular-nums}
+  .score span{font-size:12px;color:var(--muted)}
+  .rev{border-top:1px solid var(--line);padding:12px 0}
+  .rev:first-child{border-top:none}
+  .rev .k{font-weight:600;font-size:15px;word-break:keep-all}
+  .rev .e{font-size:14px;color:var(--accent);margin-top:3px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:5px;margin-right:6px;vertical-align:2px}
+  .tag.x{background:#e0313122;color:var(--bad)}
+  .tag.m{background:#e8890c22;color:var(--mid)}
+
+  details{margin-top:12px}
+  details summary{cursor:pointer;font-size:13px;color:var(--muted);font-weight:600;padding:4px 0}
+  details pre{background:var(--surface2);border-radius:10px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5}
+  table.tpl{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  table.tpl th,table.tpl td{border:1px solid var(--line);padding:6px 8px;text-align:left}
+  table.tpl th{background:var(--surface2);font-weight:700}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <h1>영어모임 암기테스트 <span class="sub" id="deckInfo"></span></h1>
+    <button class="btn-sm btn-ghost" id="btnSetup">설정</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ── 설정 ── -->
+  <section id="scSetup" hidden>
+    <div id="setupErr"></div>
+    <div class="card">
+      <h2>구글 스프레드시트 연결</h2>
+      <label class="fl">스프레드시트 주소 또는 ID</label>
+      <input id="inpId" placeholder="https://docs.google.com/spreadsheets/d/....">
+      <div class="hint">시트는 <b>공유 → 링크가 있는 모든 사용자 → 뷰어</b>로 설정되어 있어야 합니다.</div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn-primary" id="btnConnect">연결하기</button>
+        <button class="btn-ghost" id="btnCancelSetup" hidden>취소</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>시트 만드는 법</h2>
+      <p class="note"><b>1. <code>명단</code> 탭</b> — 참여자 이름을 적습니다. 여기 적힌 이름이 곧 탭 이름이 됩니다.</p>
+      <table class="tpl"><tr><th>이름</th></tr><tr><td>병순</td></tr><tr><td>지민</td></tr><tr><td>현우</td></tr></table>
+
+      <p class="note" style="margin-top:16px"><b>2. 이름별 탭</b> — 각자 본인 탭에만 입력합니다.</p>
+      <table class="tpl">
+        <tr><th>주차</th><th>한글</th><th>영어</th><th>메모</th></tr>
+        <tr><td>W1</td><td>어제 팀장이 갑자기 회의를 잡았어</td><td>My manager suddenly called a meeting yesterday.</td><td></td></tr>
+        <tr><td>W1</td><td>그래서 나 늦게까지 있었어</td><td>So I stayed late.</td><td></td></tr>
+      </table>
+      <div class="hint">첫 줄은 반드시 머리글(주차·한글·영어·메모)이어야 합니다. 메모는 비워도 됩니다.</div>
+    </div>
+  </section>
+
+  <!-- ── 홈 ── -->
+  <section id="scHome" hidden>
+    <div id="homeMsg"></div>
+
+    <div class="card">
+      <h2>1. 누구 덱으로 할까요</h2>
+      <div class="chips" id="memberChips"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn-sm btn-ghost" id="btnReload">시트 새로고침</button>
+        <span class="note" id="syncInfo" style="align-self:center"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. 범위</h2>
+      <div class="chips" id="weekChips"></div>
+      <label class="toggle"><input type="checkbox" id="chkWrong"> 지난번에 △·X 받은 것만</label>
+    </div>
+
+    <div class="card">
+      <h2>3. 방식</h2>
+      <label class="toggle"><input type="checkbox" id="chkShuffle" checked> 카드 섞기</label>
+      <label class="toggle"><input type="checkbox" id="chkTimer" checked> 3초 타이머</label>
+      <label class="toggle"><input type="checkbox" id="chkBlind"> 즉석 영작 모드 (남의 덱 · 주인 이름 가림)</label>
+    </div>
+
+    <button class="btn-primary" id="btnStart" style="width:100%;padding:15px;font-size:16px">시작 <span id="startCount"></span></button>
+  </section>
+
+  <!-- ── 퀴즈 ── -->
+  <section id="scQuiz" hidden>
+    <div class="quiz-top">
+      <span id="qCount">1 / 10</span>
+      <div class="progress"><i id="qBar"></i></div>
+      <button class="btn-sm btn-ghost" id="btnQuit">그만</button>
+    </div>
+    <div class="timer" id="timerBar" hidden><i></i></div>
+    <div class="stage">
+      <div class="owner" id="qOwner"></div>
+      <div class="ko" id="qKo"></div>
+      <div class="en" id="qEn" hidden></div>
+      <div class="memo" id="qMemo" hidden></div>
+    </div>
+    <button class="btn-primary" id="btnReveal" style="width:100%;padding:15px;font-size:16px">영어 확인</button>
+    <div class="grade" id="gradeBox" hidden>
+      <button class="g-o" data-g="O">O<br><small style="font-weight:400;font-size:11px">3초 안에 성공</small></button>
+      <button class="g-m" data-g="M">△<br><small style="font-weight:400;font-size:11px">통했지만 느림</small></button>
+      <button class="g-x" data-g="X">X<br><small style="font-weight:400;font-size:11px">못 함</small></button>
+    </div>
+  </section>
+
+  <!-- ── 결과 ── -->
+  <section id="scResult" hidden>
+    <div class="score">
+      <div><b style="color:var(--ok)" id="rO">0</b><span>O</span></div>
+      <div><b style="color:var(--mid)" id="rM">0</b><span>△</span></div>
+      <div><b style="color:var(--bad)" id="rX">0</b><span>X</span></div>
+    </div>
+    <div class="card" id="reviewCard">
+      <h2>다시 봐야 할 문장</h2>
+      <div id="reviewList"></div>
+    </div>
+    <div class="row">
+      <button class="btn-primary" id="btnRetry" style="flex:1">△·X만 다시</button>
+      <button id="btnHome" style="flex:1">처음으로</button>
+    </div>
+    <details>
+      <summary>결과 텍스트 복사 (시트에 기록용)</summary>
+      <pre id="resultText"></pre>
+      <button class="btn-sm" id="btnCopy" style="margin-top:8px">복사</button>
+    </details>
+  </section>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ───────── 저장소 ───────── */
+var LS = {
+  get: function(k, d){ try{ var v = localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },
+  set: function(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+var K_ID='em.sheetId', K_CACHE='em.cache', K_LOG='em.log';
+
+/* ───────── 상태 ───────── */
+var state = {
+  sheetId: '',
+  members: [],          // ['병순','지민',...]
+  decks: {},            // { 이름: [card,...] }
+  syncedAt: 0,
+  selMember: null,      // 이름 | '__ALL__'
+  selWeek: '__ALL__',
+  session: null
+};
+var log = LS.get(K_LOG, {});   // { cardId: {o,m,x,last} }
+
+/* ───────── DOM ───────── */
+function $(id){ return document.getElementById(id); }
+function show(sec){
+  ['scSetup','scHome','scQuiz','scResult'].forEach(function(s){ $(s).hidden = (s!==sec); });
+  window.scrollTo(0,0);
+}
+function el(tag, cls, txt){
+  var e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(txt!=null) e.textContent = txt;
+  return e;
+}
+
+/* ───────── 구글시트 읽기 ───────── */
+function gvizUrl(id, sheet){
+  return 'https://docs.google.com/spreadsheets/d/' + id +
+         '/gviz/tq?tqx=out:json&headers=1&sheet=' + encodeURIComponent(sheet) +
+         '&_=' + Date.now();
+}
+
+function fetchSheet(id, sheet){
+  return fetch(gvizUrl(id, sheet)).then(function(res){
+    if(!res.ok) throw new Error('시트를 불러오지 못했습니다 (HTTP ' + res.status + ')');
+    return res.text();
+  }).then(function(txt){
+    var m = txt.match(/setResponse\(([\s\S]*)\)/);
+    if(!m) throw new Error('응답을 해석할 수 없습니다. 시트 공유 설정이 "링크가 있는 모든 사용자"인지 확인하세요.');
+    var j = JSON.parse(m[1]);
+    if(j.status === 'error'){
+      var d = (j.errors && j.errors[0] && (j.errors[0].detailed_message || j.errors[0].message)) || '알 수 없는 오류';
+      throw new Error(d.replace(/<[^>]+>/g,''));
+    }
+    var cols = (j.table.cols||[]).map(function(c){ return String(c.label||'').trim(); });
+    var rows = (j.table.rows||[]).map(function(r){
+      var o = {}, cells = r.c || [];
+      cols.forEach(function(name, i){
+        var c = cells[i];
+        var v = c ? (c.f != null ? c.f : (c.v != null ? c.v : '')) : '';
+        o[name || ('col'+i)] = String(v).trim();
+        o['#'+i] = String(v).trim();
+      });
+      return o;
+    });
+    return { cols: cols, rows: rows };
+  });
+}
+
+// 머리글 이름이 조금 달라도 찾아냄
+function pick(row, cols, keywords, fallbackIndex){
+  for(var i=0;i<cols.length;i++){
+    for(var k=0;k<keywords.length;k++){
+      if(cols[i] && cols[i].indexOf(keywords[k]) !== -1) return row[cols[i]] || '';
+    }
+  }
+  return fallbackIndex==null ? '' : (row['#'+fallbackIndex] || '');
+}
+
+function loadAll(id){
+  $('syncInfo').textContent = '불러오는 중…';
+  return fetchSheet(id, '명단').then(function(t){
+    var names = t.rows.map(function(r){
+      return (pick(r, t.cols, ['이름','name'], 0) || '').trim();
+    }).filter(Boolean);
+    // 중복 제거
+    names = names.filter(function(n,i){ return names.indexOf(n)===i; });
+    if(!names.length) throw new Error('"명단" 탭에서 이름을 찾지 못했습니다. 첫 줄 머리글이 "이름"인지 확인하세요.');
+    state.members = names;
+    return Promise.all(names.map(function(n){
+      return fetchSheet(id, n).then(function(t2){
+        return { name:n, cards: t2.rows.map(function(r, i){
+          return {
+            id: n + '::' + i,
+            owner: n,
+            week: pick(r, t2.cols, ['주차','주'], 0),
+            ko:   pick(r, t2.cols, ['한글','한국','국문'], 1),
+            en:   pick(r, t2.cols, ['영어','영문','english'], 2),
+            memo: pick(r, t2.cols, ['메모','비고'], 3)
+          };
+        }).filter(function(c){ return c.ko; }) };
+      }).catch(function(){ return { name:n, cards: [] }; });   // 탭이 없으면 빈 덱
+    }));
+  }).then(function(list){
+    var decks = {};
+    list.forEach(function(d){ decks[d.name] = d.cards; });
+    state.decks = decks;
+    state.syncedAt = Date.now();
+    LS.set(K_CACHE, { id:id, members:state.members, decks:decks, at:state.syncedAt });
+  });
+}
+
+function loadCache(id){
+  var c = LS.get(K_CACHE, null);
+  if(c && c.id === id && c.members && c.decks){
+    state.members = c.members; state.decks = c.decks; state.syncedAt = c.at || 0;
+    return true;
+  }
+  return false;
+}
+
+/* ───────── 홈 화면 ───────── */
+function allCards(){
+  var out = [];
+  state.members.forEach(function(n){ out = out.concat(state.decks[n] || []); });
+  return out;
+}
+function currentPool(){
+  var pool = (state.selMember === '__ALL__') ? allCards()
+           : (state.selMember ? (state.decks[state.selMember] || []) : []);
+  if(state.selWeek !== '__ALL__') pool = pool.filter(function(c){ return c.week === state.selWeek; });
+  if($('chkWrong').checked) pool = pool.filter(function(c){ var l = log[c.id]; return l && (l.last==='X' || l.last==='M'); });
+  return pool;
+}
+
+function renderHome(){
+  // 멤버 칩
+  var box = $('memberChips'); box.innerHTML = '';
+  state.members.forEach(function(n){
+    var cnt = (state.decks[n]||[]).length;
+    var b = el('button','chip'); b.innerHTML = n + ' <small>' + cnt + '</small>';
+    b.setAttribute('aria-pressed', String(state.selMember === n));
+    b.onclick = function(){ state.selMember = n; state.selWeek = '__ALL__'; renderHome(); };
+    box.appendChild(b);
+  });
+  var ba = el('button','chip'); ba.innerHTML = '공용 문장풀 <small>' + allCards().length + '</small>';
+  ba.setAttribute('aria-pressed', String(state.selMember === '__ALL__'));
+  ba.onclick = function(){ state.selMember = '__ALL__'; state.selWeek='__ALL__'; $('chkBlind').checked = true; renderHome(); };
+  box.appendChild(ba);
+
+  // 주차 칩
+  var wbox = $('weekChips'); wbox.innerHTML = '';
+  var base = (state.selMember === '__ALL__') ? allCards() : (state.decks[state.selMember] || []);
+  var weeks = [];
+  base.forEach(function(c){ if(c.week && weeks.indexOf(c.week)===-1) weeks.push(c.week); });
+  weeks.sort();
+  var mk = function(label, val, cnt){
+    var b = el('button','chip'); b.innerHTML = label + ' <small>' + cnt + '</small>';
+    b.setAttribute('aria-pressed', String(state.selWeek === val));
+    b.onclick = function(){ state.selWeek = val; renderHome(); };
+    wbox.appendChild(b);
+  };
+  mk('전체','__ALL__', base.length);
+  weeks.forEach(function(w){ mk(w, w, base.filter(function(c){return c.week===w;}).length); });
+
+  // 시작 버튼
+  var n = currentPool().length;
+  $('startCount').textContent = n ? '(' + n + '장)' : '';
+  $('btnStart').disabled = (n === 0);
+  $('deckInfo').textContent = state.selMember === '__ALL__' ? '· 공용 문장풀'
+                             : (state.selMember ? '· ' + state.selMember : '');
+  $('syncInfo').textContent = state.syncedAt
+    ? new Date(state.syncedAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) + ' 기준'
+    : '';
+}
+
+/* ───────── 퀴즈 ───────── */
+var timerId = null;
+function startQuiz(cards){
+  if($('chkShuffle').checked){
+    for(var i=cards.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=cards[i]; cards[i]=cards[j]; cards[j]=t; }
+  }
+  state.session = { cards: cards, i: 0, results: [] };
+  show('scQuiz');
+  renderCard();
+}
+
+function renderCard(){
+  var s = state.session, c = s.cards[s.i];
+  $('qCount').textContent = (s.i+1) + ' / ' + s.cards.length;
+  $('qBar').style.width = (s.i / s.cards.length * 100) + '%';
+  $('qOwner').textContent = $('chkBlind').checked ? (c.week || '') : [c.owner, c.week].filter(Boolean).join(' · ');
+  $('qKo').textContent = c.ko;
+  $('qEn').textContent = c.en || '(영어가 비어 있습니다)';
+  $('qEn').hidden = true;
+  $('qMemo').textContent = c.memo || ''; $('qMemo').hidden = true;
+  $('btnReveal').hidden = false;
+  $('gradeBox').hidden = true;
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(timerId);
+  var bar = $('timerBar');
+  if(!$('chkTimer').checked){ bar.hidden = true; return; }
+  bar.hidden = false; bar.classList.remove('over');
+  var fill = bar.firstElementChild, t0 = Date.now(), LIMIT = 3000;
+  fill.style.width = '100%';
+  timerId = setInterval(function(){
+    var p = 1 - (Date.now()-t0)/LIMIT;
+    if(p <= 0){ fill.style.width = '0%'; bar.classList.add('over'); clearInterval(timerId); }
+    else fill.style.width = (p*100) + '%';
+  }, 50);
+}
+
+function reveal(){
+  clearInterval(timerId);
+  $('qEn').hidden = false;
+  if(state.session.cards[state.session.i].memo) $('qMemo').hidden = false;
+  $('btnReveal').hidden = true;
+  $('gradeBox').hidden = false;
+}
+
+function grade(g){
+  var s = state.session, c = s.cards[s.i];
+  s.results.push({ card: c, g: g });
+  var l = log[c.id] || {o:0,m:0,x:0,last:''};
+  if(g==='O') l.o++; else if(g==='M') l.m++; else l.x++;
+  l.last = g; log[c.id] = l; LS.set(K_LOG, log);
+  s.i++;
+  if(s.i >= s.cards.length) finish(); else renderCard();
+}
+
+/* ───────── 결과 ───────── */
+function finish(){
+  clearInterval(timerId);
+  var r = state.session.results;
+  var cnt = function(g){ return r.filter(function(x){ return x.g===g; }).length; };
+  $('rO').textContent = cnt('O'); $('rM').textContent = cnt('M'); $('rX').textContent = cnt('X');
+
+  var bad = r.filter(function(x){ return x.g!=='O'; });
+  var list = $('reviewList'); list.innerHTML = '';
+  $('reviewCard').hidden = (bad.length === 0);
+  bad.forEach(function(x){
+    var d = el('div','rev');
+    var k = el('div','k');
+    var tg = el('span', 'tag ' + (x.g==='X'?'x':'m'), x.g==='X'?'X':'△');
+    k.appendChild(tg); k.appendChild(document.createTextNode(x.card.ko));
+    d.appendChild(k);
+    d.appendChild(el('div','e', x.card.en));
+    list.appendChild(d);
+  });
+  $('btnRetry').disabled = (bad.length === 0);
+
+  var today = new Date().toLocaleDateString('ko-KR');
+  var txt = today + ' / ' + (state.selMember==='__ALL__'?'공용 문장풀':state.selMember) +
+            ' / O ' + cnt('O') + ' △ ' + cnt('M') + ' X ' + cnt('X') + '\n' +
+            bad.map(function(x){ return '  ' + x.g + '  ' + x.card.ko; }).join('\n');
+  $('resultText').textContent = txt;
+  show('scResult');
+}
+
+/* ───────── 이벤트 ───────── */
+$('btnSetup').onclick = function(){
+  $('inpId').value = state.sheetId || '';
+  $('btnCancelSetup').hidden = !state.members.length;
+  $('setupErr').innerHTML = '';
+  show('scSetup');
+};
+$('btnCancelSetup').onclick = function(){ show('scHome'); };
+
+$('btnConnect').onclick = function(){
+  var raw = $('inpId').value.trim();
+  var m = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  var id = m ? m[1] : raw;
+  if(!id){ $('setupErr').innerHTML = '<div class="err">주소를 입력해 주세요.</div>'; return; }
+  $('setupErr').innerHTML = '';
+  $('btnConnect').disabled = true; $('btnConnect').textContent = '연결 중…';
+  loadAll(id).then(function(){
+    state.sheetId = id; LS.set(K_ID, id);
+    state.selMember = state.members[0] || null;
+    renderHome(); show('scHome');
+  }).catch(function(e){
+    $('setupErr').innerHTML = '<div class="err">' + e.message +
+      '\n\n· 시트 공유가 "링크가 있는 모든 사용자 → 뷰어"인지\n· "명단" 탭이 있는지\n· 이 페이지가 http(s)로 열려 있는지 확인하세요.</div>';
+  }).then(function(){
+    $('btnConnect').disabled = false; $('btnConnect').textContent = '연결하기';
+  });
+};
+
+$('btnReload').onclick = function(){
+  $('btnReload').disabled = true;
+  $('homeMsg').innerHTML = '';
+  loadAll(state.sheetId).then(function(){
+    renderHome();
+    $('homeMsg').innerHTML = '<div class="ok-msg">시트를 새로 불러왔습니다.</div>';
+    setTimeout(function(){ $('homeMsg').innerHTML=''; }, 2500);
+  }).catch(function(e){
+    $('homeMsg').innerHTML = '<div class="err">' + e.message + '</div>';
+  }).then(function(){ $('btnReload').disabled = false; });
+};
+
+$('chkWrong').onchange = renderHome;
+$('btnStart').onclick = function(){ startQuiz(currentPool().slice()); };
+$('btnReveal').onclick = reveal;
+Array.prototype.forEach.call(document.querySelectorAll('#gradeBox button'), function(b){
+  b.onclick = function(){ grade(b.dataset.g); };
+});
+$('btnQuit').onclick = function(){
+  if(state.session.results.length) finish();
+  else { clearInterval(timerId); show('scHome'); }
+};
+$('btnHome').onclick = function(){ renderHome(); show('scHome'); };
+$('btnRetry').onclick = function(){
+  var bad = state.session.results.filter(function(x){ return x.g!=='O'; }).map(function(x){ return x.card; });
+  startQuiz(bad);
+};
+$('btnCopy').onclick = function(){
+  var t = $('resultText').textContent;
+  if(navigator.clipboard) navigator.clipboard.writeText(t).then(function(){ $('btnCopy').textContent = '복사됨'; setTimeout(function(){ $('btnCopy').textContent='복사'; },1500); });
+};
+
+// 스페이스바 / 엔터 = 영어 확인
+document.addEventListener('keydown', function(e){
+  if($('scQuiz').hidden) return;
+  if(e.key===' ' || e.key==='Enter'){ e.preventDefault(); if(!$('btnReveal').hidden) reveal(); }
+  else if(!$('gradeBox').hidden){
+    if(e.key==='1') grade('O'); else if(e.key==='2') grade('M'); else if(e.key==='3') grade('X');
+  }
+});
+
+/* ───────── 시작 ───────── */
+(function init(){
+  var urlId = new URLSearchParams(location.search).get('id');
+  var id = urlId || LS.get(K_ID, '');
+  if(!id){ show('scSetup'); return; }
+  state.sheetId = id;
+  var hasCache = loadCache(id);
+  if(hasCache){
+    state.selMember = state.members[0] || null;
+    renderHome(); show('scHome');
+  } else {
+    show('scSetup'); $('inpId').value = id;
+  }
+  // 백그라운드로 최신화
+  loadAll(id).then(function(){
+    if(!state.selMember) state.selMember = state.members[0] || null;
+    if(!$('scHome').hidden || !hasCache){ renderHome(); if(!hasCache) show('scHome'); }
+  }).catch(function(e){
+    if(!hasCache){ show('scSetup'); $('setupErr').innerHTML = '<div class="err">' + e.message + '</div>'; }
+  });
+})();
+
+})();
+</script>
+</body>
+</html>
