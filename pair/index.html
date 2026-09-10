@@ -33,8 +33,14 @@
   header{position:sticky; top:0; z-index:20; background:var(--bg);
     border-bottom:1px solid var(--line); padding-block:12px; margin-bottom:18px}
   header .inner{max-width:620px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:8px}
-  header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:-.01em;flex:1;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hspace{flex:1}
+  .logo{display:flex;align-items:center;gap:8px;border:none;background:transparent;
+    padding:4px 7px;margin-left:-7px;border-radius:9px;flex:none;color:var(--text)}
+  .logo:hover{background:var(--surface2)}
+  .logo .lmark{display:inline-flex;align-items:center;justify-content:center;
+    width:27px;height:27px;border-radius:8px;background:var(--accent);color:#fff;flex:none}
+  .logo .lwm{font-size:15.5px;font-weight:700;letter-spacing:-.015em;white-space:nowrap}
+  @media (max-width:420px){ .logo .lwm{display:none} }
 
   button{font-family:inherit;font-size:15px;cursor:pointer;border-radius:10px;border:1px solid var(--line);
     background:var(--surface);color:var(--text);padding:10px 14px;transition:.12s}
@@ -115,8 +121,12 @@
 
 <header>
   <div class="inner">
+    <button class="logo" id="btnLogo" title="처음 화면으로">
+      <span class="lmark" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-3.6-.7L3 21l1.9-4.9A8.2 8.2 0 0 1 4 11.5 8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/></svg></span>
+      <span class="lwm">In My Own Words</span>
+    </button>
+    <span class="hspace"></span>
     <button class="btn-sm btn-ghost" id="btnBack" hidden>‹ 뒤로</button>
-    <h1 id="hTitle">영어모임 암기테스트</h1>
     <button class="btn-sm btn-ghost" id="btnSetup">설정</button>
   </div>
 </header>
@@ -351,7 +361,6 @@ function latestMonth(){
   var n = new Date(); return [n.getFullYear(), n.getMonth()];
 }
 function renderCal(){
-  $('hTitle').textContent = '영어모임 암기테스트';
   $('calLabel').textContent = state.calY + '년 ' + (state.calM+1) + '월';
   var g = $('calGrid'); g.innerHTML = '';
   DOW.forEach(function(d){ g.appendChild(el('div','dow',d)); });
@@ -393,7 +402,6 @@ function selectedCards(){
 }
 function renderMembers(){
   var key = state.selDate, who = state.byDate[key] || {};
-  $('hTitle').textContent = dateLabel(key);
   $('mHead').textContent = dateLabel(key);
 
   var names = dayNames();
@@ -452,10 +460,9 @@ function startQuiz(){
 }
 function renderCard(){
   var s = state.session, c = s.cards[s.i];
-  $('hTitle').textContent = state.selMember + ' · ' + dateLabel(state.selDate);
   $('qCount').textContent = (s.i+1) + ' / ' + s.cards.length;
   $('qBar').style.width = ((s.i+1) / s.cards.length * 100) + '%';
-  $('qOwner').textContent = $('chkBlind').checked ? '' : c.owner;
+  $('qOwner').textContent = ($('chkBlind').checked ? '' : c.owner + ' · ') + dateLabel(state.selDate);
   $('qKo').textContent = c.ko;
   $('qEn').textContent = c.en || '(영어가 비어 있습니다)';
   setReveal(false);
@@ -477,11 +484,14 @@ $('btnBack').onclick = function(){
   if(!$('scMembers').hidden){ renderCal(); show('scCal'); }
   else if(!$('scQuiz').hidden){ renderMembers(); show('scMembers'); }
 };
+$('btnLogo').onclick = function(){
+  if(!state.members.length) return;      // 아직 시트 연결 전이면 무시
+  renderCal(); show('scCal');
+};
 $('btnSetup').onclick = function(){
   $('inpId').value = state.sheetId || '';
   $('btnCancelSetup').hidden = !state.members.length;
   $('setupErr').innerHTML = '';
-  $('hTitle').textContent = '설정';
   show('scSetup');
 };
 $('btnCancelSetup').onclick = function(){ renderCal(); show('scCal'); };
@@ -547,7 +557,6 @@ document.addEventListener('keydown', function(e){
     renderCal(); show('scCal');
   } else {
     $('inpId').value = id;
-    $('hTitle').textContent = '설정';
     show('scSetup');
   }
   loadAll(id).then(function(){
