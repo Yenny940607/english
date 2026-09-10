@@ -110,6 +110,14 @@
   .ok-msg{background:var(--accent-soft);border:1px solid transparent;color:var(--accent);
     padding:11px 15px;border-radius:var(--r);font-size:13.5px;margin-bottom:12px;font-weight:500}
 
+  /* 비밀번호 */
+  .gate{max-width:330px;margin:10vh auto 0;text-align:center;padding:28px 24px}
+  .gate-t{font-size:18px;font-weight:700;letter-spacing:-.03em}
+  .gate-s{font-size:13px;color:var(--muted);margin:7px 0 22px;line-height:1.6}
+  .pass{text-align:center;font-size:24px;font-weight:700;letter-spacing:.55em;
+    text-indent:.55em;padding:14px 12px;font-variant-numeric:tabular-nums}
+  .gate-err{font-size:13px;color:var(--danger);min-height:20px;margin:11px 0 5px;font-weight:500}
+
   /* 달력 */
   .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
   .calhead b{font-size:18px;font-weight:700;letter-spacing:-.03em}
@@ -233,6 +241,18 @@
     </div>
   </section>
 
+  <!-- ── 비밀번호 ── -->
+  <section id="scGate" hidden>
+    <div class="card gate">
+      <div class="gate-t">모임원 확인</div>
+      <div class="gate-s">비밀번호 4자리를 입력하세요</div>
+      <input id="inpPass" class="pass" inputmode="numeric" pattern="[0-9]*"
+             maxlength="4" autocomplete="off" placeholder="••••">
+      <div class="gate-err" id="gateMsg"></div>
+      <button class="btn-primary" id="btnGate" style="width:100%;padding:14px;font-size:15px">들어가기</button>
+    </div>
+  </section>
+
   <!-- ── 달력 ── -->
   <section id="scCal" hidden>
     <div id="calMsg"></div>
@@ -303,21 +323,23 @@ var LS = {
   get:function(k,d){ try{var v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
   set:function(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
 };
-var K_ID='em.sheetId', K_CACHE='em.cache';
+var K_ID='em.sheetId', K_CACHE='em.cache', K_PASS='em.pass';
 
 var state = {
   sheetId:'', members:[], decks:{}, byDate:{}, syncedAt:0,
-  calY:0, calM:0, selDate:null, selNames:[], selMember:null, limit:20, session:null
+  calY:0, calM:0, selDate:null, selNames:[], selMember:null, limit:20, session:null,
+  pass:''                                   // 시트에서 읽어온 비밀번호 (빈 값이면 잠금 없음)
 };
 
 function $(id){ return document.getElementById(id); }
 function el(t,c,x){ var e=document.createElement(t); if(c)e.className=c; if(x!=null)e.textContent=x; return e; }
 function pad2(n){ return (n<10?'0':'')+n; }
 
-var SCREENS = ['scSetup','scCal','scMembers','scQuiz'];
+var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz'];
 function show(s){
   SCREENS.forEach(function(x){ $(x).hidden = (x!==s); });
-  $('btnBack').hidden = (s==='scCal' || s==='scSetup');
+  $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate');
+  $('btnSetup').hidden = (s==='scGate');       // 잠금 상태에선 설정도 못 연다
   window.scrollTo(0,0);
 }
 
@@ -357,7 +379,8 @@ function bookUrl(id){
   return 'https://docs.google.com/spreadsheets/d/'+id+'/export?format=xlsx&_='+Date.now();
 }
 // 회원 탭이 아닌 것들 (자동 제외)
-var SKIP = ['양식','명단','템플릿','템플렛','template','안내','설명','예시','샘플','sample'];
+var SKIP = ['양식','명단','템플릿','템플렛','template','안내','설명','예시','샘플','sample',
+  '설정','비밀번호','비번','password','config','settings'];
 function isMemberTab(n){
   var s = String(n==null?'':n).trim();
   if(!s || s.charAt(0)==='_' || s.charAt(0)==='[') return false;
@@ -369,6 +392,26 @@ function isMemberTab(n){
     if(low === k || low.indexOf(k) === 0) return false;
   }
   return true;
+}
+// 설정/비밀번호 탭에서 네 자리 숫자를 찾는다. 없으면 빈 문자열(=잠금 없음).
+var PASS_TABS = ['설정','비밀번호','비번','password','config','settings'];
+function findPass(wb){
+  var names = wb.SheetNames || [];
+  for(var i = 0; i < names.length; i++){
+    var low = String(names[i]).trim().toLowerCase();
+    var isPassTab = PASS_TABS.some(function(k){
+      var kk = k.toLowerCase();
+      return low === kk || low.indexOf(kk) === 0;
+    });
+    if(!isPassTab) continue;
+    var rows = XLSX.utils.sheet_to_json(wb.Sheets[names[i]], {header:1, defval:''});
+    for(var r = 0; r < rows.length; r++)
+      for(var c = 0; c < (rows[r] || []).length; c++){
+        var v = String(rows[r][c] == null ? '' : rows[r][c]).trim();
+        if(/^\d{4}$/.test(v)) return v;
+      }
+  }
+  return '';
 }
 function colIdx(head, keys, fb){
   for(var k=0;k<keys.length;k++)
@@ -387,6 +430,7 @@ function loadAll(id){
     return r.arrayBuffer();
   }).then(function(buf){
     var wb = XLSX.read(new Uint8Array(buf), {type:'array'});
+    state.pass = findPass(wb);
     var names = (wb.SheetNames||[]).filter(isMemberTab);
     if(!names.length) throw new Error(
       '회원 탭을 찾지 못했습니다.\n\n' +
@@ -409,7 +453,7 @@ function loadAll(id){
     state.members = names; state.decks = decks;
     rebuildIndex();
     state.syncedAt = Date.now();
-    LS.set(K_CACHE, {id:id, members:names, decks:decks, at:state.syncedAt});
+    LS.set(K_CACHE, {id:id, members:names, decks:decks, at:state.syncedAt, pass:state.pass});
   });
 }
 function rebuildIndex(){
@@ -426,10 +470,28 @@ function rebuildIndex(){
 function loadCache(id){
   var c = LS.get(K_CACHE,null);
   if(c && c.id===id && c.members && c.decks){
-    state.members=c.members; state.decks=c.decks; state.syncedAt=c.at||0;
+    state.members=c.members; state.decks=c.decks; state.syncedAt=c.at||0; state.pass=c.pass||'';
     rebuildIndex(); return true;
   }
   return false;
+}
+
+/* ───────── 비밀번호 ───────── */
+// 시트에 비밀번호가 없으면 잠그지 않는다. 시트에서 비번을 바꾸면
+// 저장해둔 값과 달라지므로 모두가 다시 입력하게 된다(= 매달 갱신).
+function unlocked(){
+  return !state.pass || LS.get(K_PASS, '') === state.pass;
+}
+function enterApp(){
+  if(!unlocked()){
+    $('gateMsg').textContent = '';
+    $('inpPass').value = '';
+    show('scGate');
+    setTimeout(function(){ try{ $('inpPass').focus(); }catch(e){} }, 60);
+    return;
+  }
+  var lm = latestMonth(); state.calY = lm[0]; state.calM = lm[1];
+  renderCal(); show('scCal');
 }
 
 /* ───────── 달력 ───────── */
@@ -562,7 +624,7 @@ $('btnBack').onclick = function(){
   else if(!$('scQuiz').hidden){ renderMembers(); show('scMembers'); }
 };
 $('btnLogo').onclick = function(){
-  if(!state.members.length) return;      // 아직 시트 연결 전이면 무시
+  if(!state.members.length || !unlocked()) return;
   renderCal(); show('scCal');
 };
 $('btnSetup').onclick = function(){
@@ -581,8 +643,7 @@ $('btnConnect').onclick = function(){
   $('setupErr').innerHTML=''; $('btnConnect').disabled=true; $('btnConnect').textContent='연결 중…';
   loadAll(id).then(function(){
     state.sheetId = id; LS.set(K_ID, id);
-    var lm = latestMonth(); state.calY=lm[0]; state.calM=lm[1];
-    renderCal(); show('scCal');
+    enterApp();
   }).catch(function(e){
     $('setupErr').innerHTML = '<div class="err">'+e.message+'</div>';
   }).then(function(){
@@ -601,6 +662,14 @@ $('btnReload').onclick = function(){
 };
 $('btnPrevM').onclick = function(){ state.calM--; if(state.calM<0){state.calM=11;state.calY--;} renderCal(); };
 $('btnNextM').onclick = function(){ state.calM++; if(state.calM>11){state.calM=0;state.calY++;} renderCal(); };
+$('btnGate').onclick = function(){
+  var v = ($('inpPass').value || '').trim();
+  if(v === state.pass){ LS.set(K_PASS, v); enterApp(); return; }
+  $('gateMsg').textContent = '비밀번호가 맞지 않습니다.';
+  $('inpPass').value = '';
+  $('inpPass').focus();
+};
+$('inpPass').onkeydown = function(e){ if(e.key === 'Enter') $('btnGate').onclick(); };
 $('btnSheet').onclick = function(){
   if(state.sheetId)
     window.open('https://docs.google.com/spreadsheets/d/'+state.sheetId+'/edit', '_blank', 'noopener');
@@ -630,14 +699,14 @@ document.addEventListener('keydown', function(e){
 
   var cached = loadCache(id);
   if(cached){
-    var lm = latestMonth(); state.calY=lm[0]; state.calM=lm[1];
-    renderCal(); show('scCal');
+    enterApp();
   } else {
     $('inpId').value = id;
     show('scSetup');
   }
   loadAll(id).then(function(){
-    if(!cached){ var l=latestMonth(); state.calY=l[0]; state.calM=l[1]; renderCal(); show('scCal'); }
+    // 시트의 비밀번호가 바뀌었으면 잠금 화면으로 되돌린다
+    if(!cached || !unlocked()) enterApp();
     else if(!$('scCal').hidden) renderCal();
   }).catch(function(e){
     if(!cached){ $('setupErr').innerHTML = '<div class="err">'+e.message+'</div>'; show('scSetup'); }
