@@ -173,6 +173,12 @@
   .en{margin-top:24px;padding-top:22px;border-top:1px solid var(--line);
     font-size:clamp(16px,3.9vw,19px);line-height:1.6;color:var(--accent);
     font-weight:500;letter-spacing:-.012em;word-break:break-word}
+  .hint-line{margin-top:22px;padding-top:20px;border-top:1px dashed var(--line-2);
+    font-size:clamp(15px,3.7vw,18px);line-height:1.8;letter-spacing:-.01em;word-break:break-word}
+  .hint-line .hw{color:var(--text);font-weight:600}
+  .hint-line .hb{color:var(--muted);font-weight:500;letter-spacing:.04em}
+  .act2{display:grid;grid-template-columns:1fr 1.7fr;gap:8px}
+  .act2 button{padding:15px 6px;font-size:15px;font-weight:600}
   .nav2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
   .nav2 button{padding:13px 6px;font-size:14.5px;font-weight:600;color:var(--text-2)}
 
@@ -282,9 +288,13 @@
     <div class="stage">
       <div class="owner" id="qOwner"></div>
       <div class="ko" id="qKo"></div>
+      <div class="hint-line" id="qHint" hidden></div>
       <div class="en" id="qEn" hidden></div>
     </div>
-    <button class="btn-primary" id="btnReveal" style="width:100%;padding:15px;font-size:16px">정답 확인</button>
+    <div class="act2">
+      <button id="btnHint">힌트</button>
+      <button class="btn-primary" id="btnReveal">정답 확인</button>
+    </div>
     <div class="nav2">
       <button id="btnPrev">‹ 이전</button>
       <button id="btnNext">다음 ›</button>
@@ -516,6 +526,85 @@ function renderMembers(){
     : '사람을 선택하세요';
 }
 
+
+/* ───────── 힌트: 영어 문장을 구 단위로 쪼갠다 ─────────
+   기능어(관사·전치사·조동사·접속사·대명사)가 구의 시작이라는 규칙 기반.
+   진짜 구문 분석은 아니지만 짧은 회화 문장에서는 충분히 맞는다. */
+var PREP = ['in','on','at','to','for','with','from','by','about','into','onto','over','under',
+  'after','before','during','of','as','like','until','till','through','between','among','around',
+  'without','within','against','across','behind','beyond','near','off','since','upon','out','up','down'];
+var DET  = ['a','an','the','my','your','his','her','its','our','their','this','that','these','those',
+  'some','any','no','every','each','another'];
+var PRON = ['i','you','he','she','it','we','they','there','who','what','which','someone','something',
+  'anyone','anything','nobody','nothing','everyone','everything'];
+var CONJ = ['and','but','so','or','because','if','when','while','though','although','unless','than',
+  'whether','once','yet'];
+var AUX  = ['is','am','are','was','were','be','been','being','do','does','did','have','has','had',
+  'will','would','can','could','should','shall','might','must','may','let',
+  "don't","doesn't","didn't","can't","couldn't","won't","wouldn't","shouldn't","isn't","aren't",
+  "wasn't","weren't","haven't","hasn't","hadn't","i'm","it's","that's","there's","let's","i'll",
+  "i've","i'd","you're","we're","they're","he's","she's","you'll","we'll","they'll"];
+
+function normWord(t){
+  return t.toLowerCase().replace(/’/g, "'").replace(/^[^a-z0-9']+/, '').replace(/[^a-z0-9']+$/, '');
+}
+function isStarter(w){
+  return PREP.indexOf(w) >= 0 || DET.indexOf(w) >= 0 || PRON.indexOf(w) >= 0
+      || CONJ.indexOf(w) >= 0 || AUX.indexOf(w) >= 0;
+}
+function chunkEn(en){
+  var toks = String(en || '').trim().split(/\s+/).filter(Boolean);
+  if(!toks.length) return [];
+  var chunks = [], cur = [], prevConj = false;
+  toks.forEach(function(t, i){
+    var w = normWord(t);
+    if(i > 0 && cur.length && isStarter(w) && !prevConj){ chunks.push(cur); cur = []; }
+    cur.push(t);
+    prevConj = CONJ.indexOf(w) >= 0;
+    if(/[,;:.?!]$/.test(t)){ chunks.push(cur); cur = []; prevConj = false; }
+  });
+  if(cur.length) chunks.push(cur);
+
+  var merged = [];                                  // 한 단어 조각은 뒤에 붙인다
+  for(var i = 0; i < chunks.length; i++){
+    if(chunks[i].length === 1 && i < chunks.length - 1 && !/[,;:]$/.test(chunks[i][0])){
+      chunks[i + 1] = chunks[i].concat(chunks[i + 1]);
+    } else merged.push(chunks[i]);
+  }
+  if(merged.length === 1 && merged[0].length >= 2){ // 조각이 하나면 반으로
+    var half = Math.ceil(merged[0].length / 2);
+    merged = [merged[0].slice(0, half), merged[0].slice(half)];
+  }
+  if(merged.length && merged[0].length > 4){        // 첫 조각이 길면 앞 3단어만
+    merged = [merged[0].slice(0, 3), merged[0].slice(3)].concat(merged.slice(1));
+  }
+  return merged;
+}
+// 앞에서부터 공개하되 전체의 절반(최대 4단어)까지, 마지막 구는 절대 공개하지 않는다
+function hintParts(en){
+  var chunks = chunkEn(en), shown = 0;
+  var total = chunks.reduce(function(a, c){ return a + c.length; }, 0);
+  var cap = Math.max(2, Math.min(4, Math.ceil(total / 2)));
+  return chunks.map(function(c, i){
+    var isLast = (i === chunks.length - 1);
+    var take = !isLast && ((i === 0) || (shown < 3 && shown + c.length <= cap));
+    if(chunks.length === 1) take = true;
+    if(take){ shown += c.length; return { show: true, toks: c }; }
+    return { show: false, toks: c };
+  });
+}
+function buildHint(box, en){
+  box.innerHTML = '';
+  hintParts(en).forEach(function(p, i){
+    if(i) box.appendChild(document.createTextNode(' '));
+    if(p.show){ box.appendChild(el('span', 'hw', p.toks.join(' '))); return; }
+    box.appendChild(el('span', 'hb', '(' + p.toks.map(function(){ return '__'; }).join(' ') + ')'));
+    var last = p.toks[p.toks.length - 1];
+    var tail = (last.match(/[^A-Za-z0-9'’]+$/) || [''])[0];
+    if(tail) box.appendChild(document.createTextNode(tail));
+  });
+}
+
 /* ───────── 퀴즈 ───────── */
 function startQuiz(){
   var cards = selectedCards().slice();
@@ -537,6 +626,9 @@ function renderCard(){
   $('qOwner').textContent = ($('chkBlind').checked ? '' : c.owner + ' · ') + dateLabel(state.selDate);
   $('qKo').textContent = c.ko;
   $('qEn').textContent = c.en || '(영어가 비어 있습니다)';
+  buildHint($('qHint'), c.en);
+  $('btnHint').disabled = !c.en;
+  setHint(false);
   setReveal(false);
   $('btnPrev').disabled = (s.i === 0);
   $('btnNext').disabled = (s.i >= s.cards.length - 1);
@@ -544,6 +636,11 @@ function renderCard(){
 function setReveal(on){
   $('qEn').hidden = !on;
   $('btnReveal').textContent = on ? '정답 가리기' : '정답 확인';
+  if(on) setHint(false);              // 정답이 보이면 힌트는 접는다
+}
+function setHint(on){
+  $('qHint').hidden = !on;
+  $('btnHint').textContent = on ? '힌트 끄기' : '힌트';
 }
 function step(d){
   var s = state.session, n = s.i + d;
@@ -607,12 +704,18 @@ $('btnAll').onclick = function(){
 };
 $('btnStart').onclick = startQuiz;
 $('btnReveal').onclick = function(){ setReveal($('qEn').hidden); };
+$('btnHint').onclick = function(){
+  var on = $('qHint').hidden;
+  setHint(on);
+  if(on) setReveal(false);
+};
 $('btnPrev').onclick = function(){ step(-1); };
 $('btnNext').onclick = function(){ step(1); };
 $('btnQuit').onclick = function(){ renderMembers(); show('scMembers'); };
 document.addEventListener('keydown', function(e){
   if($('scQuiz').hidden) return;
   if(e.key===' '||e.key==='Enter'){ e.preventDefault(); setReveal($('qEn').hidden); }
+  else if(e.key==='h'||e.key==='H'){ e.preventDefault(); var on=$('qHint').hidden; setHint(on); if(on) setReveal(false); }
   else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
   else if(e.key==='ArrowRight'){ e.preventDefault(); step(1); }
 });
