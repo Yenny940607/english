@@ -346,6 +346,7 @@ var state = {
   sheetId:'', members:[], decks:{}, byDate:{}, syncedAt:0,
   calY:0, calM:0, selDate:null, selNames:[], selMember:null, limit:20, session:null,
   locked:false,                             // 서버에 비밀번호가 걸려 있는지
+  loaded:false,                             // 서버 응답을 받았는지
   admin:false                               // 이 기기가 관리자 화면을 볼 수 있는지
 };
 
@@ -395,10 +396,11 @@ function callApi(body){
 function loadAll(pw){
   $('syncInfo').textContent = '불러오는 중…';
   return callApi({ action:'data', pw: pw || '' }).then(function(j){
-    if(!j.ok && j.locked){ state.locked = true; return false; }
+    if(!j.ok && j.locked){ state.locked = true; state.loaded = true; return false; }
     if(!j.ok) throw new Error(j.error || '데이터를 불러오지 못했습니다.');
 
     state.locked = !!j.locked;
+    state.loaded = true;
     var names = Object.keys(j.decks || {}), decks = {};
     names.forEach(function(n){
       decks[n] = (j.decks[n] || []).map(function(r){
@@ -580,8 +582,11 @@ $('btnLogo').onclick = function(){
 };
 function renderAdmin(){
   var pw = LS.get(K_PASS, '');
-  $('pwNow').textContent = state.locked ? (pw || '(이 기기엔 저장 안 됨)') : '잠금 없음';
-  $('pwNow').className = 'pwnow' + (state.locked && pw ? '' : ' off');
+  var label = !state.loaded ? '확인 중…'
+            : state.locked ? (pw || '(이 기기엔 저장 안 됨)')
+            : '잠금 없음';
+  $('pwNow').textContent = label;
+  $('pwNow').className = 'pwnow' + (state.loaded && state.locked && pw ? '' : ' off');
   $('inpPw').value = state.locked ? pw : '';
   $('inpAdmin').value = '';
   $('adminWrap').hidden = !!LS.get(K_ADMIN, '');   // 이미 확인했으면 안 묻는다
@@ -674,9 +679,10 @@ document.addEventListener('keydown', function(e){
 
 /* ───────── 시작 ───────── */
 (function init(){
-  // 관리자 진입: 주소에 ?admin 을 붙이거나, 이 기기에서 이미 확인한 적이 있으면
+  // 관리자 진입: 주소에 ?admin 이 붙어 있을 때만.
+  // 기기에 기억해두면 회원용 주소로 들어가도 설정이 보여 헷갈린다.
   var q = new URLSearchParams(location.search);
-  state.admin = q.has('admin') || !!LS.get(K_ADMIN, '');
+  state.admin = q.has('admin');
 
   var saved = LS.get(K_PASS, '');
   var cached = loadCache();
@@ -687,6 +693,7 @@ document.addEventListener('keydown', function(e){
     if(!ok){ showGate(cached ? '비밀번호가 바뀌었습니다. 다시 입력해 주세요.' : ''); return; }
     if(!cached) enterApp();
     else if(!$('scCal').hidden) renderCal();
+    if(!$('scSetup').hidden) renderAdmin();      // 열어둔 설정 화면의 잠금 표시 갱신
   }).catch(function(e){
     if(!cached) showGate(e.message);
   });
