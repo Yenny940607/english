@@ -461,13 +461,112 @@
     #modal{
       position:fixed; inset:0; z-index:50; display:flex;
       align-items:center; justify-content:center; padding:24px;
-      background:rgba(22,23,26,.44);
+      background:rgba(18,19,22,.66);
     }
     #modal[hidden]{display:none}
     .sheet{
       width:100%; max-width:560px; background:var(--ground);
       border:1px solid var(--line); border-radius:10px;
       box-shadow:0 18px 50px rgba(0,0,0,.22); overflow:hidden;
+    }
+
+    /* 카드 한 장씩 넘기는 복습 */
+    .sheet.rv{
+      max-width:520px; border:none; background:transparent; box-shadow:none;
+      overflow:visible;
+    }
+    .rv-top{display:flex; align-items:center; gap:14px; margin-bottom:14px}
+    .rv-n{
+      font-size:.78rem; color:#fff; opacity:.85;
+      font-variant-numeric:tabular-nums; flex:none;
+    }
+    .rv-bar{flex:1; height:4px; border-radius:99px; background:rgba(255,255,255,.28)}
+    .rv-bar > div{height:100%; border-radius:99px; background:#4c7ef3; transition:width .2s}
+    .rv-quit{
+      flex:none; font-size:.8rem; color:#fff; opacity:.8;
+      background:none; border:none; padding:2px 0;
+    }
+    .rv-quit:hover{opacity:1}
+
+    .rv-card{
+      background:var(--ground); border-radius:14px; padding:26px 24px;
+      min-height:230px; display:flex; flex-direction:column; justify-content:center;
+      box-shadow:0 10px 30px rgba(0,0,0,.16);
+    }
+    .rv-head{display:flex; align-items:center; gap:10px; margin-bottom:10px}
+    .rv-date{font-size:.76rem; color:var(--ink-3); font-variant-numeric:tabular-nums}
+    .rv-head .tag{
+      font-size:.62rem; font-weight:600; letter-spacing:.06em;
+      padding:2px 7px; border-radius:99px; white-space:nowrap;
+      color:var(--ink-3); background:var(--sunken);
+    }
+    .rv-head .tag.ok{color:var(--ok); box-shadow:inset 0 0 0 1px var(--ok)}
+    .rv-head .tag.rv{color:var(--mid); box-shadow:inset 0 0 0 1px var(--mid)}
+    .rv-ko{
+      margin:0; font-size:1.42rem; font-weight:700; line-height:1.45;
+      word-break:keep-all; text-wrap:balance; color:var(--ink);
+    }
+    .rv-en{
+      margin:16px 0 0; padding-top:15px; border-top:1px solid var(--line);
+      font-size:1.12rem; line-height:1.55; color:var(--accent);
+    }
+    .rv-memo{
+      margin:12px 0 0; padding-left:11px; border-left:2px solid var(--line);
+      font-size:.8rem; line-height:1.55; color:var(--ink-2);
+    }
+    .rv-hint{
+      margin:12px 0 0; padding-left:11px; border-left:2px solid var(--mid);
+      font-size:.84rem; line-height:1.55; color:var(--ink-2);
+    }
+
+    .rv-main{
+      display:block; width:100%; margin-top:12px; padding:15px 16px;
+      border-radius:10px; border:none; background:var(--ink); color:var(--ground);
+      font-size:.95rem; font-weight:700; letter-spacing:.01em;
+    }
+    .rv-main:hover:not(:disabled){background:var(--accent)}
+    .rv-pair{display:flex; gap:10px}
+    .rv-pair .rv-main{flex:1}
+    .rv-main.rev{
+      background:var(--ground); color:var(--ink);
+      box-shadow:inset 0 0 0 1px var(--line);
+    }
+    .rv-main.rev:hover{background:var(--sunken)}
+
+    .rv-nav{display:flex; gap:10px; margin-top:10px}
+    .rv-nav button{
+      flex:1; padding:13px 16px; border-radius:10px;
+      background:var(--ground); color:var(--ink);
+      box-shadow:inset 0 0 0 1px var(--line);
+      font-size:.9rem; font-weight:500;
+    }
+    .rv-nav button:hover:not(:disabled){background:var(--sunken)}
+    .rv-nav button:disabled{opacity:.35}
+
+    .rv-foot{display:flex; align-items:center; gap:14px; margin-top:13px}
+    .rv-foot .grow{flex:1}
+    .rv-foot button{
+      background:none; border:none; padding:2px 0;
+      font-size:.78rem; color:#fff; opacity:.8;
+    }
+    .rv-foot button:hover:not(:disabled){opacity:1}
+    .rv-cnt{font-size:.76rem; color:#fff; opacity:.7;
+            font-variant-numeric:tabular-nums}
+
+    .rv-done{
+      background:var(--ground); border-radius:14px; padding:34px 24px 22px;
+      box-shadow:0 10px 30px rgba(0,0,0,.16); text-align:left;
+    }
+    .rv-done .big{
+      font-family:var(--font-title); font-size:2.6rem; line-height:1;
+      margin-bottom:8px; font-variant-numeric:tabular-nums;
+    }
+    .rv-done .line{color:var(--ink-2); font-size:.88rem;
+                   font-variant-numeric:tabular-nums}
+    .rv-done .prev{margin-top:6px; font-size:.76rem; color:var(--ink-3)}
+    .rv-done .rv-main{margin-top:22px}
+    .rv-done .rv-quit{
+      display:block; margin:14px auto 0; color:var(--ink-3); opacity:1;
     }
     .sheet-head{
       display:flex; align-items:center; gap:10px;
@@ -1195,10 +1294,15 @@
   }
 
   /* ---------- 복습 창 ---------- */
+  /*
+   * 카드를 한 장씩 넘기는 방식입니다. 쓰는 칸은 없습니다.
+   *   한글 보기 → 정답 확인 → 암기 완료 / 복습 필요 → 다음 장
+   * 이전으로 돌아가면 그때 고른 것이 그대로 보입니다.
+   */
   var rv = {
     open: false, week: '', queue: [], pos: 0,
-    shown: false, answer: '', right: 0, wrong: 0, missed: [], pending: [], saving: false,
-    hint: null, hintBusy: false
+    shown: false, marks: {}, saving: false,
+    noteOpen: false, hint: null, hintBusy: false
   };
 
   // 힌트는 시트에 적어둔 답에서 바로 뽑습니다. 서버에 안 다녀옵니다.
@@ -1236,8 +1340,8 @@
       var t = idx[j]; idx[j] = idx[k]; idx[k] = t;
     }
     rv = { open: true, week: wk, queue: idx, pos: 0,
-           shown: false, answer: '', right: 0, wrong: 0, missed: [], pending: [], saving: false,
-           hint: null, hintBusy: false };
+           shown: false, marks: {}, saving: false,
+           noteOpen: false, hint: null, hintBusy: false };
     renderReview();
     document.body.style.overflow = 'hidden';
   }
@@ -1249,8 +1353,27 @@
   }
 
   function rvCurrent() {
-    if (rv.pos >= rv.queue.length) return null;
+    if (rv.pos < 0 || rv.pos >= rv.queue.length) return null;
     return state.items[rv.queue[rv.pos]];
+  }
+
+  /** 지금까지 고른 것을 셉니다. 되돌아가 다시 골라도 숫자가 맞습니다. */
+  function rvTally() {
+    var done = 0, review = 0;
+    for (var p in rv.marks) {
+      if (!rv.marks.hasOwnProperty(p)) continue;
+      if (rv.marks[p] === ST_DONE) done++; else review++;
+    }
+    return { done: done, review: review, all: done + review };
+  }
+
+  /** 9월 10일 (목) */
+  function rvDate(key) {
+    var p = String(key || '').split('-');
+    if (p.length < 3) return '';
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return (+p[1]) + '월 ' + (+p[2]) + '일' +
+           (isNaN(d.getTime()) ? '' : ' (' + DOW[d.getDay()] + ')');
   }
 
   function renderReview() {
@@ -1260,95 +1383,96 @@
 
     var total = rv.queue.length;
     var q = rvCurrent();
-    var past = lastReviewOf(rv.week);
-
-    var h = '<div class="sheet"><div class="sheet-head">' +
-      '<div><b>주간 복습</b><span class="wl">' + esc(weekLabel(rv.week)) + '</span></div>' +
-      '<span class="grow"></span>' +
-      (q ? '<span class="cnt">' + (rv.pos + 1) + ' / ' + total + '</span>' : '') +
-      '<button class="x" id="rv-close" title="닫기">&times;</button>' +
-      '</div>';
+    var t = rvTally();
+    var h = '<div class="sheet rv">';
 
     if (!q) {
-      var rate = total ? Math.round(rv.right * 100 / total) : 0;
-      h += '<div class="sheet-body done">' +
+      var past = lastReviewOf(rv.week);
+      var rate = total ? Math.round(t.done * 100 / total) : 0;
+      h += '<div class="rv-done">' +
         '<div class="big">' + rate + '%</div>' +
-        '<div class="line">' + total + '문장 · 암기 완료 ' + rv.right +
-        ' · 복습 필요 ' + rv.wrong + '</div>' +
+        '<div class="line">' + total + '문장 · 암기 완료 ' + t.done +
+        ' · 복습 필요 ' + t.review + '</div>' +
         (past ? '<div class="prev">지난 복습 ' + esc(past.logged) + ' · 암기 ' +
                 past.right + '/' + past.total + '</div>' : '') +
-        '<div class="sheet-acts">' +
-        '<button class="btn-go" id="rv-save"' + (rv.saving ? ' disabled' : '') + '>' +
+        '<button class="rv-main" id="rv-save"' + (rv.saving ? ' disabled' : '') + '>' +
         (rv.saving ? '저장하는 중…' : '결과 저장하고 닫기') + '</button>' +
-        '<button class="btn-text" id="rv-again">다시 풀기</button>' +
-        '<span class="grow"></span>' +
-        '<button class="btn-text" id="rv-skip">저장 없이 닫기</button>' +
+        '<div class="rv-nav">' +
+          '<button id="rv-prev">‹ 이전</button>' +
+          '<button id="rv-again">다시 풀기</button>' +
+        '</div>' +
+        '<button class="rv-quit" id="rv-skip">저장 없이 닫기</button>' +
         '</div></div>';
-    } else {
-      h += '<div class="sheet-body">' +
-        '<p class="rq">' + esc(q.korean) + '</p>' +
-        (q.note
-          ? ('<button class="qsave" id="rv-note">' +
-             (rv.noteOpen ? '메모 닫기' : '메모') + '</button>' +
-             (rv.noteOpen ? '<p class="rn">' + esc(q.note) + '</p>' : ''))
-          : '') +
-        (rv.hint && rv.hint.text
-          ? '<div class="hintbox"><span class="tag">힌트 ' + rv.hint.level + '/3</span>' +
-            esc(rv.hint.text) + '</div>'
-          : '') +
-        '<textarea id="rv-ans" rows="2" placeholder="영어로 써보세요"' +
-        (rv.shown ? ' readonly' : '') + '>' + esc(rv.answer) + '</textarea>';
-
-      if (rv.shown) {
-        h += '<div class="rans"><b>적어둔 답</b>' +
-          (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</div>' +
-          '<div class="sheet-acts">' +
-          '<button class="btn-go" id="rv-ok">암기 완료</button>' +
-          '<button class="btn-mid" id="rv-no">복습 필요</button>' +
-          '<span class="grow"></span>' +
-          '<span class="cnt">암기 ' + rv.right + ' · 복습 ' + rv.wrong + '</span>' +
-          '</div>';
-      } else {
-        h += '<div class="sheet-acts">' +
-          '<button class="btn-go" id="rv-show">확인</button>' +
-          '<button class="btn-text lead" id="rv-hint"' +
-          (rv.hintBusy ? ' disabled' : '') + '>' +
-          (rv.hintBusy ? '생각하는 중…'
-            : (rv.hint ? (rv.hint.level >= 3 ? '힌트 다시' : '힌트 더') : '힌트')) +
-          '</button>' +
-          (rv.hint ? '<button class="btn-text" id="rv-nohint">힌트 닫기</button>' : '') +
-          '<span class="grow"></span>' +
-          '<span class="cnt">암기 ' + rv.right + ' · 복습 ' + rv.wrong + '</span>' +
-          '</div>';
-      }
-      h += '</div>';
+      box.innerHTML = h;
+      wire('rv-save', rvSave);
+      wire('rv-skip', closeReview);
+      wire('rv-again', function () { openReview(rv.week); });
+      wire('rv-prev', function () { rvGo(-1); });
+      return;
     }
 
-    h += '</div>';
-    box.innerHTML = h;
+    var mark = rv.marks[rv.pos] || '';
+    var pct = Math.round((rv.pos + (rv.shown ? 1 : 0)) * 100 / total);
+
+    h += '<div class="rv-top">' +
+      '<span class="rv-n">' + (rv.pos + 1) + ' / ' + total + '</span>' +
+      '<div class="rv-bar"><div style="width:' + pct + '%"></div></div>' +
+      '<button class="rv-quit" id="rv-close">그만</button>' +
+      '</div>';
+
+    h += '<div class="rv-card">' +
+      '<div class="rv-head">' +
+        '<span class="rv-date">' + esc(rvDate(q.date)) + '</span>' +
+        (mark ? '<span class="tag ' + (mark === ST_DONE ? 'ok' : 'rv') + '">' +
+                esc(mark) + '</span>' : '') +
+      '</div>' +
+      '<p class="rv-ko">' + esc(q.korean) + '</p>' +
+      (rv.shown
+        ? ('<p class="rv-en">' +
+           (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</p>')
+        : '') +
+      (rv.noteOpen && q.note ? '<p class="rv-memo">' + esc(q.note) + '</p>' : '') +
+      (rv.hint && rv.hint.text && !rv.shown
+        ? '<p class="rv-hint">' + esc(rv.hint.text) + '</p>' : '') +
+      '</div>';
+
+    if (rv.shown) {
+      h += '<div class="rv-pair">' +
+        '<button class="rv-main ok" id="rv-ok">암기 완료</button>' +
+        '<button class="rv-main rev" id="rv-no">복습 필요</button>' +
+        '</div>';
+    } else {
+      h += '<button class="rv-main" id="rv-show">정답 확인</button>';
+    }
+
+    h += '<div class="rv-nav">' +
+      '<button id="rv-prev"' + (rv.pos === 0 ? ' disabled' : '') + '>‹ 이전</button>' +
+      '<button id="rv-next">다음 ›</button>' +
+      '</div>';
+
+    h += '<div class="rv-foot">' +
+      (rv.shown ? '<button id="rv-hide">답 가리기</button>'
+        : ('<button id="rv-hint"' + (rv.hintBusy ? ' disabled' : '') + '>' +
+           (rv.hintBusy ? '생각하는 중…'
+             : (rv.hint ? (rv.hint.level >= 3 ? '힌트 다시' : '힌트 더') : '힌트')) +
+           '</button>')) +
+      (q.note ? '<button id="rv-note">' + (rv.noteOpen ? '메모 닫기' : '메모') +
+                '</button>' : '') +
+      '<span class="grow"></span>' +
+      '<span class="rv-cnt">암기 ' + t.done + ' · 복습 ' + t.review + '</span>' +
+      '</div>';
+
+    box.innerHTML = h + '</div>';
 
     wire('rv-close', closeReview);
-    wire('rv-skip', closeReview);
     wire('rv-show', rvShow);
+    wire('rv-hide', function () { rv.shown = false; renderReview(); });
     wire('rv-note', function () { rv.noteOpen = !rv.noteOpen; renderReview(); });
     wire('rv-hint', rvHint);
-    wire('rv-nohint', function () { rv.hint = null; renderReview(); });
     wire('rv-ok', function () { rvMark(true); });
     wire('rv-no', function () { rvMark(false); });
-    wire('rv-save', rvSave);
-    wire('rv-again', function () { openReview(rv.week); });
-
-    var ta = $('rv-ans');
-    if (ta) {
-      ta.addEventListener('input', function () { rv.answer = this.value; });
-      ta.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          if (!rv.shown) rvShow();
-        }
-      });
-      if (!rv.shown) ta.focus();
-    }
+    wire('rv-prev', function () { rvGo(-1); });
+    wire('rv-next', function () { rvGo(1); });
   }
 
   function rvHint() {
@@ -1367,7 +1491,7 @@
     // 답이 비어 있으면 그때만 서버에 물어봅니다.
     rv.hintBusy = true;
     renderReview();
-    call('getHint', [q.korean, q.answer, rv.answer, lv], function (res) {
+    call('getHint', [q.korean, q.answer, '', lv], function (res) {
       rv.hintBusy = false;
       rv.hint = { text: (res && res.text) || '', level: lv };
       renderReview();
@@ -1383,32 +1507,63 @@
     renderReview();
   }
 
-  function rvMark(ok) {
-    var q = rvCurrent();
-    if (q) {
-      if (ok) { rv.right++; delete state.missed[q.korean]; }
-      else { rv.wrong++; rv.missed.push(q.korean); state.missed[q.korean] = true; }
-      // 복습에서 고른 것도 시트의 상태 칸에 그대로 남깁니다.
-      var st = ok ? '암기 완료' : '복습 필요';
-      q.status = st;
-      rv.pending.push({ row: q.row, korean: q.korean, mine: rv.answer, status: st });
-    }
-    rv.pos++;
+  /** 앞뒤로 넘깁니다. 끝을 넘어가면 마무리 화면이 나옵니다. */
+  function rvGo(step) {
+    var next = rv.pos + step;
+    if (next < 0) return;
+    if (next > rv.queue.length) next = rv.queue.length;
+    rv.pos = next;
     rv.shown = false;
-    rv.answer = '';
     rv.noteOpen = false;
     rv.hint = null;
     renderReview();
   }
 
+  function rvMark(ok) {
+    var q = rvCurrent();
+    if (q) {
+      var st = ok ? ST_DONE : ST_REVIEW;
+      rv.marks[rv.pos] = st;
+      q.status = st;
+      if (ok) delete state.missed[q.korean];
+      else state.missed[q.korean] = true;
+    }
+    rvGo(1);
+  }
+
+  /** 이번에 고른 것을 시트에 한 번에 적습니다. (내 답 칸은 안 건드립니다) */
+  function rvPending() {
+    var out = [];
+    for (var p in rv.marks) {
+      if (!rv.marks.hasOwnProperty(p)) continue;
+      var it = state.items[rv.queue[p]];
+      if (!it) continue;
+      out.push({ row: it.row, korean: it.korean, mine: null, status: rv.marks[p] });
+    }
+    return out;
+  }
+
+  function rvMissed() {
+    var out = [];
+    for (var p in rv.marks) {
+      if (!rv.marks.hasOwnProperty(p)) continue;
+      if (rv.marks[p] === ST_REVIEW) {
+        var it = state.items[rv.queue[p]];
+        if (it) out.push(it.korean);
+      }
+    }
+    return out;
+  }
+
   function rvSave() {
+    var t = rvTally();
     rv.saving = true;
     renderReview();
-    if (rv.pending.length) {
-      call('markMany', [rv.pending], function () {}, function () {});
-      rv.pending = [];
-    }
-    call('saveReview', [rv.week, rv.queue.length, rv.right, rv.wrong, rv.missed],
+
+    var send = rvPending();
+    if (send.length) call('markMany', [send], function () {}, function () {});
+
+    call('saveReview', [rv.week, rv.queue.length, t.done, t.review, rvMissed()],
       function (rows) {
         state.reviews = rows || state.reviews;
         rv.saving = false;
@@ -1424,7 +1579,17 @@
   }
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && rv.open) closeReview();
+    if (!rv.open) return;
+    if (e.key === 'Escape') { closeReview(); return; }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); rvGo(-1); return; }
+    if (e.key === 'ArrowRight') { e.preventDefault(); rvGo(1); return; }
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      if (!rv.shown) rvShow();
+      return;
+    }
+    if (rv.shown && (e.key === '1' || e.key === 'o')) { e.preventDefault(); rvMark(true); }
+    if (rv.shown && (e.key === '2' || e.key === 'x')) { e.preventDefault(); rvMark(false); }
   });
 
   /* ---------- 테스트 ---------- */
