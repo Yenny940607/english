@@ -519,29 +519,31 @@
       font-size:.84rem; line-height:1.55; color:var(--ink-2);
     }
 
+    /* 카드와 같은 결로. 검은 덩어리는 눈에 세게 박힙니다. */
     .rv-main{
-      display:block; width:100%; margin-top:12px; padding:15px 16px;
-      border-radius:10px; border:none; background:var(--ink); color:var(--ground);
+      display:block; width:100%; margin-top:12px; padding:16px;
+      border-radius:12px; border:none;
+      background:var(--panel); color:var(--ink);
+      box-shadow:0 6px 18px rgba(0,0,0,.13);
       font-size:.95rem; font-weight:700; letter-spacing:.01em;
     }
-    .rv-main:hover:not(:disabled){background:var(--accent)}
+    .rv-main:hover:not(:disabled){background:var(--sunken)}
     .rv-pair{display:flex; gap:10px}
     .rv-pair .rv-main{flex:1}
-    .rv-main.rev{
-      background:var(--ground); color:var(--ink);
-      box-shadow:inset 0 0 0 1px var(--line);
-    }
+    .rv-main.ok{color:var(--accent); background:var(--accent-soft)}
+    .rv-main.ok:hover{background:var(--accent); color:var(--panel)}
     .rv-main.rev:hover{background:var(--sunken)}
 
+    /* 앞뒤로 넘기는 건 한 단계 여리게 */
     .rv-nav{display:flex; gap:10px; margin-top:10px}
     .rv-nav button{
-      flex:1; padding:13px 16px; border-radius:10px;
-      background:var(--ground); color:var(--ink);
-      box-shadow:inset 0 0 0 1px var(--line);
+      flex:1; padding:13px 16px; border-radius:12px;
+      background:transparent; color:#fff;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.34);
       font-size:.9rem; font-weight:500;
     }
-    .rv-nav button:hover:not(:disabled){background:var(--sunken)}
-    .rv-nav button:disabled{opacity:.35}
+    .rv-nav button:hover:not(:disabled){background:rgba(255,255,255,.14)}
+    .rv-nav button:disabled{opacity:.3}
 
     .rv-foot{display:flex; align-items:center; gap:14px; margin-top:13px}
     .rv-foot .grow{flex:1}
@@ -564,7 +566,9 @@
     .rv-done .line{color:var(--ink-2); font-size:.88rem;
                    font-variant-numeric:tabular-nums}
     .rv-done .prev{margin-top:6px; font-size:.76rem; color:var(--ink-3)}
-    .rv-done .rv-main{margin-top:22px}
+    .rv-done .rv-main{margin-top:22px; box-shadow:inset 0 0 0 1px var(--line)}
+    .rv-done .rv-nav button{color:var(--ink); box-shadow:inset 0 0 0 1px var(--line)}
+    .rv-done .rv-nav button:hover{background:var(--sunken)}
     .rv-done .rv-quit{
       display:block; margin:14px auto 0; color:var(--ink-3); opacity:1;
     }
