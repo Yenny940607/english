@@ -15,6 +15,7 @@
       --line:#e7e5e0; --line-soft:#f0eeea;
       --accent:#265a4d; --accent-2:#3d7a6a; --accent-soft:rgba(38,90,77,.13);
       --ok:#2b6152; --mid:#8a6a2f; --bad:#9c453a;
+      --sky:#e2ecfb; --sky-2:#cfe0f7; --sky-ink:#1c56a8;
       --font-ui:"IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI",
                 "Malgun Gothic", sans-serif;
       --font-say:"Gowun Batang", "Apple SD Gothic Neo", "Malgun Gothic", serif;
@@ -27,6 +28,7 @@
         --line:#2c2f34; --line-soft:#232629;
         --accent:#5d9b8a; --accent-2:#79b3a2; --accent-soft:rgba(93,155,138,.22);
         --ok:#6fae9c; --mid:#c8a266; --bad:#d98a7e;
+        --sky:#22354e; --sky-2:#2c4665; --sky-ink:#9ec7f7;
       }
     }
     :root[data-theme="dark"]{
@@ -35,6 +37,7 @@
       --line:#2c2f34; --line-soft:#232629;
       --accent:#5d9b8a; --accent-2:#79b3a2; --accent-soft:rgba(93,155,138,.22);
       --ok:#6fae9c; --mid:#c8a266; --bad:#d98a7e;
+      --sky:#22354e; --sky-2:#2c4665; --sky-ink:#9ec7f7;
     }
 
     *{box-sizing:border-box}
@@ -530,8 +533,8 @@
     .rv-main:hover:not(:disabled){background:var(--sunken)}
     .rv-pair{display:flex; gap:10px}
     .rv-pair .rv-main{flex:1}
-    .rv-main.ok{color:var(--accent); background:var(--accent-soft)}
-    .rv-main.ok:hover{background:var(--accent); color:var(--panel)}
+    .rv-main.ok{color:var(--sky-ink); background:var(--sky)}
+    .rv-main.ok:hover:not(:disabled){background:var(--sky-2); color:var(--sky-ink)}
     .rv-main.rev:hover{background:var(--sunken)}
 
     /* 앞뒤로 넘기는 건 한 단계 여리게 */
