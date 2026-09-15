@@ -631,7 +631,8 @@ function savePw(np){
       return;
     }
     LS.set(K_ADMIN, admin);            // 확인됐으니 이 기기에선 다시 안 묻는다
-    LS.set(K_PASS, np);
+    LS.set(K_PASS, '');                // 바꾼 사람도 새 번호로 다시 들어와야 한다
+    LS.set(K_OKM, '');
     state.locked = !!j.locked;
     renderAdmin();
     $('pwMsg').className = 'hint saved';
