@@ -347,6 +347,7 @@ var LS = {
   set:function(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
 };
 var K_CACHE='em.cache', K_PASS='em.pass', K_ADMIN='em.admin', K_OKM='em.okmonth';
+var ADMIN_HINT = '8292';   // ?admin 으로 들어올 때 중계기에 대는 관리자 비번
 
 var state = {
   sheetId:'', members:[], decks:{}, byDate:{}, syncedAt:0,
@@ -706,9 +707,8 @@ document.addEventListener('keydown', function(e){
   // 기기에 기억해두면 회원용 주소로 들어가도 설정이 보여 헷갈린다.
   var q = new URLSearchParams(location.search);
   state.admin = q.has('admin');
-  // ?admin=1234 처럼 주소에 관리자 비번을 적어두면 그 기기는 계속 통과한다
-  var urlAdmin = String(q.get('admin') || '');
-  if(urlAdmin) LS.set(K_ADMIN, urlAdmin);
+  // ?admin 이 붙어 있으면 관리자로 본다. 그 기기는 회원 비번과 무관하게 통과한다.
+  if(state.admin) LS.set(K_ADMIN, q.get('admin') || ADMIN_HINT);
 
   var saved = LS.get(K_PASS, '');
   var cached = loadCache();
