@@ -479,7 +479,11 @@ function renderCal(){
     b.appendChild(el('b', null, String(d)));
     if(key === today) b.classList.add('today');
     if(n){
-      (function(k){ b.onclick = function(){ state.selDate = k; renderMembers(); show('scMembers'); }; })(key);
+      (function(k){ b.onclick = function(){
+        state.selDate = k;
+        state.selNames = [];          // 날짜를 새로 누르면 지난 선택은 지운다
+        renderMembers(); show('scMembers');
+      }; })(key);
     } else { b.disabled = true; }
     g.appendChild(b);
   }
