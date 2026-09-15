@@ -445,7 +445,7 @@ function loadCache(){
 /* ───────── 비밀번호 ───────── */
 function showGate(msg){
   $('gateMsg').textContent = msg || '';
-  $('inpPass').value = '';
+  if(msg !== '확인 중…') $('inpPass').value = '';
   show('scGate');
   setTimeout(function(){ try{ $('inpPass').focus(); }catch(e){} }, 60);
 }
@@ -702,17 +702,15 @@ document.addEventListener('keydown', function(e){
   state.admin = q.has('admin');
 
   var saved = LS.get(K_PASS, '');
-  var cached = loadCache();
-  if(cached) enterApp();                       // 캐시가 있으면 먼저 보여주고
-  else showGate();                             // 없으면 잠금 화면에서 시작
+  loadCache();                                 // 문장은 미리 읽어두되 화면에는 아직 안 띄운다
+  showGate('확인 중…');                        // 서버가 답하기 전에는 아무것도 보여주지 않는다
+  $('inpPass').value = saved;
 
   loadAll(saved).then(function(ok){
-    if(!ok){ showGate(cached ? '비밀번호가 바뀌었습니다. 다시 입력해 주세요.' : ''); return; }
-    if(!cached) enterApp();
-    else if(!$('scCal').hidden) renderCal();
-    if(!$('scSetup').hidden) renderAdmin();      // 열어둔 설정 화면의 잠금 표시 갱신
+    if(!ok){ showGate(saved ? '비밀번호가 바뀌었습니다. 다시 입력해 주세요.' : ''); return; }
+    enterApp();
   }).catch(function(e){
-    if(!cached) showGate(e.message);
+    showGate(e.message);
   });
 })();
 
