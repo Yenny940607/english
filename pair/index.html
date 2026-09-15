@@ -160,6 +160,12 @@
   .mcard i.tick{display:block;width:17px;height:17px;margin:0 auto 8px;border-radius:6px;
     border:1.5px solid var(--line-2);font-style:normal;font-size:10px;line-height:14px;
     color:transparent;transition:.13s}
+  .mcard.shared{background:var(--accent-soft);border-color:transparent}
+  .mcard.shared span{color:var(--accent)}
+  .mcard.shared i.tick{border-color:#B9C8FB}
+  .mcard.shared[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .mcard.shared[aria-pressed="true"] span{color:rgba(255,255,255,.82)}
+  .mcard.shared[aria-pressed="true"] i.tick{background:#fff;border-color:#fff;color:var(--accent)}
   .mcard[aria-pressed="true"]{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-fg)}
   .mcard[aria-pressed="true"]:hover{background:var(--btn-bg);opacity:.88}
   .mcard[aria-pressed="true"] span{color:var(--btn-fg-dim)}
@@ -483,6 +489,10 @@ function renderCal(){
 }
 
 /* ───────── 이름 카드 (여러 명 선택 가능) ───────── */
+// 모임 공용 문장 파일인지 (회원 개인 문장과 구분)
+function isShared(n){
+  return /공용|공통/.test(n) || String(n).indexOf('모임') === 0;
+}
 function dayNames(){
   var who = state.byDate[state.selDate] || {};
   return state.members.filter(function(n){ return who[n] && who[n].length; });
@@ -504,7 +514,8 @@ function renderMembers(){
   var box = $('mCards'); box.innerHTML = '';
   names.forEach(function(n){
     var on = state.selNames.indexOf(n) !== -1;
-    var b = el('button','mcard');
+    // 모임장이 올리는 공용 문장은 회원 카드와 구분해 연한 색으로
+    var b = el('button','mcard' + (isShared(n) ? ' shared' : ''));
     b.setAttribute('aria-pressed', String(on));
     b.appendChild(el('i','tick', on ? '✓' : ''));
     b.appendChild(document.createTextNode(n));
