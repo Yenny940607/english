@@ -706,6 +706,9 @@ document.addEventListener('keydown', function(e){
   // 기기에 기억해두면 회원용 주소로 들어가도 설정이 보여 헷갈린다.
   var q = new URLSearchParams(location.search);
   state.admin = q.has('admin');
+  // ?admin=1234 처럼 주소에 관리자 비번을 적어두면 그 기기는 계속 통과한다
+  var urlAdmin = String(q.get('admin') || '');
+  if(urlAdmin) LS.set(K_ADMIN, urlAdmin);
 
   var saved = LS.get(K_PASS, '');
   var cached = loadCache();
