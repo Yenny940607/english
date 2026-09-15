@@ -404,12 +404,14 @@ function callApi(body){
 /** 성공하면 true, 비밀번호가 필요하면 false */
 function loadAll(pw, fresh){
   $('syncInfo').textContent = '불러오는 중…';
-  return callApi({ action:'data', pw: pw || '', fresh: fresh ? 1 : 0 }).then(function(j){
+  var adminTry = LS.get(K_ADMIN,'') || (pw || '');   // 잠금 화면에 관리자 비번을 넣어도 통과
+  return callApi({ action:'data', pw: pw || '', admin: adminTry, fresh: fresh ? 1 : 0 }).then(function(j){
     if(!j.ok && j.locked){ state.locked = true; state.loaded = true; LS.set(K_OKM, ''); return false; }
     if(!j.ok) throw new Error(j.error || '데이터를 불러오지 못했습니다.');
 
     state.locked = !!j.locked;
     state.loaded = true;
+    if(j.admin) LS.set(K_ADMIN, adminTry);   // 관리자로 통과한 기기는 기억한다
     LS.set(K_OKM, monthKey());          // 이 달은 통과한 걸로 기록
     var names = Object.keys(j.decks || {}), decks = {};
     names.forEach(function(n){
@@ -707,10 +709,11 @@ document.addEventListener('keydown', function(e){
 
   var saved = LS.get(K_PASS, '');
   var cached = loadCache();
-  var sameMonth = cached && LS.get(K_OKM, '') === monthKey();
+  var isAdminDevice = !!LS.get(K_ADMIN, '');        // 관리자는 비번을 묻지 않는다
+  var sameMonth = isAdminDevice || (cached && LS.get(K_OKM, '') === monthKey());
 
-  if(sameMonth){
-    enterApp();                                // 이번 달에 이미 통과했으면 기다리지 않는다
+  if(sameMonth && cached){
+    enterApp();                                // 이미 통과한 기기면 기다리지 않는다
   } else {
     showGate('확인 중…');                      // 달이 바뀌었으면 다시 확인한다
     $('inpPass').value = saved;
@@ -718,11 +721,11 @@ document.addEventListener('keydown', function(e){
 
   loadAll(saved).then(function(ok){
     if(!ok){ showGate(saved ? '비밀번호가 바뀌었습니다. 다시 입력해 주세요.' : ''); return; }
-    if(!sameMonth) enterApp();
+    if(!sameMonth || !cached) enterApp();
     else if(!$('scCal').hidden) renderCal();   // 뒤에서 받아온 최신 내용 반영
     if(!$('scSetup').hidden) renderAdmin();
   }).catch(function(e){
-    if(!sameMonth) showGate(e.message);         // 이미 들어와 있으면 통신 실패는 무시
+    if(!sameMonth || !cached) showGate(e.message); // 이미 들어와 있으면 통신 실패는 무시
   });
 })();
 
