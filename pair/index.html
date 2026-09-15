@@ -292,6 +292,7 @@
       <div class="cal" id="calGrid"></div>
     </div>
     <div class="row">
+      <button class="btn-sm" id="btnSheet" hidden>공용문장 열기</button>
       <button class="btn-sm btn-ghost" id="btnReload">시트 새로고침</button>
       <span class="note" id="syncInfo" style="align-self:center"></span>
     </div>
@@ -380,6 +381,8 @@ function dateLabel(key){
 /* ───────── 데이터: Apps Script 중계기 ─────────
    시트를 직접 읽지 않고 모임장 권한으로 도는 스크립트에 물어본다.
    덕분에 시트를 공개하지 않아도 되고, 비밀번호 검사도 서버에서 한다. */
+// 모임장이 공용 문장을 적는 시트 (관리자에게만 버튼이 보인다)
+var SHARED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Q2r0wqk32PQZ4U93RollVu8nhvid1FSNVqSn5shhYiQ/edit';
 var API = 'https://script.google.com/macros/s/AKfycbysvePf_fN3ABV1KNmamdaAmJxzpp2P_FG1WFxbDD8YAAAwM2p2H1SWeZ8xTwXpaBoR9g/exec';
 
 function callApi(body){
@@ -485,6 +488,7 @@ function renderCal(){
     } else { b.disabled = true; }
     g.appendChild(b);
   }
+  $('btnSheet').hidden = !state.admin;        // 관리자에게만
   $('syncInfo').textContent = state.syncedAt
     ? new Date(state.syncedAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) + ' 기준'
     : '';
@@ -672,6 +676,7 @@ $('btnGate').onclick = function(){
   }).then(function(){ $('btnGate').disabled = false; });
 };
 $('inpPass').onkeydown = function(e){ if(e.key === 'Enter') $('btnGate').onclick(); };
+$('btnSheet').onclick = function(){ window.open(SHARED_SHEET_URL, '_blank', 'noopener'); };
 $('btnAll').onclick = function(){
   var names = dayNames();
   state.selNames = (state.selNames.length === names.length) ? [] : names.slice();
