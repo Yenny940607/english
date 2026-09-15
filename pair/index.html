@@ -292,7 +292,6 @@
       <div class="cal" id="calGrid"></div>
     </div>
     <div class="row">
-      <button class="btn-sm" id="btnSheet">시트 열기</button>
       <button class="btn-sm btn-ghost" id="btnReload">시트 새로고침</button>
       <span class="note" id="syncInfo" style="align-self:center"></span>
     </div>
@@ -382,7 +381,6 @@ function dateLabel(key){
    시트를 직접 읽지 않고 모임장 권한으로 도는 스크립트에 물어본다.
    덕분에 시트를 공개하지 않아도 되고, 비밀번호 검사도 서버에서 한다. */
 var API = 'https://script.google.com/macros/s/AKfycbysvePf_fN3ABV1KNmamdaAmJxzpp2P_FG1WFxbDD8YAAAwM2p2H1SWeZ8xTwXpaBoR9g/exec';
-var SHEET_URL = 'https://docs.google.com/spreadsheets/d/1D-NlT-VLp3PAVGn1fzR1PaxPztSrrS3GIYp4bGRrpnc/edit';
 
 function callApi(body){
   return fetch(API, {
@@ -674,7 +672,6 @@ $('btnGate').onclick = function(){
   }).then(function(){ $('btnGate').disabled = false; });
 };
 $('inpPass').onkeydown = function(e){ if(e.key === 'Enter') $('btnGate').onclick(); };
-$('btnSheet').onclick = function(){ window.open(SHEET_URL, '_blank', 'noopener'); };
 $('btnAll').onclick = function(){
   var names = dayNames();
   state.selNames = (state.selNames.length === names.length) ? [] : names.slice();
