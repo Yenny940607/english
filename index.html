@@ -2640,11 +2640,12 @@
     if (pw) { pw.value = ''; pw.focus(); }
   }
 
-  function letIn(token, day) {
+  /** until 은 이 표를 언제까지 쓸 수 있는지 (YYYY-MM-DD) */
+  function letIn(token, until) {
     state.token = token;
     try {
       localStorage.setItem(PASS_STORE,
-        JSON.stringify({ token: token, day: day || todayKey() }));
+        JSON.stringify({ token: token, until: until || '' }));
     } catch (e) {}
     $('gate').hidden = true;
     $('wrap').hidden = false;
@@ -2663,7 +2664,7 @@
     gateMsg('확인하는 중…');
     post('login', [pw], function (res) {
       $('gate-go').disabled = false;
-      if (res && res.ok) { gateMsg(''); letIn(res.token, res.day); }
+      if (res && res.ok) { gateMsg(''); letIn(res.token, res.until); }
       else {
         gateMsg((res && res.message) || '비밀번호가 달라요.');
         var el = $('gate-pw'); el.value = ''; el.focus();
@@ -2675,11 +2676,14 @@
   });
 
   /* ---------- 시작 ---------- */
-  // 오늘 이미 들어온 적이 있으면 그냥 열어줍니다. 하루가 지나면 다시 물어봅니다.
+  // 한 번 들어오면 한 달 동안 안 묻습니다. 기한이 지나야 다시 물어봅니다.
   var saved = null;
   try { saved = JSON.parse(localStorage.getItem(PASS_STORE) || 'null'); } catch (e) {}
-  if (saved && saved.token && saved.day === todayKey()) letIn(saved.token, saved.day);
-  else lockUp();
+  if (saved && saved.token && saved.until && saved.until >= todayKey()) {
+    letIn(saved.token, saved.until);
+  } else {
+    lockUp();
+  }
 })();
 </script>
 </body>
