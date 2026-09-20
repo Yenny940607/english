@@ -91,6 +91,9 @@
   .btn-primary{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-fg);font-weight:600}
   .btn-primary:hover{background:var(--btn-bg);opacity:.86}
   .btn-primary:disabled:hover{background:var(--btn-bg)}
+  .btn-accent{background:var(--accent-soft);border-color:transparent;
+    color:var(--accent);font-weight:600}
+  .btn-accent:hover{background:var(--accent-soft);opacity:.82}
   .btn-ghost{background:transparent;border-color:transparent;color:var(--text-2)}
   .btn-ghost:hover{background:var(--surface-2)}
   .btn-sm{padding:6px 11px;font-size:13px;border-radius:8px}
@@ -168,7 +171,7 @@
   .guide .step b{display:block;font-size:13.5px;margin-bottom:3px;letter-spacing:-.02em}
   .guide .step p{margin:0;font-size:13.5px;line-height:1.6;color:var(--text-2)}
   .guide .tip{margin-top:17px;padding-top:13px;border-top:1px solid var(--line);
-    font-size:12.5px;line-height:1.55;color:var(--muted)}
+    font-size:13.5px;line-height:1.6;color:var(--text);font-weight:600;letter-spacing:-.015em}
 
   .mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
   .mcard{padding:15px 10px;border-radius:var(--r);font-size:16px;font-weight:600;
@@ -237,6 +240,7 @@
       <span class="lwm">In My Own Words</span>
     </button>
     <span class="hspace"></span>
+    <button class="btn-sm btn-accent" id="btnGuide">진행 방법</button>
     <button class="btn-sm btn-ghost" id="btnBack" hidden>‹ 뒤로</button>
     <button class="btn-sm btn-ghost" id="btnSetup">설정</button>
   </div>
@@ -312,7 +316,6 @@
       <div class="cal" id="calGrid"></div>
     </div>
     <div class="row">
-      <button class="btn-sm" id="btnGuide">진행 방법</button>
       <button class="btn-sm" id="btnSheet" hidden>공용문장 열기</button>
       <button class="btn-sm btn-ghost" id="btnReload">시트 새로고침</button>
       <span class="note" id="syncInfo" style="align-self:center"></span>
@@ -416,6 +419,8 @@ var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz'];
 function show(s){
   SCREENS.forEach(function(x){ $(x).hidden = (x!==s); });
   $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate' || s==='scQuiz');
+  // 진행 방법은 모임을 진행하는 두 화면에서만 띄운다
+  $('btnGuide').hidden = !(s==='scCal' || s==='scMembers');
   // 관리자가 아니면 설정 버튼 자체가 없다 (회원에게는 이 화면이 존재하지 않는다)
   $('btnSetup').hidden = (s==='scGate') || !state.admin;
   window.scrollTo(0,0);
