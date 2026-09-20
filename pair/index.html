@@ -158,6 +158,16 @@
 
   /* 이름 카드 */
   .mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+  .mwrap{position:relative}
+  .mwrap .mcard{width:100%}
+  .dl{position:absolute;top:5px;right:5px;width:25px;height:25px;padding:0;
+    border:none;background:transparent;color:var(--muted);border-radius:7px;
+    font-size:15px;line-height:25px;opacity:.55;transition:.13s}
+  .dl:hover{opacity:1;background:var(--surface-2)}
+  .mcard[aria-pressed="true"] + .dl{color:var(--btn-fg-dim);opacity:.8}
+  .mcard[aria-pressed="true"] + .dl:hover{background:rgba(255,255,255,.16);opacity:1}
+  .mcard.shared + .dl{color:var(--accent)}
+  .mcard.shared[aria-pressed="true"] + .dl{color:rgba(255,255,255,.85)}
   .mcard{padding:15px 10px;border-radius:var(--r);font-size:16px;font-weight:600;
     line-height:1.35;letter-spacing:-.02em;border:1px solid var(--line-2);text-align:center}
   .mcard span{display:block;font-size:12px;color:var(--muted);font-weight:500;
@@ -313,7 +323,8 @@
         <button class="btn-sm btn-ghost" id="btnAll">전체 선택</button>
       </div>
       <div class="mcards" id="mCards"></div>
-      <div class="hint">여러 명을 선택하면 해당 회원들의 문장이 <b>섞여서</b> 출제됩니다.</div>
+      <div class="hint">여러 명을 선택하면 해당 회원들의 문장이 <b>섞여서</b> 출제됩니다.<br>
+        카드 오른쪽 위 <b>⤓</b> 를 누르면 그 회원의 <b>전체 문장</b>을 파일로 내려받을 수 있습니다.</div>
     </div>
     <div class="card">
       <h2>문항 수</h2>
@@ -435,6 +446,39 @@ function loadAll(pw, fresh){
   });
 }
 
+/* ── 한 회원의 문장을 표 파일로 내려받기 ──
+   엑셀·구글 스프레드시트에서 바로 열린다. */
+/* 한 회원의 문장을 표 파일(CSV)로 내려받는다. 엑셀·구글 스프레드시트에서 바로 열린다. */
+var CSV_LF = String.fromCharCode(10);
+var CSV_CR = String.fromCharCode(13);
+var CSV_BOM = String.fromCharCode(65279);   // 이게 있어야 엑셀에서 한글이 안 깨진다
+
+function csvCell(v){
+  v = String(v == null ? "" : v);
+  var needs = v.indexOf(String.fromCharCode(34)) !== -1 || v.indexOf(",") !== -1 ||
+              v.indexOf(CSV_LF) !== -1 || v.indexOf(CSV_CR) !== -1;
+  if(!needs) return v;
+  var q = String.fromCharCode(34);
+  return q + v.split(q).join(q + q) + q;
+}
+
+function downloadMember(name){
+  var rows = (state.decks[name] || []).slice().sort(function(a,b){
+    return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+  });
+  if(!rows.length){ alert(name + " 님의 문장이 아직 없습니다."); return; }
+  var lines = ["스터디 일자,한글,영어"];
+  rows.forEach(function(c){
+    lines.push([csvCell(c.date), csvCell(c.ko), csvCell(c.en)].join(","));
+  });
+  var text = CSV_BOM + lines.join(CSV_CR + CSV_LF);
+  var url = URL.createObjectURL(new Blob([text], { type:"text/csv;charset=utf-8" }));
+  var a = document.createElement("a");
+  a.href = url; a.download = name + "_문장.csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+
 function rebuildIndex(){
   var byDate = {};
   state.members.forEach(function(n){
@@ -544,7 +588,14 @@ function renderMembers(){
       if(i === -1) state.selNames.push(n); else state.selNames.splice(i,1);
       renderMembers();
     };
-    box.appendChild(b);
+    // 카드 모서리의 내려받기 단추. 카드 선택과 섞이지 않게 따로 얹는다.
+    var wrap = el("div","mwrap");
+    var dl = el("button","dl","⤓");
+    dl.title = n + " 문장 내려받기";
+    dl.setAttribute("aria-label", n + " 문장 내려받기");
+    dl.onclick = function(ev){ ev.stopPropagation(); downloadMember(n); };
+    wrap.appendChild(b); wrap.appendChild(dl);
+    box.appendChild(wrap);
   });
 
   $('btnAll').textContent =
