@@ -73,8 +73,13 @@
   .logo:hover{background:var(--surface-2)}
   .logo .lmark{display:inline-flex;align-items:center;justify-content:center;
     width:28px;height:28px;border-radius:9px;background:var(--btn-bg);color:var(--btn-fg);flex:none}
-  .logo .lwm{font-size:17px;font-weight:700;letter-spacing:-.025em}
-  @media (max-width:420px){ .logo .lwm{display:none} }
+  .logo .lwm{font-size:17px;font-weight:700;letter-spacing:-.025em;white-space:nowrap}
+  /* 좁은 화면에서도 이름은 계속 보이게 하고, 대신 글자와 여백을 줄인다 */
+  @media (max-width:420px){
+    .logo .lwm{font-size:14.5px}
+    .logo{gap:7px;padding:5px 6px;margin-left:-6px}
+    header .inner{gap:4px;padding:0 14px}
+  }
 
   button{font-family:inherit;font-size:14.5px;font-weight:500;cursor:pointer;
     border-radius:var(--r-sm);border:1px solid var(--line-2);
