@@ -323,8 +323,12 @@
         <button class="btn-sm btn-ghost" id="btnAll">전체 선택</button>
       </div>
       <div class="mcards" id="mCards"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn-sm btn-ghost" id="btnDlSel">선택한 회원 문장 내려받기</button>
+      </div>
       <div class="hint">여러 명을 선택하면 해당 회원들의 문장이 <b>섞여서</b> 출제됩니다.<br>
-        카드 오른쪽 위 <b>⤓</b> 를 누르면 그 회원의 <b>전체 문장</b>을 파일로 내려받을 수 있습니다.</div>
+        카드 오른쪽 위 <b>⤓</b> 는 그 회원 한 명의 전체 문장을,
+        아래 단추는 <b>선택한 회원 전원</b>의 문장을 파일로 내려받습니다.</div>
     </div>
     <div class="card">
       <h2>문항 수</h2>
@@ -462,19 +466,34 @@ function csvCell(v){
   return q + v.split(q).join(q + q) + q;
 }
 
-function downloadMember(name){
-  var rows = (state.decks[name] || []).slice().sort(function(a,b){
-    return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+/** 여러 명을 한꺼번에 받으면 이름 열이 앞에 붙는다 */
+function downloadMember(names){
+  if(typeof names === "string") names = [names];
+  names = (names || []).filter(function(n){ return (state.decks[n] || []).length; });
+  if(!names.length){ alert("내려받을 문장이 없습니다."); return; }
+
+  var many = names.length > 1;
+  var rows = [];
+  names.forEach(function(n){
+    (state.decks[n] || []).forEach(function(c){ rows.push({ who:n, c:c }); });
   });
-  if(!rows.length){ alert(name + " 님의 문장이 아직 없습니다."); return; }
-  var lines = ["스터디 일자,한글,영어"];
-  rows.forEach(function(c){
-    lines.push([csvCell(c.date), csvCell(c.ko), csvCell(c.en)].join(","));
+  rows.sort(function(a,b){
+    if(a.c.date !== b.c.date) return a.c.date < b.c.date ? -1 : 1;
+    return a.who < b.who ? -1 : a.who > b.who ? 1 : 0;
   });
+
+  var lines = [many ? "이름,스터디 일자,한글,영어" : "스터디 일자,한글,영어"];
+  rows.forEach(function(r){
+    var cols = [csvCell(r.c.date), csvCell(r.c.ko), csvCell(r.c.en)];
+    if(many) cols.unshift(csvCell(r.who));
+    lines.push(cols.join(","));
+  });
+
+  var base = many ? (names[0] + " 외 " + (names.length - 1) + "명") : names[0];
   var text = CSV_BOM + lines.join(CSV_CR + CSV_LF);
   var url = URL.createObjectURL(new Blob([text], { type:"text/csv;charset=utf-8" }));
   var a = document.createElement("a");
-  a.href = url; a.download = name + "_문장.csv";
+  a.href = url; a.download = base + "_문장.csv";
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
 }
@@ -600,6 +619,12 @@ function renderMembers(){
 
   $('btnAll').textContent =
     (names.length && state.selNames.length === names.length) ? '전체 해제' : '전체 선택';
+
+  var dlBtn = $('btnDlSel');
+  dlBtn.disabled = !state.selNames.length;
+  dlBtn.textContent = state.selNames.length > 1
+    ? '선택한 ' + state.selNames.length + '명 문장 내려받기'
+    : '선택한 회원 문장 내려받기';
 
   var cbox = $('countChips'); cbox.innerHTML = '';
   [10,20,50,0].forEach(function(v){
@@ -742,6 +767,7 @@ $('btnGate').onclick = function(){
 };
 $('inpPass').onkeydown = function(e){ if(e.key === 'Enter') $('btnGate').onclick(); };
 $('btnSheet').onclick = function(){ window.open(SHARED_SHEET_URL, '_blank', 'noopener'); };
+$('btnDlSel').onclick = function(){ downloadMember(state.selNames.slice()); };
 $('btnAll').onclick = function(){
   var names = dayNames();
   state.selNames = (state.selNames.length === names.length) ? [] : names.slice();
