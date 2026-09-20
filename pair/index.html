@@ -157,13 +157,12 @@
   .day.has.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
 
   /* 이름 카드 */
-  /* 달력 화면에서만 가로를 넓혀 오른쪽에 안내를 둔다. 좁은 화면에서는 달력 아래로 내려간다. */
-  .callay{display:grid;gap:16px}
-  @media (min-width:980px){
-    body.wide .wrap, body.wide header .inner{max-width:944px}
-    .callay{grid-template-columns:1fr 300px;align-items:start}
-  }
-  .guide h3{margin:0 0 14px;font-size:15px;letter-spacing:-.022em}
+  /* 진행 방법 팝업 */
+  .modal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;
+    justify-content:center;padding:18px;background:rgba(18,18,22,.45)}
+  .modal > .card{width:100%;max-width:430px;max-height:84vh;overflow:auto;margin:0}
+  .ghead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .ghead h3{margin:0;font-size:16px;letter-spacing:-.022em}
   .guide .step{margin-top:15px}
   .guide .step:first-of-type{margin-top:0}
   .guide .step b{display:block;font-size:13.5px;margin-bottom:3px;letter-spacing:-.02em}
@@ -302,38 +301,18 @@
   <!-- ── 달력 ── -->
   <section id="scCal" hidden>
     <div id="calMsg"></div>
-    <div class="callay">
-      <div class="card">
-        <div class="calhead">
-          <b id="calLabel">—</b>
-          <div class="navs">
-            <button id="btnPrevM" aria-label="이전 달">‹</button>
-            <button id="btnNextM" aria-label="다음 달">›</button>
-          </div>
+    <div class="card">
+      <div class="calhead">
+        <b id="calLabel">—</b>
+        <div class="navs">
+          <button id="btnPrevM" aria-label="이전 달">‹</button>
+          <button id="btnNextM" aria-label="다음 달">›</button>
         </div>
-        <div class="cal" id="calGrid"></div>
       </div>
-
-      <div class="card guide">
-        <h3>진행 방법</h3>
-        <div class="step">
-          <b>1단계 · 복습</b>
-          <p>파트너의 카드를 선택한 후 한글 문장을 읽어 줍니다. 파트너가 직접 작성하고
-            암기해 온 문장이므로 복습이 됩니다. 서로 번갈아 가며 진행합니다.</p>
-        </div>
-        <div class="step">
-          <b>2단계 · 즉석 영작</b>
-          <p>본인의 카드를 열어 파트너에게 문제를 냅니다. 파트너에게는 처음 보는
-            문장이므로 그 자리에서 영작하게 됩니다.</p>
-        </div>
-        <div class="step">
-          <b>3단계 · 무작위</b>
-          <p>다른 회원의 카드를 선택하여 서로 문제를 냅니다.</p>
-        </div>
-        <div class="tip">2·3단계에서는 [이름 가리기]를 켜면 누구의 문장인지 보이지 않습니다.</div>
-      </div>
+      <div class="cal" id="calGrid"></div>
     </div>
     <div class="row">
+      <button class="btn-sm" id="btnGuide">진행 방법</button>
       <button class="btn-sm" id="btnSheet" hidden>공용문장 열기</button>
       <button class="btn-sm btn-ghost" id="btnReload">시트 새로고침</button>
       <span class="note" id="syncInfo" style="align-self:center"></span>
@@ -384,6 +363,30 @@
 
 </div>
 
+<div class="modal" id="mdGuide" hidden>
+  <div class="card guide">
+    <div class="ghead">
+      <h3>진행 방법</h3>
+      <button class="btn-sm btn-ghost" id="btnGuideClose">닫기</button>
+    </div>
+    <div class="step">
+      <b>1단계 · 복습</b>
+      <p>파트너의 카드를 선택해 한글 문장을 읽어 줌. (각자 문장 복습형태)<br>
+        서로 번갈아 가며 진행함.</p>
+    </div>
+    <div class="step">
+      <b>2단계 · 즉석 영작</b>
+      <p>같은 방식으로 본인의 카드를 선택해 진행함. (새로운 문장 즉석 영작)</p>
+    </div>
+    <div class="step">
+      <b>3단계 · 무작위</b>
+      <p>다른 회원의 카드를 선택해 추가 영작 연습.</p>
+    </div>
+    <div class="tip">단계가 끝날 때마다 각자 공부한 문장과 표현을
+      서로 공유하고 이야기 나눠 보면 좋음.</div>
+  </div>
+</div>
+
 <script>
 (function(){
 "use strict";
@@ -412,8 +415,6 @@ function monthKey(){ var d = new Date(); return d.getFullYear() + '-' + pad2(d.g
 var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz'];
 function show(s){
   SCREENS.forEach(function(x){ $(x).hidden = (x!==s); });
-  // 달력 화면에서만 오른쪽에 안내가 들어갈 자리를 만든다
-  if(document.body.classList) document.body.classList.toggle('wide', s==='scCal');
   $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate' || s==='scQuiz');
   // 관리자가 아니면 설정 버튼 자체가 없다 (회원에게는 이 화면이 존재하지 않는다)
   $('btnSetup').hidden = (s==='scGate') || !state.admin;
@@ -794,7 +795,13 @@ $('btnReveal').onclick = function(){ setReveal($('qEn').hidden); };
 $('btnPrev').onclick = function(){ step(-1); };
 $('btnNext').onclick = function(){ step(1); };
 $('btnQuit').onclick = function(){ renderMembers(); show('scMembers'); };
+
+$('btnGuide').onclick      = function(){ $('mdGuide').hidden = false; };
+$('btnGuideClose').onclick = function(){ $('mdGuide').hidden = true; };
+// 바깥 어두운 곳을 눌러도 닫힌다
+$('mdGuide').onclick = function(ev){ if(ev.target === this) this.hidden = true; };
 document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && !$('mdGuide').hidden){ $('mdGuide').hidden = true; return; }
   if($('scQuiz').hidden) return;
   if(e.key===' '||e.key==='Enter'){ e.preventDefault(); setReveal($('qEn').hidden); }
   else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
