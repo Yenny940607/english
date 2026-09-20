@@ -377,7 +377,7 @@ function monthKey(){ var d = new Date(); return d.getFullYear() + '-' + pad2(d.g
 var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz'];
 function show(s){
   SCREENS.forEach(function(x){ $(x).hidden = (x!==s); });
-  $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate');
+  $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate' || s==='scQuiz');
   // 관리자가 아니면 설정 버튼 자체가 없다 (회원에게는 이 화면이 존재하지 않는다)
   $('btnSetup').hidden = (s==='scGate') || !state.admin;
   window.scrollTo(0,0);
@@ -660,10 +660,7 @@ function step(d){
 }
 
 /* ───────── 이벤트 ───────── */
-$('btnBack').onclick = function(){
-  if(!$('scMembers').hidden){ renderCal(); show('scCal'); }
-  else if(!$('scQuiz').hidden){ renderMembers(); show('scMembers'); }
-};
+$('btnBack').onclick = function(){ renderCal(); show('scCal'); };
 $('btnLogo').onclick = function(){
   if(!state.members.length || !$('scGate').hidden) return;
   renderCal(); show('scCal');
