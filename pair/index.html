@@ -610,7 +610,9 @@ function isShared(n){
 }
 function dayNames(){
   var who = state.byDate[state.selDate] || {};
-  return state.members.filter(function(n){ return who[n] && who[n].length; });
+  var names = state.members.filter(function(n){ return who[n] && who[n].length; });
+  // 모임 공용 문장은 늘 맨 앞에. 나머지는 시트에서 읽은 순서 그대로 둔다.
+  return names.filter(isShared).concat(names.filter(function(n){ return !isShared(n); }));
 }
 function selectedCards(){
   var who = state.byDate[state.selDate] || {}, out = [];
