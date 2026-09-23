@@ -166,9 +166,14 @@
   .modal > .card{width:100%;max-width:430px;max-height:84vh;overflow:auto;margin:0}
   .ghead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
   .ghead h3{margin:0;font-size:16px;letter-spacing:-.022em}
+  .ghead h3 em{font-style:normal;font-size:12.5px;font-weight:500;
+    color:var(--muted);letter-spacing:0;margin-left:5px}
   .guide .step{margin-top:15px}
   .guide .step:first-of-type{margin-top:0}
-  .guide .step b{display:block;font-size:13.5px;margin-bottom:3px;letter-spacing:-.02em}
+  .guide .step b{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    font-size:13.5px;margin-bottom:3px;letter-spacing:-.02em}
+  .guide .step b em{font-style:normal;font-weight:500;font-size:12.5px;
+    color:var(--muted);letter-spacing:0;flex:none}
   .guide .step p{margin:0;font-size:13.5px;line-height:1.6;color:var(--text-2)}
   .guide .tip{margin-top:17px;padding-top:13px;border-top:1px solid var(--line);
     font-size:13.5px;line-height:1.6;color:var(--text);font-weight:600;letter-spacing:-.015em}
@@ -369,21 +374,21 @@
 <div class="modal" id="mdGuide" hidden>
   <div class="card guide">
     <div class="ghead">
-      <h3>진행 방법</h3>
+      <h3>진행 방법 <em>총 60분</em></h3>
       <button class="btn-sm btn-ghost" id="btnGuideClose">닫기</button>
     </div>
     <div class="step">
-      <b>1단계 · 복습</b>
+      <b>1단계 · 복습 <em>20분</em></b>
       <p>파트너의 카드를 선택해 한글 예문 제시, 파트너는 영어로 바꿔 말해보기.<br>
         (각자 문장 복습형태) 서로 번갈아 가며 진행함.</p>
     </div>
     <div class="step">
-      <b>2단계 · 즉석 영작</b>
+      <b>2단계 · 즉석 영작 <em>20분</em></b>
       <p>같은 방식으로 본인의 카드를 선택해 진행.<br>
         (파트너에게는 처음 보는 문장 · 즉석 영작)</p>
     </div>
     <div class="step">
-      <b>3단계 · 무작위</b>
+      <b>3단계 · 무작위 <em>20분</em></b>
       <p>다른 회원의 카드를 선택해 추가 영작 연습.</p>
     </div>
     <div class="tip">각자 공부한 내용과 새로 알게 된 표현에 대해
