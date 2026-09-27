@@ -1526,7 +1526,8 @@
         : ('<button id="rv-hint"' + (rv.hintBusy ? ' disabled' : '') + '>' +
            (rv.hintBusy ? '생각하는 중…'
              : (rv.hint ? (rv.hint.level >= 3 ? '힌트 다시' : '힌트 더') : '힌트')) +
-           '</button>')) +
+           '</button>' +
+           (rv.hint ? '<button id="rv-nohint">힌트 닫기</button>' : ''))) +
       (q.note ? '<button id="rv-note">' + (rv.noteOpen ? '메모 닫기' : '메모') +
                 '</button>' : '') +
       '<span class="grow"></span>' +
@@ -1540,6 +1541,7 @@
     wire('rv-hide', function () { rv.shown = false; renderReview(); });
     wire('rv-note', function () { rv.noteOpen = !rv.noteOpen; renderReview(); });
     wire('rv-hint', rvHint);
+    wire('rv-nohint', function () { rv.hint = null; renderReview(); });
     wire('rv-ok', function () { rvMark(true); });
     wire('rv-no', function () { rvMark(false); });
     wire('rv-prev', function () { rvGo(-1); });
