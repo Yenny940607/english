@@ -500,6 +500,42 @@
       color:var(--ink-2); font-size:1.5rem; margin-bottom:8px;
     }
 
+    /* ---------- 메모장 ---------- */
+    .pad{
+      position:fixed; right:22px; bottom:22px; z-index:45;
+      width:min(340px, calc(100vw - 32px));
+      background:var(--panel); border:1px solid var(--line); border-radius:10px;
+      box-shadow:0 14px 40px rgba(0,0,0,.2); overflow:hidden;
+      display:flex; flex-direction:column;
+    }
+    .pad[hidden]{display:none}
+    .pad-head{
+      display:flex; align-items:center; gap:9px;
+      padding:9px 12px; border-bottom:1px solid var(--line);
+      font-size:.78rem; color:var(--ink-3);
+    }
+    .pad-head b{color:var(--ink); font-size:.82rem}
+    .pad-head .day{font-variant-numeric:tabular-nums}
+    .pad-head .grow{flex:1}
+    .pad-head .state{font-size:.72rem}
+    .pad-head .state.dirty{color:var(--mid)}
+    .pad-head .state.saved{color:var(--ok)}
+    .pad-head .x{
+      border:none; background:none; color:var(--ink-3);
+      font-size:1.1rem; line-height:1; padding:0 2px;
+    }
+    .pad-head .x:hover{color:var(--ink)}
+    .pad textarea{
+      border:none; border-radius:0; background:transparent;
+      height:260px; resize:vertical; padding:12px;
+      font-size:.88rem; line-height:1.7;
+    }
+    .pad textarea:focus{outline:none}
+    @media (max-width:640px){
+      .pad{right:10px; left:10px; bottom:10px; width:auto}
+      .pad textarea{height:180px}
+    }
+
     /* ---------- 주간 복습 팝업 ---------- */
     #modal{
       position:fixed; inset:0; z-index:50; display:flex;
@@ -813,6 +849,7 @@
             <span id="progress"></span>
             <span class="grow"></span>
             <span class="score" id="score"></span>
+            <button class="mini" id="pad-open">메모장</button>
             <button class="mini" id="restart">다시 섞기</button>
           </div>
           <div class="bar"><div id="bar" style="width:0%"></div></div>
@@ -833,6 +870,17 @@
       <button class="mini" id="reload">시트에서 다시 읽기</button>
       <button class="mini" id="open-sheet">시트 열기</button>
     </footer>
+    <div class="pad" id="pad" hidden>
+      <div class="pad-head">
+        <b>메모장</b>
+        <span class="day" id="pad-day"></span>
+        <span class="grow"></span>
+        <span class="state" id="pad-state"></span>
+        <button class="mini" id="pad-save">저장</button>
+        <button class="x" id="pad-close" title="닫기">&times;</button>
+      </div>
+      <textarea id="pad-text" placeholder="생각나는 대로 적어두세요"></textarea>
+    </div>
     <div id="modal" hidden></div>
   </div>
 
@@ -857,11 +905,11 @@
     queue: [],          // 문제 순서 (items 의 인덱스)
     page: 0,            // 몇 번째 묶음
     pageSize: 5,        // 한 화면에 몇 문제
-    answers: {},        // items 인덱스 -> 내가 쓴 답
+
     hints: {},          // items 인덱스 -> {text, level, ai}
     checked: {},        // 되돌리려고 고른 문제
     noteOpen: {},       // 메모를 펼쳐둔 문제
-    saved: {},          // 시트에 넣어둔 답 (점검 전)
+
     apply: {},          // items 인덱스 -> 응용 문제 {busy, list, pos, shown, mine}
     revealed: {},       // 답을 펼쳐둔 문제
     marked: {},         // items 인덱스 -> {status}  (이번에 고른 것)
@@ -872,12 +920,13 @@
     diaryFor: null,     // 지금 화면에 띄운 일기 날짜
     diaryDirty: false,
     notes: [],          // 노트 목록
+    pad: {},            // 날짜 -> 메모장 글
+    padFor: null,       // 지금 열어둔 메모장 날짜
     noteFor: null,      // 지금 표에 띄운 노트 날짜
     noteRows: [],       // 표에 적힌 것 (화면 그대로)
     reviews: [],        // 주간 복습 기록
     history: {},        // 한글 -> [{date, mine}] (펼칠 때 받아옵니다)
     histOpen: {},       // 이력을 펼쳐둔 문제
-    dirtyAnswers: false,
     tally: { done: 0, review: 0 },
     missed: {}          // 틀린 문제 기억 (한글 기준)
   };
@@ -993,6 +1042,8 @@
         state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
       });
       state.notes = (data && data.notes) || [];
+      state.pad = {};
+      ((data && data.pad) || []).forEach(function (e) { state.pad[e.date] = e.text; });
       state.reviews = (data && data.reviews) || [];
       state.hasKey = !!(data && data.hasKey);
       state.loading = false;
@@ -1046,22 +1097,11 @@
     }
     state.queue = idx;
     state.page = 0;
-    state.answers = {};
-    state.saved = {};
     state.apply = {};
-    // 써두고 아직 점검 안 한 답은 그대로 다시 띄웁니다.
-    for (var q = 0; q < state.items.length; q++) {
-      var it0 = state.items[q];
-      if (it0.mine && !it0.status) {
-        state.answers[q] = it0.mine;
-        state.saved[q] = true;
-      }
-    }
     state.checked = {};
     state.noteOpen = {};
     state.revealed = {};
     state.marked = {};
-    state.dirtyAnswers = false;
     state.hints = {};
     state.tally = { done: 0, review: 0 };
   }
@@ -1833,7 +1873,6 @@
 
   function cardHtml(ix, num) {
     var q = state.items[ix];
-    var ans = state.answers[ix] || '';
     var hint = state.hints[ix];
     var open = !!state.revealed[ix];
     var ap = state.apply[ix];
@@ -1867,9 +1906,6 @@
            (hint.ai ? '' : ' · 기본') + '</span>' + esc(hint.text) + '</div>';
     }
 
-    h += '<textarea class="ans" data-ans="' + ix + '" rows="2" ' +
-         'placeholder="영어로 써보세요">' + esc(ans) + '</textarea>';
-
     h += applyHtml(ix);
 
     if (open) {
@@ -1892,10 +1928,6 @@
         (ap && ap.busy ? ' disabled' : '') + '>' +
         (ap && ap.busy ? '만드는 중…' : (ap && ap.list.length ? '응용 더' : '응용')) +
         '</button>' +
-        '<span class="grow"></span>' +
-        '<button class="qsave' + (state.saved[ix] ? ' done' : '') +
-        '" data-save="' + ix + '">' +
-        (state.saved[ix] ? '저장됨' : '저장') + '</button>' +
         '</div>';
     }
     return h + '</li>';
@@ -1940,9 +1972,7 @@
           : '') +
         '<button class="btn-text" data-aclose="' + ix + '">닫기</button>' +
       '</div>' +
-      '<p class="ako">' + esc(cur.ko) + '</p>' +
-      '<textarea class="amine" data-amine="' + ix + '" rows="2" ' +
-      'placeholder="이 문장도 영어로 써보세요">' + esc(ap.mine || '') + '</textarea>';
+      '<p class="ako">' + esc(cur.ko) + '</p>';
 
     if (ap.shown) {
       h += '<div class="rans"><span class="rh"><b>이렇게 쓰면 됩니다</b>' +
@@ -2059,7 +2089,6 @@
     var rest = total - from - p.length;
     var marks = markedOnPage();
     var picks = pickedOnPage();
-    var unsaved = unsavedOnPage();
 
     h += '<div class="page-acts">' +
       (rest > 0
@@ -2069,11 +2098,8 @@
       (picks.length
         ? ('<button class="btn-mid" id="undo-picked">고른 ' + picks.length +
            '개 되돌리기</button>')
-        : unsaved.length
-        ? ('<button class="btn-mid" id="save-page">쓴 ' + unsaved.length +
-           '개 저장</button>')
         : (pageMarked() ? ''
-           : '<span class="note">답을 쓰고 저장하거나, 답을 펼쳐 점검하세요</span>')) +
+           : '<span class="note">입으로 말해보고 답을 펼쳐 점검하세요</span>')) +
       '<span class="grow"></span>' +
       (marks.length
         ? ('<button class="btn-text" id="pick-all">' +
@@ -2098,7 +2124,6 @@
       render();
     });
     wire('undo-picked', function () { undoMany(pickedOnPage()); });
-    wire('save-page', function () { saveThese(unsavedOnPage(), this); });
     wire('pick-all', function () {
       var all = markedOnPage();
       var on = pickedOnPage().length !== all.length;
@@ -2162,6 +2187,7 @@
   function render() {
     renderCal();
     renderScopes();
+    if ($('pad') && !$('pad').hidden) padOpen(true);
     if (state.tab === 'diary') renderDiary();
     else renderQuiz();
     renderNotes();
@@ -2173,7 +2199,7 @@
   function markOne(ix, status) {
     var it = state.items[ix];
     if (!it) return;
-    var mine = state.answers[ix] || '';
+    var mine = null;   // 쓰는 칸이 없으니 시트의 내 답은 그대로 둡니다
 
     // 화면은 바로 바꾸고, 저장은 뒤에서 합니다.
     if (state.marked[ix]) {
@@ -2185,8 +2211,7 @@
       if (status === ST_DONE) state.tally.done++; else state.tally.review++;
       delete state.revealed[ix];
       delete state.hints[ix];
-      delete state.saved[ix];
-      state.answers[ix] = '';
+
     } else {
       delete state.marked[ix];
       state.focusIx = ix;
@@ -2202,39 +2227,6 @@
     });
   }
 
-  /** 아직 안 넣어둔, 뭔가 써놓은 문장들 */
-  function unsavedOnPage() {
-    return pageIdx().filter(function (ix) {
-      return (state.answers[ix] || '').trim() && !state.saved[ix];
-    });
-  }
-
-  /** 써둔 답을 시트에 넣어둡니다. 점검(암기 완료 / 복습 필요)은 나중에. */
-  function saveThese(list, btn) {
-    var send = [], done = [];
-    (list || []).forEach(function (ix) {
-      var it = state.items[ix];
-      if (!it || !it.row) return;
-      var mine = state.answers[ix] || '';
-      if (!mine.trim()) return;
-      it.mine = mine;
-      state.saved[ix] = true;
-      done.push(ix);
-      delete state.history[it.korean];
-      send.push({ row: it.row, korean: it.korean, mine: mine });
-    });
-    if (!send.length) { msg('쓴 답이 없어요.', 'err'); return; }
-
-    if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
-    call('saveAnswers', [send], function () {
-      render();
-      msg(send.length + '개를 넣어뒀어요. 점검은 나중에 하셔도 됩니다.', 'ok');
-    }, function (e) {
-      done.forEach(function (ix) { delete state.saved[ix]; });
-      render();
-      msg(errText(e), 'err');
-    });
-  }
 
   /** 고른 문장들의 표시를 한 번에 지웁니다. */
   function undoMany(list) {
@@ -2251,8 +2243,7 @@
       it.status = '';
       it.checkedOn = '';
       delete state.checked[ix];
-      // 시트에 넣어둔 답은 그대로 두고 다시 띄워줍니다.
-      if (it.mine) { state.answers[ix] = it.mine; state.saved[ix] = true; }
+
       send.push({ row: it.row, korean: it.korean, mine: '', status: '' });
     });
     render();
@@ -2279,7 +2270,7 @@
     state.hints[ix] = { text: '생각하는 중…', level: lv, ai: state.hasKey };
     render();
 
-    call('getHint', [q.korean, q.answer, state.answers[ix] || '', lv], function (res) {
+    call('getHint', [q.korean, q.answer, '', lv], function (res) {
       state.busy = false;
       state.hints[ix] = { text: (res && res.text) || '', level: lv, ai: !!(res && res.ai) };
       render();
@@ -2733,24 +2724,7 @@
     pasteAt(+t.getAttribute('data-r'), +t.getAttribute('data-c'), text);
   });
 
-  /* ---------- 카드 안 버튼·입력 (위임으로 한 번만) ---------- */
-  $('stage').addEventListener('input', function (e) {
-    var ai = e.target.getAttribute && e.target.getAttribute('data-amine');
-    if (ai !== null && ai !== undefined) {
-      if (state.apply[ai]) state.apply[ai].mine = e.target.value;
-      return;
-    }
-    var ix = e.target.getAttribute && e.target.getAttribute('data-ans');
-    if (ix === null || ix === undefined) return;
-    state.answers[ix] = e.target.value;
-    state.dirtyAnswers = true;
-    if (state.saved[ix]) {
-      delete state.saved[ix];
-      var card = e.target.closest('li.q');
-      var sb = card && card.querySelector('[data-save]');
-      if (sb) { sb.textContent = '저장'; sb.className = 'qsave'; }
-    }
-  });
+  /* ---------- 카드 안 버튼 (위임으로 한 번만) ---------- */
 
   $('stage').addEventListener('change', function (e) {
     var ix = e.target.getAttribute && e.target.getAttribute('data-pick');
@@ -2775,8 +2749,7 @@
     }
     ix = b.getAttribute('data-hint');
     if (ix !== null) { doHint(ix); return; }
-    ix = b.getAttribute('data-save');
-    if (ix !== null) { saveThese([ix], b); return; }
+
     ix = b.getAttribute('data-apply');
     if (ix !== null) { askApply(ix); return; }
     ix = b.getAttribute('data-aprev');
@@ -2802,6 +2775,64 @@
       var cut = mk.lastIndexOf(':');
       markOne(mk.slice(cut + 1), mk.slice(0, cut));
       return;
+    }
+  });
+
+  /* ---------- 메모장 ---------- */
+  function padKey() { return state.selDate || todayKey(); }
+
+  function setPadState(kind) {
+    var el = $('pad-state');
+    if (!el) return;
+    if (kind === 'dirty') { el.textContent = '저장 안 됨'; el.className = 'state dirty'; }
+    else if (kind === 'saved') { el.textContent = '저장했어요'; el.className = 'state saved'; }
+    else if (kind === 'saving') { el.textContent = '저장하는 중…'; el.className = 'state'; }
+    else { el.textContent = ''; el.className = 'state'; }
+  }
+
+  function padOpen(on) {
+    var box = $('pad');
+    if (!box) return;
+    if (!on) { box.hidden = true; return; }
+
+    var d = padKey();
+    if (state.padFor !== d) {
+      state.padFor = d;
+      $('pad-text').value = state.pad[d] || '';
+      setPadState();
+    }
+    var p = diaryTitle(d);
+    $('pad-day').textContent = p.title.split('년 ')[1] + ' ' + p.dow;
+    box.hidden = false;
+    if (finePointer()) $('pad-text').focus();
+  }
+
+  function padSaveNow() {
+    var d = state.padFor || padKey();
+    var text = $('pad-text').value;
+    $('pad-save').disabled = true;
+    setPadState('saving');
+    call('savePad', [d, text], function () {
+      $('pad-save').disabled = false;
+      state.pad[d] = text;
+      setPadState('saved');
+    }, function (e) {
+      $('pad-save').disabled = false;
+      setPadState('dirty');
+      msg(errText(e), 'err');
+    });
+  }
+
+  $('pad-open').addEventListener('click', function () {
+    padOpen($('pad').hidden);
+  });
+  $('pad-close').addEventListener('click', function () { padOpen(false); });
+  $('pad-save').addEventListener('click', padSaveNow);
+  $('pad-text').addEventListener('input', function () { setPadState('dirty'); });
+  $('pad-text').addEventListener('keydown', function (e) {
+    if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'Enter')) {
+      e.preventDefault();
+      padSaveNow();
     }
   });
 
@@ -2875,6 +2906,8 @@
         state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
       });
       state.notes = (data && data.notes) || [];
+      state.pad = {};
+      ((data && data.pad) || []).forEach(function (e) { state.pad[e.date] = e.text; });
       state.hasKey = !!(data && data.hasKey);
       build();
       state.diaryFor = null;
