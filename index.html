@@ -500,40 +500,25 @@
       color:var(--ink-2); font-size:1.5rem; margin-bottom:8px;
     }
 
-    /* ---------- 메모장 ---------- */
-    .pad{
-      position:fixed; right:22px; bottom:22px; z-index:45;
-      width:min(340px, calc(100vw - 32px));
-      background:var(--panel); border:1px solid var(--line); border-radius:10px;
-      box-shadow:0 14px 40px rgba(0,0,0,.2); overflow:hidden;
-      display:flex; flex-direction:column;
+    /* ---------- 문장별 메모장 ---------- */
+    .qsave.has{color:var(--sky-ink)}
+    .qsave.has::after{content:" ●"; font-size:.5rem; vertical-align:middle}
+    .padbox{
+      margin-top:10px; padding:10px 12px; border-radius:10px;
+      background:var(--panel); box-shadow:inset 0 0 0 1px var(--line);
     }
-    .pad[hidden]{display:none}
-    .pad-head{
-      display:flex; align-items:center; gap:9px;
-      padding:9px 12px; border-bottom:1px solid var(--line);
-      font-size:.78rem; color:var(--ink-3);
+    .phead{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+    .phead .grow{flex:1}
+    .phead .tag{
+      font-size:.62rem; font-weight:600; letter-spacing:.06em;
+      color:var(--ink-3); background:var(--sunken);
+      padding:2px 7px; border-radius:99px;
     }
-    .pad-head b{color:var(--ink); font-size:.82rem}
-    .pad-head .day{font-variant-numeric:tabular-nums}
-    .pad-head .grow{flex:1}
-    .pad-head .state{font-size:.72rem}
-    .pad-head .state.dirty{color:var(--mid)}
-    .pad-head .state.saved{color:var(--ok)}
-    .pad-head .x{
-      border:none; background:none; color:var(--ink-3);
-      font-size:1.1rem; line-height:1; padding:0 2px;
-    }
-    .pad-head .x:hover{color:var(--ink)}
-    .pad textarea{
-      border:none; border-radius:0; background:transparent;
-      height:260px; resize:vertical; padding:12px;
-      font-size:.88rem; line-height:1.7;
-    }
-    .pad textarea:focus{outline:none}
-    @media (max-width:640px){
-      .pad{right:10px; left:10px; bottom:10px; width:auto}
-      .pad textarea{height:180px}
+    .phead .state{font-size:.72rem; color:var(--ok)}
+    .phead .state.dirty{color:var(--mid)}
+    .phead .btn-text{font-size:.74rem}
+    textarea.ptext{
+      background:var(--ground); font-size:.88rem; line-height:1.65;
     }
 
     /* ---------- 주간 복습 팝업 ---------- */
@@ -849,7 +834,6 @@
             <span id="progress"></span>
             <span class="grow"></span>
             <span class="score" id="score"></span>
-            <button class="mini" id="pad-open">메모장</button>
             <button class="mini" id="restart">다시 섞기</button>
           </div>
           <div class="bar"><div id="bar" style="width:0%"></div></div>
@@ -870,17 +854,6 @@
       <button class="mini" id="reload">시트에서 다시 읽기</button>
       <button class="mini" id="open-sheet">시트 열기</button>
     </footer>
-    <div class="pad" id="pad" hidden>
-      <div class="pad-head">
-        <b>메모장</b>
-        <span class="day" id="pad-day"></span>
-        <span class="grow"></span>
-        <span class="state" id="pad-state"></span>
-        <button class="mini" id="pad-save">저장</button>
-        <button class="x" id="pad-close" title="닫기">&times;</button>
-      </div>
-      <textarea id="pad-text" placeholder="생각나는 대로 적어두세요"></textarea>
-    </div>
     <div id="modal" hidden></div>
   </div>
 
@@ -920,8 +893,9 @@
     diaryFor: null,     // 지금 화면에 띄운 일기 날짜
     diaryDirty: false,
     notes: [],          // 노트 목록
-    pad: {},            // 날짜 -> 메모장 글
-    padFor: null,       // 지금 열어둔 메모장 날짜
+    padOpen: {},        // 메모장을 펼쳐둔 문장
+    padDirty: {},       // 아직 저장 안 한 메모장
+    padSaved: {},       // 방금 저장한 메모장
     noteFor: null,      // 지금 표에 띄운 노트 날짜
     noteRows: [],       // 표에 적힌 것 (화면 그대로)
     reviews: [],        // 주간 복습 기록
@@ -1042,8 +1016,7 @@
         state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
       });
       state.notes = (data && data.notes) || [];
-      state.pad = {};
-      ((data && data.pad) || []).forEach(function (e) { state.pad[e.date] = e.text; });
+
       state.reviews = (data && data.reviews) || [];
       state.hasKey = !!(data && data.hasKey);
       state.loading = false;
@@ -1098,6 +1071,9 @@
     state.queue = idx;
     state.page = 0;
     state.apply = {};
+    state.padOpen = {};
+    state.padDirty = {};
+    state.padSaved = {};
     state.checked = {};
     state.noteOpen = {};
     state.revealed = {};
@@ -1895,6 +1871,8 @@
               'title="표시를 지우고 안 한 상태로 되돌립니다">되돌리기</button>' : '') +
         (q.note ? '<button class="qsave" data-note="' + ix + '">' +
                   (state.noteOpen[ix] ? '메모 닫기' : '메모') + '</button>' : '') +
+        '<button class="qsave' + (q.pad ? ' has' : '') + '" data-pad="' + ix + '">' +
+        (state.padOpen[ix] ? '메모장 닫기' : '메모장') + '</button>' +
         '<button class="qsave hist" data-hist="' + ix + '">' +
         (state.histOpen[ix] ? '이력 닫기' : '이력') + '</button>' +
       '</div>' +
@@ -1906,6 +1884,7 @@
            (hint.ai ? '' : ' · 기본') + '</span>' + esc(hint.text) + '</div>';
     }
 
+    h += padHtml(ix);
     h += applyHtml(ix);
 
     if (open) {
@@ -1944,6 +1923,46 @@
   /** 지금 범위 전체에서 표시가 붙어 있는 문장들 */
   function scopeMarkedAll() {
     return state.queue.filter(function (ix) { return !!statusOf(ix); });
+  }
+
+  /* ---------- 문장별 메모장 ---------- */
+  function padHtml(ix) {
+    if (!state.padOpen[ix]) return '';
+    var q = state.items[ix];
+    var dirty = state.padDirty[ix];
+    return '<div class="padbox">' +
+      '<div class="phead">' +
+        '<span class="tag">메모장</span>' +
+        '<span class="grow"></span>' +
+        '<span class="state' + (dirty ? ' dirty' : '') + '">' +
+        (dirty === 'saving' ? '저장하는 중…'
+          : (dirty ? '저장 안 됨' : (state.padSaved[ix] ? '저장했어요' : ''))) +
+        '</span>' +
+        '<button class="btn-text" data-padsave="' + ix + '">저장</button>' +
+      '</div>' +
+      '<textarea class="ptext" data-ptext="' + ix + '" rows="3" ' +
+      'placeholder="이 문장에 대해 적어두고 싶은 것">' + esc(q.pad || '') + '</textarea>' +
+      '</div>';
+  }
+
+  function padSaveNow(ix) {
+    var q = state.items[ix];
+    if (!q || !q.row) return;
+    var box = $('stage').querySelector('[data-ptext="' + ix + '"]');
+    var text = box ? box.value : (q.pad || '');
+
+    state.padDirty[ix] = 'saving';
+    render();
+    call('savePad', [q.row, text], function () {
+      q.pad = text;
+      delete state.padDirty[ix];
+      state.padSaved[ix] = true;
+      render();
+    }, function (e) {
+      state.padDirty[ix] = true;
+      render();
+      msg(errText(e), 'err');
+    });
   }
 
   /* ---------- 응용 (메모를 길잡이로 새 문장 만들기) ---------- */
@@ -2188,7 +2207,6 @@
   function render() {
     renderCal();
     renderScopes();
-    if ($('pad') && !$('pad').hidden) padOpen(true);
     if (state.tab === 'diary') renderDiary();
     else renderQuiz();
     renderNotes();
@@ -2725,7 +2743,25 @@
     pasteAt(+t.getAttribute('data-r'), +t.getAttribute('data-c'), text);
   });
 
-  /* ---------- 카드 안 버튼 (위임으로 한 번만) ---------- */
+  /* ---------- 카드 안 버튼·메모장 (위임으로 한 번만) ---------- */
+  $('stage').addEventListener('input', function (e) {
+    var ix = e.target.getAttribute && e.target.getAttribute('data-ptext');
+    if (ix === null || ix === undefined) return;
+    if (state.padDirty[ix] === true) return;      // 이미 표시해 뒀습니다
+    state.padDirty[ix] = true;
+    delete state.padSaved[ix];
+    var st = e.target.closest('.padbox').querySelector('.state');
+    if (st) { st.textContent = '저장 안 됨'; st.className = 'state dirty'; }
+  });
+
+  $('stage').addEventListener('keydown', function (e) {
+    var ix = e.target.getAttribute && e.target.getAttribute('data-ptext');
+    if (ix === null || ix === undefined) return;
+    if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'Enter')) {
+      e.preventDefault();
+      padSaveNow(ix);
+    }
+  });
 
   $('stage').addEventListener('change', function (e) {
     var ix = e.target.getAttribute && e.target.getAttribute('data-pick');
@@ -2741,6 +2777,16 @@
     if (!b) return;
     var ix = b.getAttribute('data-hist');
     if (ix !== null) { toggleHist(ix); return; }
+    ix = b.getAttribute('data-pad');
+    if (ix !== null) {
+      if (state.padOpen[ix]) delete state.padOpen[ix];
+      else { state.padOpen[ix] = true; state.focusIx = null; }
+      delete state.padSaved[ix];
+      render();
+      return;
+    }
+    ix = b.getAttribute('data-padsave');
+    if (ix !== null) { padSaveNow(ix); return; }
     ix = b.getAttribute('data-note');
     if (ix !== null) {
       if (state.noteOpen[ix]) delete state.noteOpen[ix];
@@ -2776,64 +2822,6 @@
       var cut = mk.lastIndexOf(':');
       markOne(mk.slice(cut + 1), mk.slice(0, cut));
       return;
-    }
-  });
-
-  /* ---------- 메모장 ---------- */
-  function padKey() { return state.selDate || todayKey(); }
-
-  function setPadState(kind) {
-    var el = $('pad-state');
-    if (!el) return;
-    if (kind === 'dirty') { el.textContent = '저장 안 됨'; el.className = 'state dirty'; }
-    else if (kind === 'saved') { el.textContent = '저장했어요'; el.className = 'state saved'; }
-    else if (kind === 'saving') { el.textContent = '저장하는 중…'; el.className = 'state'; }
-    else { el.textContent = ''; el.className = 'state'; }
-  }
-
-  function padOpen(on) {
-    var box = $('pad');
-    if (!box) return;
-    if (!on) { box.hidden = true; return; }
-
-    var d = padKey();
-    if (state.padFor !== d) {
-      state.padFor = d;
-      $('pad-text').value = state.pad[d] || '';
-      setPadState();
-    }
-    var p = diaryTitle(d);
-    $('pad-day').textContent = p.title.split('년 ')[1] + ' ' + p.dow;
-    box.hidden = false;
-    if (finePointer()) $('pad-text').focus();
-  }
-
-  function padSaveNow() {
-    var d = state.padFor || padKey();
-    var text = $('pad-text').value;
-    $('pad-save').disabled = true;
-    setPadState('saving');
-    call('savePad', [d, text], function () {
-      $('pad-save').disabled = false;
-      state.pad[d] = text;
-      setPadState('saved');
-    }, function (e) {
-      $('pad-save').disabled = false;
-      setPadState('dirty');
-      msg(errText(e), 'err');
-    });
-  }
-
-  $('pad-open').addEventListener('click', function () {
-    padOpen($('pad').hidden);
-  });
-  $('pad-close').addEventListener('click', function () { padOpen(false); });
-  $('pad-save').addEventListener('click', padSaveNow);
-  $('pad-text').addEventListener('input', function () { setPadState('dirty'); });
-  $('pad-text').addEventListener('keydown', function (e) {
-    if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'Enter')) {
-      e.preventDefault();
-      padSaveNow();
     }
   });
 
@@ -2907,8 +2895,7 @@
         state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
       });
       state.notes = (data && data.notes) || [];
-      state.pad = {};
-      ((data && data.pad) || []).forEach(function (e) { state.pad[e.date] = e.text; });
+
       state.hasKey = !!(data && data.hasKey);
       build();
       state.diaryFor = null;
