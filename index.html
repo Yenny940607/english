@@ -530,6 +530,16 @@
     }
     .rv-quit:hover{opacity:1}
 
+    /* 원문 / 응용 고르기 */
+    .rv-modes{display:flex; gap:2px; flex:none}
+    .rv-modes button{
+      padding:3px 10px; border:none; border-radius:99px;
+      background:transparent; color:#fff; opacity:.55;
+      font-size:.74rem; font-weight:600;
+    }
+    .rv-modes button:hover{opacity:.85}
+    .rv-modes button.on{background:rgba(255,255,255,.2); opacity:1}
+
     .rv-card{
       background:var(--ground); border-radius:14px; padding:26px 24px;
       min-height:230px; display:flex; flex-direction:column; justify-content:center;
@@ -551,6 +561,25 @@
     .rv-en{
       margin:16px 0 0; padding-top:15px; border-top:1px solid var(--line);
       font-size:1.12rem; line-height:1.55; color:var(--accent);
+    }
+    .rv-point{
+      font-size:.66rem; font-weight:600; letter-spacing:.04em;
+      color:var(--sky-ink); background:var(--sky);
+      padding:2px 8px; border-radius:99px;
+      min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .rv-wait{
+      margin:0; font-size:1rem; line-height:1.5; color:var(--ink-3);
+      word-break:keep-all;
+    }
+    .rv-retry{
+      margin-top:12px; padding:7px 14px; border:none; border-radius:8px;
+      background:var(--sunken); color:var(--ink); font-size:.8rem; font-weight:600;
+    }
+    .rv-retry:hover{background:var(--line)}
+    .rv-from{
+      margin:14px 0 0; padding-top:11px; border-top:1px dashed var(--line);
+      font-size:.74rem; color:var(--ink-3); word-break:keep-all;
     }
     .rv-memo{
       margin:12px 0 0; padding-left:11px; border-left:2px solid var(--line);
@@ -707,7 +736,17 @@
       .sheet.rv{max-height:none; overflow:visible}
       .rv-scope{display:none}
       .rv-ko{font-size:1.24rem}
-      .rv-card{min-height:190px; padding:22px 18px}
+      /* 원문 / 응용 고르기 */
+    .rv-modes{display:flex; gap:2px; flex:none}
+    .rv-modes button{
+      padding:3px 10px; border:none; border-radius:99px;
+      background:transparent; color:#fff; opacity:.55;
+      font-size:.74rem; font-weight:600;
+    }
+    .rv-modes button:hover{opacity:.85}
+    .rv-modes button.on{background:rgba(255,255,255,.2); opacity:1}
+
+    .rv-card{min-height:190px; padding:22px 18px}
     }
     /* 손가락으로 쓰는 화면에는 마우스를 올릴 수가 없습니다 */
     @media (hover:none){
@@ -1392,7 +1431,9 @@
   var rv = {
     open: false, key: '', kind: '주간', queue: [], pos: 0,
     shown: false, marks: {}, saving: false,
-    noteOpen: false, hint: null, hintBusy: false
+    noteOpen: false, hint: null, hintBusy: false,
+    mode: 'base',   // base = 적어둔 문장 그대로, apply = 응용 문장
+    vari: {}       // 자리 -> {busy, ko, en, point, err}
   };
 
   /** 지금 복습하는 범위 이름 (9.6 – 9.12 / 2026년 9월) */
@@ -1438,7 +1479,8 @@
     }
     rv = { open: true, key: key, kind: scope, queue: idx, pos: 0,
            shown: false, marks: {}, saving: false,
-           noteOpen: false, hint: null, hintBusy: false };
+           noteOpen: false, hint: null, hintBusy: false,
+           mode: 'base', vari: {} };
     renderReview();
     document.body.style.overflow = 'hidden';
   }
@@ -1512,24 +1554,48 @@
     var mark = rv.marks[rv.pos] || '';
     var pct = Math.round((rv.pos + (rv.shown ? 1 : 0)) * 100 / total);
 
+    var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
+
     h += '<div class="rv-top">' +
-      '<span class="rv-scope">' + esc(rvScopeLabel()) + '</span>' +
+      '<span class="rv-modes">' +
+        '<button id="rv-base"' + (rv.mode === 'base' ? ' class="on"' : '') +
+        '>원문</button>' +
+        '<button id="rv-apply"' + (rv.mode === 'apply' ? ' class="on"' : '') +
+        '>응용</button>' +
+      '</span>' +
       '<span class="rv-n">' + (rv.pos + 1) + ' / ' + total + '</span>' +
       '<div class="rv-bar"><div style="width:' + pct + '%"></div></div>' +
       '<button class="rv-quit" id="rv-close">그만</button>' +
       '</div>';
 
+    // 응용 모드에서는 AI 가 만든 새 문장을 냅니다.
+    var askKo = q.korean, askEn = q.answer, wait = false, oops = '';
+    if (rv.mode === 'apply') {
+      if (!va || va.busy) { wait = true; }
+      else if (va.err) { oops = va.err; }
+      else { askKo = va.ko; askEn = va.en; }
+    }
+
     h += '<div class="rv-card">' +
       '<div class="rv-head">' +
         '<span class="rv-date">' + esc(rvDate(q.date)) + '</span>' +
+        (rv.mode === 'apply' && va && va.point
+          ? '<span class="rv-point">' + esc(va.point) + '</span>' : '') +
         (mark ? '<span class="tag ' + (mark === ST_DONE ? 'ok' : 'rv') + '">' +
                 esc(mark) + '</span>' : '') +
       '</div>' +
-      '<p class="rv-ko">' + esc(q.korean) + '</p>' +
-      (rv.shown
-        ? ('<p class="rv-en">' +
-           (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</p>')
-        : '') +
+      (wait
+        ? '<p class="rv-wait">응용 문장을 만드는 중…</p>'
+        : (oops
+          ? ('<p class="rv-wait">' + esc(oops) + '</p>' +
+             '<button class="rv-retry" id="rv-revar">다시 만들기</button>')
+          : ('<p class="rv-ko">' + esc(askKo) + '</p>' +
+             (rv.shown
+               ? ('<p class="rv-en">' +
+                  (askEn ? esc(askEn) : '영어 문장이 비어 있어요') + '</p>')
+               : '')))) +
+      (rv.mode === 'apply' && !wait && !oops
+        ? '<p class="rv-from">원문 — ' + esc(q.korean) + '</p>' : '') +
       (rv.noteOpen && q.note ? '<p class="rv-memo">' + esc(q.note) + '</p>' : '') +
       (rv.hint && rv.hint.text && !rv.shown
         ? '<p class="rv-hint">' + esc(rv.hint.text) + '</p>' : '') +
@@ -1541,7 +1607,8 @@
         '<button class="rv-main rev" id="rv-no">복습 필요</button>' +
         '</div>';
     } else {
-      h += '<button class="rv-main" id="rv-show">정답 확인</button>';
+      h += '<button class="rv-main" id="rv-show"' +
+        (wait || oops ? ' disabled' : '') + '>정답 확인</button>';
     }
 
     h += '<div class="rv-nav">' +
@@ -1558,6 +1625,8 @@
            (rv.hint ? '<button id="rv-nohint">힌트 닫기</button>' : ''))) +
       (q.note ? '<button id="rv-note">' + (rv.noteOpen ? '메모 닫기' : '메모') +
                 '</button>' : '') +
+      (rv.mode === 'apply' && !wait
+        ? '<button id="rv-revar">다른 문장</button>' : '') +
       '<span class="grow"></span>' +
       '<span class="rv-cnt">암기 ' + t.done + ' · 복습 ' + t.review + '</span>' +
       '</div>';
@@ -1574,6 +1643,50 @@
     wire('rv-no', function () { rvMark(false); });
     wire('rv-prev', function () { rvGo(-1); });
     wire('rv-next', function () { rvGo(1); });
+    wire('rv-base', function () { rvMode('base'); });
+    wire('rv-apply', function () { rvMode('apply'); });
+    wire('rv-revar', function () { rvVar(rv.pos, true); });
+  }
+
+  /* ---------- 응용편 ---------- */
+  function rvMode(m) {
+    if (rv.mode === m) return;
+    rv.mode = m;
+    rv.shown = false;
+    rv.hint = null;
+    renderReview();
+    if (m === 'apply') rvVar(rv.pos);
+  }
+
+  /** 그 자리의 응용 문장을 받아옵니다. again 이면 새로 하나 더 뽑습니다. */
+  function rvVar(pos, again) {
+    if (pos < 0 || pos >= rv.queue.length) return;
+    var cur = rv.vari[pos];
+    if (cur && cur.busy) return;
+    if (cur && !cur.err && !again) return;
+
+    var q = state.items[rv.queue[pos]];
+    if (!q) return;
+
+    var seen = (cur && cur.ko) ? [cur.ko] : [];
+    rv.vari[pos] = { busy: true, ko: '', en: '', point: '', err: '' };
+    if (pos === rv.pos) { rv.shown = false; renderReview(); }
+
+    call('getVariation', [q.korean, q.answer, q.note, seen], function (res) {
+      if (res && res.ok) {
+        rv.vari[pos] = { busy: false, ko: res.ko, en: res.en,
+                         point: res.point, err: '' };
+      } else {
+        rv.vari[pos] = { busy: false, ko: '', en: '', point: '',
+          err: (res && res.message) || '응용 문장을 못 만들었어요.' };
+      }
+      if (rv.open) renderReview();
+      // 다음 장을 미리 받아두면 기다림이 줄어듭니다.
+      if (rv.open && rv.mode === 'apply' && pos === rv.pos) rvVar(pos + 1);
+    }, function (e) {
+      rv.vari[pos] = { busy: false, ko: '', en: '', point: '', err: errText(e) };
+      if (rv.open) renderReview();
+    });
   }
 
   function rvHint() {
@@ -1581,8 +1694,12 @@
     if (!q) return;
     var lv = rv.hint ? Math.min(3, rv.hint.level + 1) : 1;
 
-    // 시트에 답이 있으면 바로 만들어 보여줍니다.
-    var local = localHint(q.answer, lv);
+    // 응용편에서는 그 응용 문장의 영어로 힌트를 만듭니다.
+    var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
+    if (rv.mode === 'apply' && (!va || va.busy || va.err)) return;
+    var base = va ? va.en : q.answer;
+
+    var local = localHint(base, lv);
     if (local) {
       rv.hint = { text: local, level: lv };
       renderReview();
@@ -1592,7 +1709,7 @@
     // 답이 비어 있으면 그때만 서버에 물어봅니다.
     rv.hintBusy = true;
     renderReview();
-    call('getHint', [q.korean, q.answer, '', lv], function (res) {
+    call('getHint', [va ? va.ko : q.korean, base, '', lv], function (res) {
       rv.hintBusy = false;
       rv.hint = { text: (res && res.text) || '', level: lv };
       renderReview();
@@ -1618,6 +1735,7 @@
     rv.noteOpen = false;
     rv.hint = null;
     renderReview();
+    if (rv.mode === 'apply') rvVar(rv.pos);
   }
 
   function rvMark(ok) {
