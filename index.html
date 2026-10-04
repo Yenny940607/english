@@ -434,6 +434,11 @@
       font-size:.74rem; color:var(--ink-3); min-width:0;
       overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
+    .ahead .asaved{
+      flex:none; font-size:.62rem; color:var(--ink-3);
+      background:var(--panel); padding:2px 7px; border-radius:99px;
+      white-space:nowrap;
+    }
     .ahead .btn-text{font-size:.74rem}
     .ako{
       margin:0 0 8px; font-family:var(--font-say); font-size:1.02rem;
@@ -1668,23 +1673,27 @@
     var q = state.items[rv.queue[pos]];
     if (!q) return;
 
-    var seen = (cur && cur.ko) ? [cur.ko] : [];
-    rv.vari[pos] = { busy: true, ko: '', en: '', point: '', err: '' };
+    var seen = (cur && cur.seen) ? cur.seen.slice() : [];
+    if (cur && cur.ko && seen.indexOf(cur.ko) === -1) seen.push(cur.ko);
+    rv.vari[pos] = { busy: true, ko: '', en: '', point: '', err: '', seen: seen };
     if (pos === rv.pos) { rv.shown = false; renderReview(); }
 
     call('getVariation', [q.korean, q.answer, q.note, seen], function (res) {
       if (res && res.ok) {
+        if (seen.indexOf(res.ko) === -1) seen.push(res.ko);
         rv.vari[pos] = { busy: false, ko: res.ko, en: res.en,
-                         point: res.point, err: '' };
+                         point: res.point, err: '', saved: !!res.saved,
+                         seen: seen };
       } else {
-        rv.vari[pos] = { busy: false, ko: '', en: '', point: '',
+        rv.vari[pos] = { busy: false, ko: '', en: '', point: '', seen: seen,
           err: (res && res.message) || '응용 문장을 못 만들었어요.' };
       }
       if (rv.open) renderReview();
       // 다음 장을 미리 받아두면 기다림이 줄어듭니다.
       if (rv.open && rv.mode === 'apply' && pos === rv.pos) rvVar(pos + 1);
     }, function (e) {
-      rv.vari[pos] = { busy: false, ko: '', en: '', point: '', err: errText(e) };
+      rv.vari[pos] = { busy: false, ko: '', en: '', point: '', seen: seen,
+                       err: errText(e) };
       if (rv.open) renderReview();
     });
   }
@@ -1920,6 +1929,8 @@
       '<div class="ahead">' +
         '<span class="tag">응용 ' + (ap.pos + 1) + '/' + ap.list.length + '</span>' +
         (cur.point ? '<span class="apoint">' + esc(cur.point) + '</span>' : '') +
+        (cur.saved ? '<span class="asaved" title="전에 만들어 둔 것입니다">쌓아둔 것' +
+                     (cur.on ? ' · ' + esc(cur.on) : '') + '</span>' : '') +
         '<span class="grow"></span>' +
         (ap.list.length > 1
           ? ('<button class="btn-text" data-aprev="' + ix + '"' +
@@ -1965,7 +1976,8 @@
         msg((res && res.message) || '응용 문장을 못 만들었어요.', 'err');
         return;
       }
-      ap.list.push({ ko: res.ko, en: res.en, point: res.point });
+      ap.list.push({ ko: res.ko, en: res.en, point: res.point,
+                     saved: !!res.saved, on: res.on || '' });
       ap.pos = ap.list.length - 1;
       ap.shown = false;
       ap.mine = '';
