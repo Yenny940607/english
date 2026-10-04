@@ -417,6 +417,32 @@
       color:var(--mid); text-transform:uppercase; margin-bottom:3px;
     }
 
+    /* 응용 — 같은 표현으로 다른 문장 써보기 */
+    .applybox{
+      margin-top:10px; padding:12px 14px; border-radius:10px;
+      background:var(--sunken); border-left:2px solid var(--sky-ink);
+    }
+    .applybox.quiet{color:var(--ink-3); font-size:.8rem; border-left-color:var(--line)}
+    .ahead{display:flex; align-items:center; gap:10px; margin-bottom:7px}
+    .ahead .grow{flex:1}
+    .ahead .tag{
+      flex:none; font-size:.62rem; font-weight:600; letter-spacing:.06em;
+      color:var(--sky-ink); background:var(--sky);
+      padding:2px 7px; border-radius:99px; white-space:nowrap;
+    }
+    .ahead .apoint{
+      font-size:.74rem; color:var(--ink-3); min-width:0;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .ahead .btn-text{font-size:.74rem}
+    .ako{
+      margin:0 0 8px; font-family:var(--font-say); font-size:1.02rem;
+      line-height:1.5; word-break:keep-all;
+    }
+    .applybox textarea{background:var(--panel)}
+    .applybox .rans{margin-top:10px}
+    .applybox .acts{margin-top:6px}
+
     /* 답을 펼쳤을 때 고르는 두 버튼 */
     .btn-go.sm{padding:9px 20px; font-size:.82rem}
     .btn-mid{
@@ -792,6 +818,7 @@
     checked: {},        // 되돌리려고 고른 문제
     noteOpen: {},       // 메모를 펼쳐둔 문제
     saved: {},          // 시트에 넣어둔 답 (점검 전)
+    apply: {},          // items 인덱스 -> 응용 문제 {busy, list, pos, shown, mine}
     revealed: {},       // 답을 펼쳐둔 문제
     marked: {},         // items 인덱스 -> {status}  (이번에 고른 것)
     busy: false,
@@ -977,6 +1004,7 @@
     state.page = 0;
     state.answers = {};
     state.saved = {};
+    state.apply = {};
     // 써두고 아직 점검 안 한 답은 그대로 다시 띄웁니다.
     for (var q = 0; q < state.items.length; q++) {
       var it0 = state.items[q];
@@ -1681,6 +1709,7 @@
     var ans = state.answers[ix] || '';
     var hint = state.hints[ix];
     var open = !!state.revealed[ix];
+    var ap = state.apply[ix];
     var st = statusOf(ix);
     var n2 = num < 10 ? ('0' + num) : String(num);
 
@@ -1714,6 +1743,8 @@
     h += '<textarea class="ans" data-ans="' + ix + '" rows="2" ' +
          'placeholder="영어로 써보세요">' + esc(ans) + '</textarea>';
 
+    h += applyHtml(ix);
+
     if (open) {
       h += '<div class="rans">' +
         '<span class="rh"><b>적어둔 답</b>' +
@@ -1730,6 +1761,10 @@
         (hint ? (hint.level >= 3 ? '힌트 다시' : '힌트 더') : '힌트') + '</button>' +
         (hint ? '<button class="btn-text" data-nohint="' + ix + '">힌트 닫기</button>' : '') +
         '<button class="btn-text" data-show="' + ix + '">답 보기</button>' +
+        '<button class="btn-text" data-apply="' + ix + '"' +
+        (ap && ap.busy ? ' disabled' : '') + '>' +
+        (ap && ap.busy ? '만드는 중…' : (ap && ap.list.length ? '응용 더' : '응용')) +
+        '</button>' +
         '<span class="grow"></span>' +
         '<button class="qsave' + (state.saved[ix] ? ' done' : '') +
         '" data-save="' + ix + '">' +
@@ -1750,6 +1785,91 @@
   /** 지금 범위 전체에서 표시가 붙어 있는 문장들 */
   function scopeMarkedAll() {
     return state.queue.filter(function (ix) { return !!statusOf(ix); });
+  }
+
+  /* ---------- 응용 (메모를 길잡이로 새 문장 만들기) ---------- */
+  function applyHtml(ix) {
+    var ap = state.apply[ix];
+    if (!ap) return '';
+
+    if (ap.busy && !ap.list.length) {
+      return '<div class="applybox quiet">응용 문장을 만드는 중…</div>';
+    }
+    var cur = ap.list[ap.pos];
+    if (!cur) return '';
+
+    var h = '<div class="applybox">' +
+      '<div class="ahead">' +
+        '<span class="tag">응용 ' + (ap.pos + 1) + '/' + ap.list.length + '</span>' +
+        (cur.point ? '<span class="apoint">' + esc(cur.point) + '</span>' : '') +
+        '<span class="grow"></span>' +
+        (ap.list.length > 1
+          ? ('<button class="btn-text" data-aprev="' + ix + '"' +
+             (ap.pos === 0 ? ' disabled' : '') + '>‹</button>' +
+             '<button class="btn-text" data-anext="' + ix + '"' +
+             (ap.pos >= ap.list.length - 1 ? ' disabled' : '') + '>›</button>')
+          : '') +
+        '<button class="btn-text" data-aclose="' + ix + '">닫기</button>' +
+      '</div>' +
+      '<p class="ako">' + esc(cur.ko) + '</p>' +
+      '<textarea class="amine" data-amine="' + ix + '" rows="2" ' +
+      'placeholder="이 문장도 영어로 써보세요">' + esc(ap.mine || '') + '</textarea>';
+
+    if (ap.shown) {
+      h += '<div class="rans"><span class="rh"><b>이렇게 쓰면 됩니다</b>' +
+        '<button class="btn-text" data-ahide="' + ix + '">가리기</button></span>' +
+        (cur.en ? esc(cur.en) : '영어 문장을 못 받았어요') + '</div>';
+    } else {
+      h += '<div class="acts">' +
+        '<button class="btn-text" data-ashow="' + ix + '">답 보기</button>' +
+        '</div>';
+    }
+    return h + '</div>';
+  }
+
+  /** 응용 문제를 하나 더 받아옵니다. */
+  function askApply(ix) {
+    var q = state.items[ix];
+    if (!q) return;
+    var ap = state.apply[ix];
+    if (!ap) ap = state.apply[ix] = { busy: false, list: [], pos: 0, shown: false, mine: '' };
+    if (ap.busy) return;
+
+    ap.busy = true;
+    render();
+
+    var seen = ap.list.map(function (x) { return x.ko; });
+    call('getVariation', [q.korean, q.answer, q.note, seen], function (res) {
+      ap.busy = false;
+      if (!res || !res.ok) {
+        if (!ap.list.length) delete state.apply[ix];
+        render();
+        msg((res && res.message) || '응용 문장을 못 만들었어요.', 'err');
+        return;
+      }
+      ap.list.push({ ko: res.ko, en: res.en, point: res.point });
+      ap.pos = ap.list.length - 1;
+      ap.shown = false;
+      ap.mine = '';
+      msg('');
+      render();
+    }, function (e) {
+      ap.busy = false;
+      if (!ap.list.length) delete state.apply[ix];
+      render();
+      msg(errText(e), 'err');
+    });
+  }
+
+  function applyGo(ix, step) {
+    var ap = state.apply[ix];
+    if (!ap) return;
+    var p = ap.pos + step;
+    if (p < 0 || p >= ap.list.length) return;
+    ap.pos = p;
+    ap.shown = false;
+    ap.mine = '';
+    render();
   }
 
   function pageMarked() {
@@ -2485,6 +2605,11 @@
 
   /* ---------- 카드 안 버튼·입력 (위임으로 한 번만) ---------- */
   $('stage').addEventListener('input', function (e) {
+    var ai = e.target.getAttribute && e.target.getAttribute('data-amine');
+    if (ai !== null && ai !== undefined) {
+      if (state.apply[ai]) state.apply[ai].mine = e.target.value;
+      return;
+    }
     var ix = e.target.getAttribute && e.target.getAttribute('data-ans');
     if (ix === null || ix === undefined) return;
     state.answers[ix] = e.target.value;
@@ -2522,6 +2647,18 @@
     if (ix !== null) { doHint(ix); return; }
     ix = b.getAttribute('data-save');
     if (ix !== null) { saveThese([ix], b); return; }
+    ix = b.getAttribute('data-apply');
+    if (ix !== null) { askApply(ix); return; }
+    ix = b.getAttribute('data-aprev');
+    if (ix !== null) { applyGo(ix, -1); return; }
+    ix = b.getAttribute('data-anext');
+    if (ix !== null) { applyGo(ix, 1); return; }
+    ix = b.getAttribute('data-ashow');
+    if (ix !== null) { state.apply[ix].shown = true; render(); return; }
+    ix = b.getAttribute('data-ahide');
+    if (ix !== null) { state.apply[ix].shown = false; render(); return; }
+    ix = b.getAttribute('data-aclose');
+    if (ix !== null) { delete state.apply[ix]; render(); return; }
     ix = b.getAttribute('data-nohint');
     if (ix !== null) { delete state.hints[ix]; state.focusIx = ix; render(); return; }
     ix = b.getAttribute('data-show');
