@@ -1970,7 +1970,6 @@
              '<button class="btn-text" data-anext="' + ix + '"' +
              (ap.pos >= ap.list.length - 1 ? ' disabled' : '') + '>›</button>')
           : '') +
-        '<button class="btn-text" data-aclose="' + ix + '">닫기</button>' +
       '</div>' +
       '<p class="ako">' + esc(cur.ko) + '</p>';
 
@@ -1978,11 +1977,13 @@
       h += '<div class="rans"><span class="rh"><b>이렇게 쓰면 됩니다</b>' +
         '<button class="btn-text" data-ahide="' + ix + '">가리기</button></span>' +
         (cur.en ? esc(cur.en) : '영어 문장을 못 받았어요') + '</div>';
-    } else {
-      h += '<div class="acts">' +
-        '<button class="btn-text" data-ashow="' + ix + '">답 보기</button>' +
-        '</div>';
     }
+
+    h += '<div class="acts">' +
+      (ap.shown ? ''
+        : '<button class="btn-text" data-ashow="' + ix + '">답 보기</button>') +
+      '<button class="btn-text" data-aclose="' + ix + '">응용 닫기</button>' +
+      '</div>';
     return h + '</div>';
   }
 
