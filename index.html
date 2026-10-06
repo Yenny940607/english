@@ -440,7 +440,16 @@
       white-space:nowrap;
     }
     .ahead .btn-text{font-size:.74rem}
-    .ahead .akeep{flex:none}
+
+    /* 네모는 문장 왼쪽에, 손가락으로도 누르기 좋게 */
+    .aitem{display:flex; align-items:flex-start; gap:11px}
+    .abody{flex:1; min-width:0}
+    .akeep{flex:none; margin-top:1px; padding:3px}
+    .akeep.ghost{width:26px; height:26px}
+    .akeep .box{width:20px; height:20px; border-radius:5px}
+    .akeep input:checked + .box::after{
+      left:6px; top:2px; width:5px; height:11px; border-width:0 2px 2px 0;
+    }
     .aitem + .aitem, .aitem.more{
       margin-top:12px; padding-top:12px; border-top:1px solid var(--line);
     }
@@ -450,14 +459,13 @@
       margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
     }
     .afoot .grow{flex:1}
-    .afoot .note{font-size:.72rem; color:var(--ink-3)}
     .afoot .btn-text{font-size:.78rem}
     .ako{
       margin:0 0 8px; font-family:var(--font-say); font-size:1.02rem;
       line-height:1.5; word-break:keep-all;
     }
     .applybox textarea{background:var(--panel)}
-    .applybox .rans{margin-top:10px}
+    .applybox .rans{margin-top:10px; border-left-color:var(--sky-ink)}
     .applybox .acts{margin-top:6px}
 
     /* 답을 펼쳤을 때 고르는 두 버튼 */
@@ -1994,6 +2002,12 @@
     for (var j = 0; j < ap.list.length; j++) {
       var cur = ap.list[j];
       h += '<div class="aitem' + (j ? ' more' : '') + '">' +
+        (cur.saved
+          ? '<span class="akeep ghost"></span>'
+          : ('<label class="pick akeep" title="저장할 문장 고르기">' +
+             '<input type="checkbox" data-akeep="' + ix + ':' + j + '"' +
+             (cur.keep ? ' checked' : '') + '><span class="box"></span></label>')) +
+        '<div class="abody">' +
         '<div class="ahead">' +
           '<span class="tag">응용 ' + (j + 1) + '</span>' +
           (cur.point ? '<span class="apoint">' + esc(cur.point) + '</span>' : '') +
@@ -2001,25 +2015,21 @@
             ? ('<span class="asaved" title="전에 쌓아둔 것입니다">쌓아둔 것' +
                (cur.on ? ' · ' + esc(cur.on) : '') + '</span>')
             : '') +
-          '<span class="grow"></span>' +
-          (cur.saved
-            ? ''
-            : ('<label class="pick akeep" title="저장할 문장 고르기">' +
-               '<input type="checkbox" data-akeep="' + ix + ':' + j + '"' +
-               (cur.keep ? ' checked' : '') + '><span class="box"></span></label>')) +
         '</div>' +
         '<p class="ako">' + esc(cur.ko) + '</p>';
 
       if (cur.shown) {
-        h += '<div class="rans"><span class="rh"><b>이렇게 쓰면 됩니다</b>' +
-          '<button class="btn-text" data-ahide="' + ix + ':' + j + '">가리기</button></span>' +
-          (cur.en ? esc(cur.en) : '영어 문장을 못 받았어요') + '</div>';
+        h += '<div class="rans">' +
+          (cur.en ? esc(cur.en) : '영어 문장을 못 받았어요') + '</div>' +
+          '<div class="acts">' +
+          '<button class="btn-text" data-ahide="' + ix + ':' + j + '">가리기</button>' +
+          '</div>';
       } else {
         h += '<div class="acts">' +
           '<button class="btn-text" data-ashow="' + ix + ':' + j + '">답 보기</button>' +
           '</div>';
       }
-      h += '</div>';
+      h += '</div></div>';
     }
 
     if (ap.busy) h += '<div class="aitem more quiet">응용 문장을 만드는 중…</div>';
@@ -2030,7 +2040,7 @@
         ? ('<button class="btn-text lead" data-asave="' + ix + '"' +
            (ap.saving ? ' disabled' : '') + '>' +
            (ap.saving ? '저장하는 중…' : ('고른 ' + keeps + '개 저장')) + '</button>')
-        : '<span class="note">네모를 치고 저장하면 이 문장의 응용으로 쌓입니다</span>') +
+        : '') +
       '<span class="grow"></span>' +
       '<button class="btn-text" data-aclose="' + ix + '">응용 닫기</button>' +
       '</div>';
