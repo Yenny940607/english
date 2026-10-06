@@ -345,6 +345,8 @@
     li.q.done .qn{color:var(--accent)}
     .qtop{display:flex; align-items:flex-start; gap:14px}
     .qtop .qko{flex:1; min-width:0}
+    .qko.foldable{cursor:pointer}
+    .qko.foldable:hover{color:var(--accent)}
     .qsave{
       flex:none; margin-top:2px; padding:2px 0; font-size:.73rem;
       color:var(--ink-3); border-bottom:1px solid transparent;
@@ -1948,7 +1950,10 @@
           : n2) +
       '</span>' +
       '<div class="qtop">' +
-        '<p class="qko">' + esc(q.korean) + '</p>' +
+        '<p class="qko' + (ap && ap.list.length ? ' foldable' : '') + '"' +
+        (ap && ap.list.length
+          ? (' data-kofold="' + ix + '" title="눌러서 응용 접기"') : '') +
+        '>' + esc(q.korean) + '</p>' +
         (st ? '<span class="tag ' + (st === ST_DONE ? 'ok' : 'rv') + '">' +
               esc(st) + '</span>' +
               '<button class="qsave undo" data-unmark="' + ix + '" ' +
@@ -1968,15 +1973,18 @@
            (hint.ai ? '' : ' · 기본') + '</span>' + esc(hint.text) + '</div>';
     }
 
-    h += padHtml(ix);
-    h += applyHtml(ix);
-
     if (open) {
       h += '<div class="rans">' +
         '<span class="rh"><b>적어둔 답</b>' +
         '<button class="btn-text" data-hide="' + ix + '">가리기</button></span>' +
-        (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</div>' +
-        '<div class="acts">' +
+        (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</div>';
+    }
+
+    h += padHtml(ix);
+    h += applyHtml(ix);
+
+    if (open) {
+      h += '<div class="acts">' +
         '<button class="btn-go sm" data-mark="' + ST_DONE + ':' + ix + '">암기 완료</button>' +
         '<button class="btn-mid" data-mark="' + ST_REVIEW + ':' + ix + '">복습 필요</button>' +
         '</div>';
@@ -2943,6 +2951,15 @@
 
   $('stage').addEventListener('click', function (e) {
     if (!e.target.closest) return;
+
+    // 원문 문장을 누르면 펼쳐둔 응용을 접습니다.
+    var fold = e.target.closest('[data-kofold]');
+    if (fold && !e.target.closest('button')) {
+      delete state.apply[fold.getAttribute('data-kofold')];
+      render();
+      return;
+    }
+
     var b = e.target.closest('button');
     if (!b) return;
     var ix = b.getAttribute('data-hist');
