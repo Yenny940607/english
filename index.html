@@ -893,6 +893,7 @@
     token: '',
     items: [], hasKey: false, loading: true,
     y: now.getFullYear(), m: now.getMonth(),
+    stale: false,       // 지난번 것을 먼저 띄운 상태
     scope: 'all',       // all | today | week | review | done | date
     selDate: '',
     queue: [],          // 문제 순서 (items 의 인덱스)
@@ -1028,27 +1029,69 @@
     post(fn, [state.token].concat(args), ok, bad);
   }
 
-  function load(quiet) {
-    if (!quiet) { state.loading = true; render(); }
-    call('listAll', [], function (data) {
-      state.items = (data && data.items) || [];
-      state.diary = {};
-      ((data && data.diary) || []).forEach(function (e) {
-        state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
-      });
-      state.notes = (data && data.notes) || [];
-      state.vars = {};
-      ((data && data.vars) || []).forEach(function (v) {
-        (state.vars[v.of] = state.vars[v.of] || []).push(v);
-      });
+  /*
+   * 지난번에 받아둔 것을 브라우저에 남겨뒀다가 먼저 띄웁니다.
+   * 그래서 열자마자 바로 보이고, 시트는 뒤에서 조용히 다시 읽습니다.
+   */
+  var SNAP = 'study.snap';
 
-      state.reviews = (data && data.reviews) || [];
-      state.hasKey = !!(data && data.hasKey);
+  function saveSnap(data) {
+    try { localStorage.setItem(SNAP, JSON.stringify(data)); } catch (e) {}
+  }
+  function loadSnap() {
+    try {
+      var d = JSON.parse(localStorage.getItem(SNAP) || 'null');
+      return (d && d.items && d.items.length) ? d : null;
+    } catch (e) { return null; }
+  }
+
+  function applyData(data) {
+    state.items = (data && data.items) || [];
+    state.diary = {};
+    ((data && data.diary) || []).forEach(function (e) {
+      state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
+    });
+    state.notes = (data && data.notes) || [];
+    state.vars = {};
+    ((data && data.vars) || []).forEach(function (v) {
+      (state.vars[v.of] = state.vars[v.of] || []).push(v);
+    });
+    state.reviews = (data && data.reviews) || [];
+    state.hasKey = !!(data && data.hasKey);
+  }
+
+  /** 문장들이 그대로인지 가볍게 견줍니다. */
+  function stamp(items) {
+    var a = items || [];
+    if (!a.length) return '0';
+    return a.length + '|' + a[0].korean + '|' + a[a.length - 1].korean;
+  }
+
+  function load(quiet) {
+    var snap = quiet ? null : loadSnap();
+    if (snap) {
+      applyData(snap);
       state.loading = false;
+      state.stale = true;
       build();
+      render();
+    } else if (!quiet) {
+      state.loading = true;
+      render();
+    }
+    var was = stamp(state.items);
+
+    call('listAll', [], function (data) {
+      applyData(data);
+      state.loading = false;
+      state.stale = false;
+      saveSnap(data);
+      // 문장이 그대로면 풀던 순서를 흔들지 않습니다.
+      if (!snap || stamp(state.items) !== was) build();
       render();
     }, function (e) {
       state.loading = false;
+      state.stale = false;
       render();
       msg(errText(e), 'err');
     });
@@ -1200,7 +1243,10 @@
     }
     var days = 0;
     for (var dk in state.diary) { if (state.diary.hasOwnProperty(dk)) days++; }
-    $('tally').textContent = state.loading
+    $('tally').textContent = state.stale
+      ? ((state.tab === 'diary' ? ('일기 ' + days + '일치')
+                                 : ('시트에 ' + state.items.length + '문장')) + ' · 다시 읽는 중…')
+      : state.loading
       ? '불러오는 중…'
       : (state.tab === 'diary'
           ? ('일기 ' + days + '일치')
@@ -2357,8 +2403,7 @@
     render();
 
     call('markItem', [it.row, it.korean, mine, status], function (res) {
-      it.checkedOn = (res && res.checkedOn) || '';
-      if (status) { it.mine = mine; delete state.history[it.korean]; }
+      if (status) delete state.history[it.korean];
     }, function (e) {
       msg(errText(e), 'err');
     });
@@ -2378,7 +2423,6 @@
         delete state.marked[ix];
       }
       it.status = '';
-      it.checkedOn = '';
       delete state.checked[ix];
 
       send.push({ row: it.row, korean: it.korean, mine: '', status: '' });
