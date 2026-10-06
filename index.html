@@ -1945,6 +1945,9 @@
         (ap && ap.busy ? ' disabled' : '') + '>' +
         (ap && ap.busy ? '만드는 중…' : (ap && ap.list.length ? '응용 더' : '응용')) +
         '</button>' +
+        (ap && ap.list.length
+          ? '<button class="btn-text" data-aclose="' + ix + '">응용 닫기</button>'
+          : '') +
         '</div>';
     }
     return h + '</li>';
@@ -2053,15 +2056,13 @@
     if (ap.busy) h += '<div class="aitem more quiet">응용 문장을 만드는 중…</div>';
 
     var keeps = keepCount(ix);
-    h += '<div class="afoot">' +
-      (keeps
-        ? ('<button class="btn-text lead" data-asave="' + ix + '"' +
-           (ap.saving ? ' disabled' : '') + '>' +
-           (ap.saving ? '저장하는 중…' : ('고른 ' + keeps + '개 저장')) + '</button>')
-        : '') +
-      '<span class="grow"></span>' +
-      '<button class="btn-text" data-aclose="' + ix + '">응용 닫기</button>' +
-      '</div>';
+    if (keeps) {
+      h += '<div class="afoot">' +
+        '<button class="btn-text lead" data-asave="' + ix + '"' +
+        (ap.saving ? ' disabled' : '') + '>' +
+        (ap.saving ? '저장하는 중…' : ('고른 ' + keeps + '개 저장')) + '</button>' +
+        '</div>';
+    }
 
     return h + '</div>';
   }
