@@ -913,6 +913,7 @@
     diaryFor: null,     // 지금 화면에 띄운 일기 날짜
     diaryDirty: false,
     notes: [],          // 노트 목록
+    vars: {},           // 한글 -> 쌓아둔 응용들 (미리 받아둡니다)
     padOpen: {},        // 메모장을 펼쳐둔 문장
     padDirty: {},       // 아직 저장 안 한 메모장
     padSaved: {},       // 방금 저장한 메모장
@@ -1036,6 +1037,10 @@
         state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
       });
       state.notes = (data && data.notes) || [];
+      state.vars = {};
+      ((data && data.vars) || []).forEach(function (v) {
+        (state.vars[v.of] = state.vars[v.of] || []).push(v);
+      });
 
       state.reviews = (data && data.reviews) || [];
       state.hasKey = !!(data && data.hasKey);
@@ -1711,6 +1716,19 @@
 
     var seen = (cur && cur.seen) ? cur.seen.slice() : [];
     if (cur && cur.ko && seen.indexOf(cur.ko) === -1) seen.push(cur.ko);
+
+    // 쌓아둔 게 남아 있으면 기다릴 것 없이 바로 띄웁니다.
+    var had = state.vars[q.korean] || [];
+    for (var i = 0; i < had.length; i++) {
+      if (seen.indexOf(had[i].ko) !== -1) continue;
+      seen.push(had[i].ko);
+      rv.vari[pos] = { busy: false, ko: had[i].ko, en: had[i].en,
+                       point: had[i].point, err: '', saved: true, seen: seen };
+      if (pos === rv.pos) { rv.shown = false; renderReview(); }
+      if (rv.open && rv.mode === 'apply' && pos === rv.pos) rvVar(pos + 1);
+      return;
+    }
+
     rv.vari[pos] = { busy: true, ko: '', en: '', point: '', err: '', seen: seen };
     if (pos === rv.pos) { rv.shown = false; renderReview(); }
 
@@ -2058,13 +2076,36 @@
     return n;
   }
 
-  /** 응용 문제를 하나 더 받아 아래에 붙입니다. */
+  /** 쌓아둔 것 중 아직 안 꺼낸 게 있으면 그걸 줍니다. (서버에 안 다녀옵니다) */
+  function nextStored(ix) {
+    var q = state.items[ix];
+    var had = (q && state.vars[q.korean]) || [];
+    var ap = state.apply[ix];
+    var out = ap ? ap.list.map(function (x) { return x.ko; }) : [];
+    for (var i = 0; i < had.length; i++) {
+      if (out.indexOf(had[i].ko) === -1) return had[i];
+    }
+    return null;
+  }
+
+  /** 응용 문제를 하나 더 아래에 붙입니다. */
   function askApply(ix) {
     var q = state.items[ix];
     if (!q) return;
     var ap = state.apply[ix];
     if (!ap) ap = state.apply[ix] = { busy: false, saving: false, list: [] };
     if (ap.busy) return;
+
+    // 쌓아둔 게 남아 있으면 기다릴 것 없이 바로 띄웁니다.
+    var got = nextStored(ix);
+    if (got) {
+      ap.list.push({ ko: got.ko, en: got.en, point: got.point,
+                     saved: true, on: got.on || '',
+                     shown: false, keep: false });
+      msg('');
+      render();
+      return;
+    }
 
     ap.busy = true;
     render();
@@ -2112,10 +2153,13 @@
     call('saveVars', [q.korean, send], function (res) {
       ap.saving = false;
       var on = (res && res.on) || '';
+      var box = (state.vars[q.korean] = state.vars[q.korean] || []);
       mine.forEach(function (j) {
         ap.list[j].saved = true;
         ap.list[j].keep = false;
         ap.list[j].on = on;
+        box.push({ of: q.korean, ko: ap.list[j].ko, en: ap.list[j].en,
+                   point: ap.list[j].point, on: on });
       });
       render();
       msg(send.length + '개를 이 문장의 응용으로 쌓았어요.', 'ok');
@@ -2980,6 +3024,10 @@
         state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
       });
       state.notes = (data && data.notes) || [];
+      state.vars = {};
+      ((data && data.vars) || []).forEach(function (v) {
+        (state.vars[v.of] = state.vars[v.of] || []).push(v);
+      });
 
       state.hasKey = !!(data && data.hasKey);
       build();
