@@ -440,6 +440,18 @@
       white-space:nowrap;
     }
     .ahead .btn-text{font-size:.74rem}
+    .ahead .akeep{flex:none}
+    .aitem + .aitem, .aitem.more{
+      margin-top:12px; padding-top:12px; border-top:1px solid var(--line);
+    }
+    .aitem.quiet{color:var(--ink-3); font-size:.8rem}
+    .afoot{
+      display:flex; align-items:center; gap:14px;
+      margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
+    }
+    .afoot .grow{flex:1}
+    .afoot .note{font-size:.72rem; color:var(--ink-3)}
+    .afoot .btn-text{font-size:.78rem}
     .ako{
       margin:0 0 8px; font-family:var(--font-say); font-size:1.02rem;
       line-height:1.5; word-break:keep-all;
@@ -1966,52 +1978,82 @@
   }
 
   /* ---------- 응용 (메모를 길잡이로 새 문장 만들기) ---------- */
+  /*
+   * '응용 더' 를 누르면 아래로 한 장씩 쌓입니다.
+   * 마음에 드는 것만 네모를 치고 저장하면 시트 '응용' 장에 남습니다.
+   */
   function applyHtml(ix) {
     var ap = state.apply[ix];
     if (!ap) return '';
-
-    if (ap.busy && !ap.list.length) {
-      return '<div class="applybox quiet">응용 문장을 만드는 중…</div>';
-    }
-    var cur = ap.list[ap.pos];
-    if (!cur) return '';
-
-    var h = '<div class="applybox">' +
-      '<div class="ahead">' +
-        '<span class="tag">응용 ' + (ap.pos + 1) + '/' + ap.list.length + '</span>' +
-        (cur.point ? '<span class="apoint">' + esc(cur.point) + '</span>' : '') +
-        (cur.saved ? '<span class="asaved" title="전에 만들어 둔 것입니다">쌓아둔 것' +
-                     (cur.on ? ' · ' + esc(cur.on) : '') + '</span>' : '') +
-        '<span class="grow"></span>' +
-        (ap.list.length > 1
-          ? ('<button class="btn-text" data-aprev="' + ix + '"' +
-             (ap.pos === 0 ? ' disabled' : '') + '>‹</button>' +
-             '<button class="btn-text" data-anext="' + ix + '"' +
-             (ap.pos >= ap.list.length - 1 ? ' disabled' : '') + '>›</button>')
-          : '') +
-      '</div>' +
-      '<p class="ako">' + esc(cur.ko) + '</p>';
-
-    if (ap.shown) {
-      h += '<div class="rans"><span class="rh"><b>이렇게 쓰면 됩니다</b>' +
-        '<button class="btn-text" data-ahide="' + ix + '">가리기</button></span>' +
-        (cur.en ? esc(cur.en) : '영어 문장을 못 받았어요') + '</div>';
+    if (!ap.list.length) {
+      return ap.busy ? '<div class="applybox quiet">응용 문장을 만드는 중…</div>' : '';
     }
 
-    h += '<div class="acts">' +
-      (ap.shown ? ''
-        : '<button class="btn-text" data-ashow="' + ix + '">답 보기</button>') +
+    var h = '<div class="applybox">';
+
+    for (var j = 0; j < ap.list.length; j++) {
+      var cur = ap.list[j];
+      h += '<div class="aitem' + (j ? ' more' : '') + '">' +
+        '<div class="ahead">' +
+          '<span class="tag">응용 ' + (j + 1) + '</span>' +
+          (cur.point ? '<span class="apoint">' + esc(cur.point) + '</span>' : '') +
+          (cur.saved
+            ? ('<span class="asaved" title="전에 쌓아둔 것입니다">쌓아둔 것' +
+               (cur.on ? ' · ' + esc(cur.on) : '') + '</span>')
+            : '') +
+          '<span class="grow"></span>' +
+          (cur.saved
+            ? ''
+            : ('<label class="pick akeep" title="저장할 문장 고르기">' +
+               '<input type="checkbox" data-akeep="' + ix + ':' + j + '"' +
+               (cur.keep ? ' checked' : '') + '><span class="box"></span></label>')) +
+        '</div>' +
+        '<p class="ako">' + esc(cur.ko) + '</p>';
+
+      if (cur.shown) {
+        h += '<div class="rans"><span class="rh"><b>이렇게 쓰면 됩니다</b>' +
+          '<button class="btn-text" data-ahide="' + ix + ':' + j + '">가리기</button></span>' +
+          (cur.en ? esc(cur.en) : '영어 문장을 못 받았어요') + '</div>';
+      } else {
+        h += '<div class="acts">' +
+          '<button class="btn-text" data-ashow="' + ix + ':' + j + '">답 보기</button>' +
+          '</div>';
+      }
+      h += '</div>';
+    }
+
+    if (ap.busy) h += '<div class="aitem more quiet">응용 문장을 만드는 중…</div>';
+
+    var keeps = keepCount(ix);
+    h += '<div class="afoot">' +
+      (keeps
+        ? ('<button class="btn-text lead" data-asave="' + ix + '"' +
+           (ap.saving ? ' disabled' : '') + '>' +
+           (ap.saving ? '저장하는 중…' : ('고른 ' + keeps + '개 저장')) + '</button>')
+        : '<span class="note">네모를 치고 저장하면 이 문장의 응용으로 쌓입니다</span>') +
+      '<span class="grow"></span>' +
       '<button class="btn-text" data-aclose="' + ix + '">응용 닫기</button>' +
       '</div>';
+
     return h + '</div>';
   }
 
-  /** 응용 문제를 하나 더 받아옵니다. */
+  function keepCount(ix) {
+    var ap = state.apply[ix];
+    if (!ap) return 0;
+    var n = 0;
+    for (var j = 0; j < ap.list.length; j++) {
+      if (ap.list[j].keep && !ap.list[j].saved) n++;
+    }
+    return n;
+  }
+
+  /** 응용 문제를 하나 더 받아 아래에 붙입니다. */
   function askApply(ix) {
     var q = state.items[ix];
     if (!q) return;
     var ap = state.apply[ix];
-    if (!ap) ap = state.apply[ix] = { busy: false, list: [], pos: 0, shown: false, mine: '' };
+    if (!ap) ap = state.apply[ix] = { busy: false, saving: false, list: [] };
     if (ap.busy) return;
 
     ap.busy = true;
@@ -2027,10 +2069,8 @@
         return;
       }
       ap.list.push({ ko: res.ko, en: res.en, point: res.point,
-                     saved: !!res.saved, on: res.on || '' });
-      ap.pos = ap.list.length - 1;
-      ap.shown = false;
-      ap.mine = '';
+                     saved: !!res.saved, on: res.on || '',
+                     shown: false, keep: false });
       msg('');
       render();
     }, function (e) {
@@ -2041,17 +2081,40 @@
     });
   }
 
-  function applyGo(ix, step) {
+  /** 네모 친 것들을 시트 '응용' 장에 쌓습니다. */
+  function applySave(ix) {
+    var q = state.items[ix];
     var ap = state.apply[ix];
-    if (!ap) return;
-    var p = ap.pos + step;
-    if (p < 0 || p >= ap.list.length) return;
-    ap.pos = p;
-    ap.shown = false;
-    ap.mine = '';
-    render();
-  }
+    if (!q || !ap || ap.saving) return;
 
+    var send = [], mine = [];
+    for (var j = 0; j < ap.list.length; j++) {
+      var c = ap.list[j];
+      if (!c.keep || c.saved) continue;
+      send.push({ ko: c.ko, en: c.en, point: c.point });
+      mine.push(j);
+    }
+    if (!send.length) return;
+
+    ap.saving = true;
+    render();
+
+    call('saveVars', [q.korean, send], function (res) {
+      ap.saving = false;
+      var on = (res && res.on) || '';
+      mine.forEach(function (j) {
+        ap.list[j].saved = true;
+        ap.list[j].keep = false;
+        ap.list[j].on = on;
+      });
+      render();
+      msg(send.length + '개를 이 문장의 응용으로 쌓았어요.', 'ok');
+    }, function (e) {
+      ap.saving = false;
+      render();
+      msg(errText(e), 'err');
+    });
+  }
   function pageMarked() {
     var p = pageIdx();
     if (!p.length) return false;
@@ -2764,6 +2827,14 @@
   });
 
   $('stage').addEventListener('change', function (e) {
+    var ak = e.target.getAttribute && e.target.getAttribute('data-akeep');
+    if (ak !== null && ak !== undefined) {
+      var p = ak.split(':');
+      var ap = state.apply[p[0]];
+      if (ap && ap.list[p[1]]) ap.list[p[1]].keep = e.target.checked;
+      render();
+      return;
+    }
     var ix = e.target.getAttribute && e.target.getAttribute('data-pick');
     if (ix === null || ix === undefined) return;
     if (e.target.checked) state.checked[ix] = true;
@@ -2799,14 +2870,18 @@
 
     ix = b.getAttribute('data-apply');
     if (ix !== null) { askApply(ix); return; }
-    ix = b.getAttribute('data-aprev');
-    if (ix !== null) { applyGo(ix, -1); return; }
-    ix = b.getAttribute('data-anext');
-    if (ix !== null) { applyGo(ix, 1); return; }
-    ix = b.getAttribute('data-ashow');
-    if (ix !== null) { state.apply[ix].shown = true; render(); return; }
-    ix = b.getAttribute('data-ahide');
-    if (ix !== null) { state.apply[ix].shown = false; render(); return; }
+    var pair = b.getAttribute('data-ashow') || b.getAttribute('data-ahide');
+    if (pair !== null) {
+      var pp = pair.split(':');
+      var ap0 = state.apply[pp[0]];
+      if (ap0 && ap0.list[pp[1]]) {
+        ap0.list[pp[1]].shown = (b.getAttribute('data-ashow') !== null);
+        render();
+      }
+      return;
+    }
+    ix = b.getAttribute('data-asave');
+    if (ix !== null) { applySave(ix); return; }
     ix = b.getAttribute('data-aclose');
     if (ix !== null) { delete state.apply[ix]; render(); return; }
     ix = b.getAttribute('data-nohint');
