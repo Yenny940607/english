@@ -1071,12 +1071,18 @@
       bad(new Error('서버 주소가 없어요.'));
       return;
     }
-    var tries = (left === undefined) ? 3 : left;
+    var tries = (left === undefined) ? 2 : left;
     function again() {
       if (tries <= 1) return false;
       setTimeout(function () { post(fn, args, ok, bad, tries - 1); }, 800);
       return true;
     }
+
+    var gaveUp = false;
+    var bell = setTimeout(function () {
+      gaveUp = true;
+      bad(new Error('너무 오래 걸려요. 잠시 뒤에 다시 눌러주세요.'));
+    }, 40000);
 
     fetch(API, {
       method: 'POST',
@@ -1086,6 +1092,8 @@
     })
       .then(function (r) { return r.text(); })
       .then(function (t) {
+        if (gaveUp) return;
+        clearTimeout(bell);
         var res = null;
         try { res = JSON.parse(t); } catch (e) { res = null; }
 
@@ -1102,6 +1110,8 @@
         ok(res.data);
       })
       .catch(function () {
+        if (gaveUp) return;
+        clearTimeout(bell);
         if (again()) return;
         bad(new Error('연결이 안 돼요. 잠시 뒤에 다시 해보세요.'));
       });
