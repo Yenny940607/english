@@ -547,6 +547,59 @@
       background:var(--ground); font-size:.88rem; line-height:1.65;
     }
 
+    /* ---------- 목소리 고르기 ---------- */
+    .vbox{
+      position:fixed; inset:0; z-index:55; display:flex;
+      align-items:center; justify-content:center; padding:20px;
+      background:rgba(18,19,22,.6);
+    }
+    .vbox[hidden]{display:none}
+    .vinner{
+      width:100%; max-width:460px; max-height:84vh; overflow-y:auto;
+      background:var(--ground); border-radius:12px; padding:16px 18px 18px;
+      box-shadow:0 18px 50px rgba(0,0,0,.26);
+    }
+    .vhead{display:flex; align-items:center; gap:10px; margin-bottom:12px}
+    .vhead b{font-size:.92rem}
+    .vhead .grow{flex:1}
+    .vhead .x{
+      border:none; background:none; color:var(--ink-3);
+      font-size:1.2rem; line-height:1; padding:0 2px;
+    }
+    .vgroup{margin-bottom:16px}
+    .vlab{
+      font-size:.66rem; font-weight:600; letter-spacing:.09em;
+      color:var(--ink-3); text-transform:uppercase; margin-bottom:6px;
+    }
+    .vlab .n{font-weight:400; letter-spacing:0; text-transform:none}
+    .vrow{
+      display:flex; align-items:center; gap:8px;
+      padding:7px 9px; border-radius:8px;
+    }
+    .vrow + .vrow{margin-top:2px}
+    .vrow.on{background:var(--sky)}
+    .vrow .grow{flex:1}
+    .vuse{
+      border:none; background:none; padding:0; text-align:left;
+      font-size:.84rem; color:var(--ink-2); min-width:0;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .vrow.on .vuse{color:var(--sky-ink); font-weight:600}
+    .vrow .good{
+      flex:none; font-size:.6rem; font-weight:600; color:var(--ok);
+      background:var(--sunken); padding:2px 6px; border-radius:99px;
+    }
+    .vtry{
+      flex:none; border:none; border-radius:6px; padding:4px 9px;
+      background:var(--sunken); color:var(--ink-2); font-size:.74rem;
+    }
+    .vtry:hover{background:var(--line); color:var(--ink)}
+    .vnone{margin:0; font-size:.8rem; color:var(--ink-3)}
+    .vtip{
+      margin:0; padding-top:12px; border-top:1px solid var(--line);
+      font-size:.74rem; line-height:1.6; color:var(--ink-3);
+    }
+
     /* ---------- 주간 복습 팝업 ---------- */
     #modal{
       position:fixed; inset:0; z-index:50; display:flex;
@@ -894,10 +947,12 @@
     <footer>
       <span id="ai-state">—</span>
       <button class="mini" id="ai-test">AI 연결 확인</button>
+      <button class="mini" id="voice-pick">목소리 고르기</button>
       <span class="grow"></span>
       <button class="mini" id="reload">시트에서 다시 읽기</button>
       <button class="mini" id="open-sheet">시트 열기</button>
     </footer>
+    <div class="vbox" id="vbox" hidden></div>
     <div id="modal" hidden></div>
   </div>
 
@@ -1972,6 +2027,90 @@
     if (rv.shown && (e.key === '2' || e.key === 'x')) { e.preventDefault(); rvMark(false); }
   });
 
+  /* ---------- 목소리 고르기 ---------- */
+  var VSAMPLE = {
+    ko: '오늘 하루도 고생 많으셨어요.',
+    en: 'You have been doing really well lately.'
+  };
+
+  function voiceBoxHtml() {
+    var pref = voicePrefs();
+    var h = '<div class="vinner">' +
+      '<div class="vhead"><b>목소리 고르기</b>' +
+      '<span class="grow"></span>' +
+      '<button class="x" id="v-close" title="닫기">&times;</button></div>';
+
+    [['ko', '한국어', 'ko-KR'], ['en', '영어', 'en-US']].forEach(function (g) {
+      var list = voicesFor(g[2]);
+      h += '<div class="vgroup"><div class="vlab">' + g[1] +
+        ' <span class="n">' + list.length + '개</span></div>';
+      if (!list.length) {
+        h += '<p class="vnone">이 기기에 ' + g[1] + ' 목소리가 없어요.</p>';
+      }
+      for (var i = 0; i < list.length && i < 12; i++) {
+        var v = list[i];
+        var on = pref[g[0]] ? (pref[g[0]] === v.name) : (i === 0);
+        h += '<div class="vrow' + (on ? ' on' : '') + '">' +
+          '<button class="vuse" data-vuse="' + g[0] + '|' + esc(v.name) + '">' +
+          (on ? '● ' : '○ ') + esc(v.name) + '</button>' +
+          '<span class="grow"></span>' +
+          (voiceScore(v) >= 5 ? '<span class="good">또렷함</span>' : '') +
+          '<button class="vtry" data-vtry="' + g[2] + '|' + esc(v.name) + '">▶ 들어보기</button>' +
+          '</div>';
+      }
+      h += '</div>';
+    });
+
+    return h + '<p class="vtip">기기에 깔린 목소리만 나옵니다. ' +
+      '윈도우라면 설정 → 시간 및 언어 → 음성 에서 자연스러운 목소리를 더 받으실 수 있어요 (무료).</p>' +
+      '</div>';
+  }
+
+  function voiceBox(on) {
+    var box = $('vbox');
+    if (!box) return;
+    if (!on) { box.hidden = true; sayStop(); return; }
+    loadVoices();
+    box.innerHTML = voiceBoxHtml();
+    box.hidden = false;
+  }
+
+  $('voice-pick').addEventListener('click', function () {
+    if (!say.on) { msg('이 브라우저는 읽어주기를 안 해요.', 'err'); return; }
+    voiceBox($('vbox').hidden);
+  });
+
+  $('vbox').addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    var b = e.target.closest('button');
+    if (!b) return;
+
+    if (b.id === 'v-close') { voiceBox(false); return; }
+
+    var use = b.getAttribute('data-vuse');
+    if (use) {
+      var p = use.split('|');
+      setVoicePref(p[0], p.slice(1).join('|'));
+      voiceBox(true);
+      msg('목소리를 바꿨어요.', 'ok');
+      return;
+    }
+
+    var tryIt = b.getAttribute('data-vtry');
+    if (tryIt) {
+      var q = tryIt.split('|');
+      var lang = q[0], name = q.slice(1).join('|');
+      sayStop();
+      var list = voicesFor(lang), v = null;
+      for (var i = 0; i < list.length; i++) { if (list[i].name === name) v = list[i]; }
+      var u = new window.SpeechSynthesisUtterance(VSAMPLE[lang.slice(0, 2)]);
+      u.lang = lang;
+      u.rate = (lang.slice(0, 2) === 'en') ? 0.92 : 1;
+      if (v) u.voice = v;
+      try { window.speechSynthesis.speak(u); } catch (err) {}
+    }
+  });
+
   /* ---------- 이어 듣기 (운전하면서) ---------- */
   /*
    * 복습 창에 담긴 문장들을 처음부터 끝까지 이어서 읽어줍니다.
@@ -2219,19 +2358,61 @@
     try { window.speechSynthesis.onvoiceschanged = loadVoices; } catch (e) {}
   }
 
-  /** 그 말에 맞는 목소리를 고릅니다. 없으면 브라우저가 알아서 고릅니다. */
-  function pickVoice(lang) {
+  /*
+   * 기기에 깔린 목소리는 품질 차이가 큽니다.
+   * 사람 목소리에 가까운 것(Google · Natural · Neural · 온라인)을 먼저 고릅니다.
+   * 회원님이 직접 고른 게 있으면 그걸 씁니다.
+   */
+  var VOICE_STORE = 'study.voice';
+
+  function voicePrefs() {
+    try { return JSON.parse(localStorage.getItem(VOICE_STORE) || '{}') || {}; }
+    catch (e) { return {}; }
+  }
+  function setVoicePref(lang, name) {
+    var p = voicePrefs();
+    if (name) p[lang.slice(0, 2)] = name; else delete p[lang.slice(0, 2)];
+    try { localStorage.setItem(VOICE_STORE, JSON.stringify(p)); } catch (e) {}
+  }
+
+  /** 사람 같을수록 높은 점수 */
+  function voiceScore(v) {
+    var nm = String(v.name || '').toLowerCase();
+    var sc = 0;
+    if (nm.indexOf('google') !== -1) sc += 6;
+    if (nm.indexOf('natural') !== -1 || nm.indexOf('neural') !== -1) sc += 6;
+    if (nm.indexOf('online') !== -1 || nm.indexOf('온라인') !== -1) sc += 3;
+    if (nm.indexOf('premium') !== -1 || nm.indexOf('enhanced') !== -1) sc += 4;
+    if (nm.indexOf('siri') !== -1) sc += 3;
+    if (nm.indexOf('desktop') !== -1) sc -= 4;      // 윈도우 기본값, 많이 딱딱합니다
+    if (nm.indexOf('espeak') !== -1 || nm.indexOf('compact') !== -1) sc -= 6;
+    if (v.localService === false) sc += 1;           // 서버에서 만드는 쪽이 대개 낫습니다
+    return sc;
+  }
+
+  /** 그 말로 쓸 수 있는 목소리들, 좋은 것부터 */
+  function voicesFor(lang) {
     if (!say.voices.length) loadVoices();
     var want = lang.slice(0, 2);
-    var best = null;
+    var out = [];
     for (var i = 0; i < say.voices.length; i++) {
       var v = say.voices[i];
-      var vl = String(v.lang || '').replace('_', '-');
-      if (vl.slice(0, 2) !== want) continue;
-      if (vl === lang) return v;        // ko-KR, en-US 처럼 딱 맞으면 바로
-      if (!best) best = v;
+      if (String(v.lang || '').replace('_', '-').slice(0, 2) === want) out.push(v);
     }
-    return best;
+    out.sort(function (a, b) { return voiceScore(b) - voiceScore(a); });
+    return out;
+  }
+
+  function pickVoice(lang) {
+    var list = voicesFor(lang);
+    if (!list.length) return null;
+    var want = voicePrefs()[lang.slice(0, 2)];
+    if (want) {
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].name === want) return list[i];
+      }
+    }
+    return list[0];
   }
 
   function sayOne(text, lang, rate, done) {
