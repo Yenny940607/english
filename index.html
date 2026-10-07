@@ -826,6 +826,8 @@
     }
     footer .grow{flex:1}
     footer .ai-on{color:var(--ok); font-weight:600}
+    .fill-state{font-size:.72rem; color:var(--ink-3)}
+    .fill-state.ok{color:var(--ok)}
     .mini{
       background:none; border:none; color:var(--ink-3); padding:2px 0;
       font-size:.74rem; cursor:pointer; border-bottom:1px solid transparent;
@@ -952,6 +954,8 @@
       <span id="ai-state">—</span>
       <button class="mini" id="ai-test">AI 연결 확인</button>
       <button class="mini" id="voice-pick">목소리 고르기</button>
+      <button class="mini" id="fill-btn">응용 미리 쌓기</button>
+      <span class="fill-state" id="fill-state"></span>
       <span class="grow"></span>
       <button class="mini" id="reload">시트에서 다시 읽기</button>
       <button class="mini" id="open-sheet">시트 열기</button>
@@ -997,6 +1001,7 @@
     diaryFor: null,     // 지금 화면에 띄운 일기 날짜
     diaryDirty: false,
     notes: [],          // 노트 목록
+    fill: null,         // 응용 쌓기 상태
     vars: {},           // 한글 -> 쌓아둔 응용들 (미리 받아둡니다)
     padOpen: {},        // 메모장을 펼쳐둔 문장
     padDirty: {},       // 아직 저장 안 한 메모장
@@ -1179,6 +1184,7 @@
       state.loading = false;
       state.stale = false;
       saveSnap(data);
+      fillCheck();
       // 문장이 그대로면 풀던 순서를 흔들지 않습니다.
       if (!snap || stamp(state.items) !== was) build();
       render();
@@ -2041,6 +2047,64 @@
     if (rv.shown && (e.key === '2' || e.key === 'x')) { e.preventDefault(); rvMark(false); }
   });
 
+  /* ---------- 응용 미리 쌓기 ---------- */
+  /*
+   * 시트에 문장을 적어두면 뒤에서 응용을 2개씩 만들어 쌓아둡니다.
+   * 그러면 '응용'을 눌렀을 때 AI 를 안 거치고 바로 뜹니다.
+   */
+  function fillSay(t, kind) {
+    var el = $('fill-state');
+    if (!el) return;
+    el.textContent = t || '';
+    el.className = 'fill-state' + (kind ? ' ' + kind : '');
+  }
+
+  function fillCheck() {
+    call('fillStatus', [], function (r) {
+      if (!r || !r.ok) return;
+      state.fill = r;
+      if (!r.need) {
+        fillSay('응용 다 쌓였어요 (' + r.done + '문장)', 'ok');
+      } else {
+        fillSay(r.need + '문장은 아직 응용이 없어요' +
+          (r.auto ? ' · 10분마다 채우는 중' : ''));
+      }
+    }, function () {});
+  }
+
+  function fillRun() {
+    fillSay('지금 채우는 중… 몇 분 걸립니다');
+    call('fillNow', [], function (r) {
+      if (r && r.ok) {
+        msg('응용 ' + r.made + '개를 쌓았어요.' +
+            (r.left ? (' 아직 ' + r.left + '문장 남았습니다.') : ''), 'ok');
+        load(true);          // 쌓인 것을 바로 들고 옵니다
+      } else {
+        msg((r && r.message) || '못 채웠어요.', 'err');
+      }
+      fillCheck();
+    }, function (e) {
+      fillSay('');
+      msg(errText(e), 'err');
+    });
+  }
+
+  $('fill-btn').addEventListener('click', function () {
+    var f = state.fill;
+    if (f && !f.auto) {
+      var ask = '10분마다 저절로 채우게 할까요? ' +
+        '켜두면 시트에 새 문장을 적을 때마다 응용이 알아서 쌓입니다.';
+      if (window.confirm(ask)) {
+        call('setAutoFill', [true], function () {
+          msg('10분마다 저절로 채웁니다.', 'ok');
+          fillCheck();
+          fillRun();
+        }, function (e) { msg(errText(e), 'err'); });
+        return;
+      }
+    }
+    fillRun();
+  });
   /* ---------- 목소리 고르기 ---------- */
   var VSAMPLE = {
     ko: '오늘 하루도 고생 많으셨어요.',
