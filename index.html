@@ -585,6 +585,10 @@
       overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
     .vrow.on .vuse{color:var(--sky-ink); font-weight:600}
+    .vrow .vlang{
+      flex:none; font-size:.64rem; color:var(--ink-3);
+      font-variant-numeric:tabular-nums;
+    }
     .vrow .good{
       flex:none; font-size:.6rem; font-weight:600; color:var(--ok);
       background:var(--sunken); padding:2px 6px; border-radius:99px;
@@ -2053,8 +2057,9 @@
         h += '<div class="vrow' + (on ? ' on' : '') + '">' +
           '<button class="vuse" data-vuse="' + g[0] + '|' + esc(v.name) + '">' +
           (on ? '● ' : '○ ') + esc(v.name) + '</button>' +
+          '<span class="vlang">' + esc(String(v.lang || '').replace('_', '-')) + '</span>' +
           '<span class="grow"></span>' +
-          (voiceScore(v) >= 5 ? '<span class="good">또렷함</span>' : '') +
+          (voiceScore(v, g[2]) >= 12 ? '<span class="good">또렷함</span>' : '') +
           '<button class="vtry" data-vtry="' + g[2] + '|' + esc(v.name) + '">▶ 들어보기</button>' +
           '</div>';
       }
@@ -2378,10 +2383,18 @@
     try { localStorage.setItem(VOICE_STORE, JSON.stringify(p)); } catch (e) {}
   }
 
-  /** 사람 같을수록 높은 점수 */
-  function voiceScore(v) {
+  /** 사람 같을수록, 그리고 찾는 말씨에 가까울수록 높은 점수 */
+  function voiceScore(v, lang) {
     var nm = String(v.name || '').toLowerCase();
+    var vl = String(v.lang || '').replace('_', '-');
     var sc = 0;
+
+    // 말씨가 딱 맞는 것(en-US, ko-KR)을 가장 먼저 봅니다.
+    if (lang && vl === lang) sc += 10;
+    else if (lang && vl.slice(0, 2) === lang.slice(0, 2)) {
+      // 영어면 미국식을 먼저, 영국·호주·인도식은 뒤로
+      if (/-(GB|AU|IN|IE|ZA|NZ)$/i.test(vl)) sc -= 3;
+    }
     if (nm.indexOf('google') !== -1) sc += 6;
     if (nm.indexOf('natural') !== -1 || nm.indexOf('neural') !== -1) sc += 6;
     if (nm.indexOf('online') !== -1 || nm.indexOf('온라인') !== -1) sc += 3;
@@ -2402,7 +2415,7 @@
       var v = say.voices[i];
       if (String(v.lang || '').replace('_', '-').slice(0, 2) === want) out.push(v);
     }
-    out.sort(function (a, b) { return voiceScore(b) - voiceScore(a); });
+    out.sort(function (a, b) { return voiceScore(b, lang) - voiceScore(a, lang); });
     return out;
   }
 
