@@ -592,6 +592,24 @@
     .rv-modes button:hover{opacity:.85}
     .rv-modes button.on{background:rgba(255,255,255,.2); opacity:1}
 
+    /* 몇 번씩 읽을지 고르는 줄 */
+    .rv-pick{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      margin-bottom:12px; padding:10px 12px; border-radius:10px;
+      background:rgba(255,255,255,.14);
+    }
+    .rv-pick .lab{font-size:.78rem; color:#fff; opacity:.85; margin-right:4px}
+    .rv-pick .grow{flex:1}
+    .rv-pick button{
+      padding:7px 14px; border:none; border-radius:8px;
+      background:var(--panel); color:var(--ink);
+      font-size:.84rem; font-weight:700;
+    }
+    .rv-pick button:hover{background:var(--sky); color:var(--sky-ink)}
+    .rv-pick button.plain{
+      background:transparent; color:#fff; opacity:.75; font-weight:500;
+    }
+
     .rv-card{
       background:var(--ground); border-radius:14px; padding:26px 24px;
       min-height:230px; display:flex; flex-direction:column; justify-content:center;
@@ -1585,6 +1603,8 @@
 
   function closeReview() {
     sayStop();
+    auto.on = false;
+    keepAwake(false);
     rv.open = false;
     $('modal').hidden = true;
     document.body.style.overflow = '';
@@ -1618,6 +1638,15 @@
     var box = $('modal');
     if (!rv.open) { box.hidden = true; return; }
     box.hidden = false;
+
+    if (auto.on) {
+      box.innerHTML = autoPanelHtml();
+      wire('auto-stop', autoStop);
+      wire('auto-x', function () { autoStop(); closeReview(); });
+      wire('auto-prev', function () { autoJump(-1); });
+      wire('auto-next', function () { autoJump(1); });
+      return;
+    }
 
     var total = rv.queue.length;
     var q = rvCurrent();
@@ -1675,6 +1704,8 @@
       else { askKo = va.ko; askEn = va.en; }
     }
 
+    if (rv.askRep) h += repPickHtml();
+
     h += '<div class="rv-card">' +
       '<div class="rv-head">' +
         '<span class="rv-date">' + esc(rvDate(q.date)) + '</span>' +
@@ -1726,6 +1757,7 @@
                 '</button>' : '') +
       (say.on ? '<button id="rv-play">' +
         (say.now === 'rv' ? '■ 멈춤' : '▶ 듣기') + '</button>' : '') +
+      (say.on ? '<button id="rv-auto">▶▶ 전체 듣기</button>' : '') +
       (rv.mode === 'apply' && !wait
         ? '<button id="rv-revar">다른 문장</button>' : '') +
       '<span class="grow"></span>' +
@@ -1739,6 +1771,14 @@
     wire('rv-hide', function () { rv.shown = false; renderReview(); });
     wire('rv-note', function () { rv.noteOpen = !rv.noteOpen; renderReview(); });
     wire('rv-play', function () { playFrom('rv'); });
+    wire('rv-auto', function () { rv.askRep = !rv.askRep; renderReview(); });
+    wire('rv-pick-no', function () { rv.askRep = false; renderReview(); });
+    var reps = box.querySelectorAll('[data-rep]');
+    for (var r0 = 0; r0 < reps.length; r0++) {
+      reps[r0].addEventListener('click', function () {
+        autoStart(this.getAttribute('data-rep'));
+      });
+    }
     wire('rv-hint', rvHint);
     wire('rv-nohint', function () { rv.hint = null; renderReview(); });
     wire('rv-ok', function () { rvMark(true); });
@@ -1931,6 +1971,133 @@
     if (rv.shown && (e.key === '1' || e.key === 'o')) { e.preventDefault(); rvMark(true); }
     if (rv.shown && (e.key === '2' || e.key === 'x')) { e.preventDefault(); rvMark(false); }
   });
+
+  /* ---------- 이어 듣기 (운전하면서) ---------- */
+  /*
+   * 복습 창에 담긴 문장들을 처음부터 끝까지 이어서 읽어줍니다.
+   *   1번 한글 → 영어 (고른 횟수만큼) → 2번 한글 → 영어 → …
+   * 화면을 안 봐도 되게, 읽는 동안은 화면이 꺼지지 않게 해둡니다.
+   */
+  var auto = { on: false, i: 0, r: 0, rep: 1, wake: null };
+
+  function keepAwake(on) {
+    try {
+      if (on) {
+        if (navigator.wakeLock && !auto.wake) {
+          navigator.wakeLock.request('screen').then(function (w) { auto.wake = w; },
+            function () {});
+        }
+      } else if (auto.wake) {
+        auto.wake.release();
+        auto.wake = null;
+      }
+    } catch (e) {}
+  }
+
+  function autoCurrent() {
+    if (auto.i < 0 || auto.i >= rv.queue.length) return null;
+    return state.items[rv.queue[auto.i]];
+  }
+
+  function autoStop() {
+    auto.on = false;
+    sayStop();
+    keepAwake(false);
+    renderReview();
+  }
+
+  function autoStart(rep) {
+    if (!say.on || !rv.queue.length) return;
+    sayStop();
+    auto.on = true;
+    auto.rep = Math.max(1, Math.min(9, Number(rep) || 1));
+    auto.i = Math.min(rv.pos, rv.queue.length - 1);
+    if (auto.i < 0) auto.i = 0;
+    auto.r = 0;
+    rv.askRep = false;
+    keepAwake(true);
+    renderReview();
+    autoStep();
+  }
+
+  /** 한 문장을 한글 → 영어로 읽고, 다음으로 넘깁니다. */
+  function autoStep() {
+    if (!auto.on) return;
+    var q = autoCurrent();
+    if (!q) { autoStop(); return; }
+
+    sayOne(q.korean, 'ko-KR', 1, function () {
+      if (!auto.on) return;
+      setTimeout(function () {
+        if (!auto.on) return;
+        sayOne(q.answer, 'en-US', 0.92, function () {
+          if (!auto.on) return;
+          setTimeout(function () {
+            if (!auto.on) return;
+            auto.r++;
+            if (auto.r >= auto.rep) { auto.r = 0; auto.i++; }
+            if (auto.i >= rv.queue.length) { autoStop(); return; }
+            renderReview();
+            autoStep();
+          }, 700);
+        });
+      }, 450);
+    });
+  }
+
+  /** 몇 번씩 읽을지 고르는 줄 */
+  function repPickHtml() {
+    var h = '<div class="rv-pick">' +
+      '<span class="lab">같은 문장을 몇 번씩 읽을까요?</span>';
+    for (var k = 1; k <= 4; k++) {
+      h += '<button data-rep="' + k + '">' + k + '회</button>';
+    }
+    return h + '<span class="grow"></span>' +
+      '<button class="plain" id="rv-pick-no">취소</button></div>';
+  }
+
+  /** 듣는 중 화면 */
+  function autoPanelHtml() {
+    var q = autoCurrent();
+    var total = rv.queue.length;
+    return '<div class="sheet rv">' +
+      '<div class="rv-top">' +
+        '<span class="rv-scope">' + esc(rvScopeLabel()) + '</span>' +
+        '<span class="rv-n">' + (auto.i + 1) + ' / ' + total + '</span>' +
+        '<div class="rv-bar"><div style="width:' +
+          Math.round((auto.i + 1) * 100 / total) + '%"></div></div>' +
+        '<button class="rv-quit" id="auto-x">그만</button>' +
+      '</div>' +
+      '<div class="rv-card">' +
+        '<div class="rv-head">' +
+          '<span class="rv-date">' + esc(rvDate(q ? q.date : '')) + '</span>' +
+          '<span class="rv-point">이어 듣는 중 · ' + auto.rep + '회씩</span>' +
+        '</div>' +
+        '<p class="rv-ko">' + esc(q ? q.korean : '') + '</p>' +
+        '<p class="rv-en">' + esc(q ? q.answer : '') + '</p>' +
+      '</div>' +
+      '<button class="rv-main" id="auto-stop">■ 멈추기</button>' +
+      '<div class="rv-nav">' +
+        '<button id="auto-prev">‹ 이전 문장</button>' +
+        '<button id="auto-next">다음 문장 ›</button>' +
+      '</div>' +
+      '<div class="rv-foot">' +
+        '<span class="grow"></span>' +
+        '<span class="rv-cnt">화면이 꺼지지 않게 해뒀어요</span>' +
+      '</div>' +
+      '</div>';
+  }
+
+  function autoJump(step) {
+    if (!auto.on) return;
+    var n = auto.i + step;
+    if (n < 0 || n >= rv.queue.length) return;
+    sayStop();
+    auto.i = n;
+    auto.r = 0;
+    renderReview();
+    autoStep();
+  }
 
   /* ---------- 테스트 ---------- */
   var ST_REVIEW = '복습 필요';
