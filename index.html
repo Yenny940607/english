@@ -526,123 +526,7 @@
       color:var(--ink-2); font-size:1.5rem; margin-bottom:8px;
     }
 
-    /* ---------- 소리로 듣기 ---------- */
-  /*
-   * 브라우저에 들어 있는 읽어주기 기능을 씁니다. 서버에 안 다녀옵니다.
-   * 한글을 먼저 읽고, 잠깐 쉬었다가 영어를 읽습니다.
-   */
-  var say = {
-    on: !!(window.speechSynthesis && window.SpeechSynthesisUtterance),
-    voices: [],
-    now: '',        // 지금 읽고 있는 자리 (없으면 빈 값)
-    stop: false
-  };
-
-  function loadVoices() {
-    if (!say.on) return;
-    try { say.voices = window.speechSynthesis.getVoices() || []; } catch (e) {}
-  }
-  if (say.on) {
-    loadVoices();
-    try { window.speechSynthesis.onvoiceschanged = loadVoices; } catch (e) {}
-  }
-
-  /** 그 말에 맞는 목소리를 고릅니다. 없으면 브라우저가 알아서 고릅니다. */
-  function pickVoice(lang) {
-    if (!say.voices.length) loadVoices();
-    var want = lang.slice(0, 2);
-    var best = null;
-    for (var i = 0; i < say.voices.length; i++) {
-      var v = say.voices[i];
-      var vl = String(v.lang || '').replace('_', '-');
-      if (vl.slice(0, 2) !== want) continue;
-      if (vl === lang) return v;        // ko-KR, en-US 처럼 딱 맞으면 바로
-      if (!best) best = v;
-    }
-    return best;
-  }
-
-  function sayOne(text, lang, rate, done) {
-    var t = String(text || '').trim();
-    if (!t) { done(); return; }
-    var u = new window.SpeechSynthesisUtterance(t);
-    u.lang = lang;
-    u.rate = rate || 1;
-    var v = pickVoice(lang);
-    if (v) u.voice = v;
-    u.onend = done;
-    u.onerror = done;
-    try { window.speechSynthesis.speak(u); } catch (e) { done(); }
-  }
-
-  function sayStop() {
-    if (!say.on) return;
-    say.stop = true;
-    try { window.speechSynthesis.cancel(); } catch (e) {}
-    say.now = '';
-  }
-
-  /**
-   * 한글 → (쉬고) → 영어 순서로 읽습니다.
-   * key 는 어느 버튼이 눌렸는지 표시해 두는 이름입니다.
-   */
-  function sayPair(key, ko, en, after) {
-    if (!say.on) return;
-    if (say.now === key) { sayStop(); render(); return; }   // 다시 누르면 멈춤
-
-    sayStop();
-    say.stop = false;
-    say.now = key;
-    render();
-
-    function finish() {
-      if (say.now === key) say.now = '';
-      render();
-      if (after) after();
-    }
-
-    sayOne(ko, 'ko-KR', 1, function () {
-      if (say.stop || say.now !== key) { finish(); return; }
-      setTimeout(function () {
-        if (say.stop || say.now !== key) { finish(); return; }
-        sayOne(en, 'en-US', 0.92, finish);
-      }, 450);
-    });
-  }
-
-  /** 버튼 하나 만들기 */
-  function playBtn(key, label) {
-    if (!say.on) return '';
-    var on = (say.now === key);
-    return '<button class="btn-text play' + (on ? ' on' : '') + '" data-play="' + key + '" ' +
-      'title="' + (on ? '멈추기' : '한글 먼저, 그다음 영어로 읽어줍니다') + '">' +
-      (on ? '■ 멈춤' : '▶ ' + (label || '듣기')) + '</button>';
-  }
-
-  /** data-play 에 적힌 이름을 보고 무엇을 읽을지 정합니다. */
-  function playFrom(key) {
-    var p = String(key || '').split(':');
-    if (p[0] === 'q') {
-      var q = state.items[p[1]];
-      if (q) sayPair(key, q.korean, q.answer);
-      return;
-    }
-    if (p[0] === 'a') {
-      var ap = state.apply[p[1]];
-      var one = ap && ap.list[p[2]];
-      if (one) sayPair(key, one.ko, one.en);
-      return;
-    }
-    if (p[0] === 'rv') {
-      var cur = rvCurrent();
-      if (!cur) return;
-      var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
-      if (va && !va.busy && !va.err) sayPair(key, va.ko, va.en);
-      else sayPair(key, cur.korean, cur.answer);
-    }
-  }
-
-  /* ---------- 문장별 메모장 ---------- */
+    /* ---------- 문장별 메모장 ---------- */
     .qsave.has{color:var(--sky-ink)}
     .qsave.has::after{content:" ●"; font-size:.5rem; vertical-align:middle}
     .padbox{
@@ -2145,6 +2029,122 @@
   /** 지금 범위 전체에서 표시가 붙어 있는 문장들 */
   function scopeMarkedAll() {
     return state.queue.filter(function (ix) { return !!statusOf(ix); });
+  }
+
+  /* ---------- 소리로 듣기 ---------- */
+  /*
+   * 브라우저에 들어 있는 읽어주기 기능을 씁니다. 서버에 안 다녀옵니다.
+   * 한글을 먼저 읽고, 잠깐 쉬었다가 영어를 읽습니다.
+   */
+  var say = {
+    on: !!(window.speechSynthesis && window.SpeechSynthesisUtterance),
+    voices: [],
+    now: '',        // 지금 읽고 있는 자리 (없으면 빈 값)
+    stop: false
+  };
+
+  function loadVoices() {
+    if (!say.on) return;
+    try { say.voices = window.speechSynthesis.getVoices() || []; } catch (e) {}
+  }
+  if (say.on) {
+    loadVoices();
+    try { window.speechSynthesis.onvoiceschanged = loadVoices; } catch (e) {}
+  }
+
+  /** 그 말에 맞는 목소리를 고릅니다. 없으면 브라우저가 알아서 고릅니다. */
+  function pickVoice(lang) {
+    if (!say.voices.length) loadVoices();
+    var want = lang.slice(0, 2);
+    var best = null;
+    for (var i = 0; i < say.voices.length; i++) {
+      var v = say.voices[i];
+      var vl = String(v.lang || '').replace('_', '-');
+      if (vl.slice(0, 2) !== want) continue;
+      if (vl === lang) return v;        // ko-KR, en-US 처럼 딱 맞으면 바로
+      if (!best) best = v;
+    }
+    return best;
+  }
+
+  function sayOne(text, lang, rate, done) {
+    var t = String(text || '').trim();
+    if (!t) { done(); return; }
+    var u = new window.SpeechSynthesisUtterance(t);
+    u.lang = lang;
+    u.rate = rate || 1;
+    var v = pickVoice(lang);
+    if (v) u.voice = v;
+    u.onend = done;
+    u.onerror = done;
+    try { window.speechSynthesis.speak(u); } catch (e) { done(); }
+  }
+
+  function sayStop() {
+    if (!say.on) return;
+    say.stop = true;
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    say.now = '';
+  }
+
+  /**
+   * 한글 → (쉬고) → 영어 순서로 읽습니다.
+   * key 는 어느 버튼이 눌렸는지 표시해 두는 이름입니다.
+   */
+  function sayPair(key, ko, en, after) {
+    if (!say.on) return;
+    if (say.now === key) { sayStop(); render(); return; }   // 다시 누르면 멈춤
+
+    sayStop();
+    say.stop = false;
+    say.now = key;
+    render();
+
+    function finish() {
+      if (say.now === key) say.now = '';
+      render();
+      if (after) after();
+    }
+
+    sayOne(ko, 'ko-KR', 1, function () {
+      if (say.stop || say.now !== key) { finish(); return; }
+      setTimeout(function () {
+        if (say.stop || say.now !== key) { finish(); return; }
+        sayOne(en, 'en-US', 0.92, finish);
+      }, 450);
+    });
+  }
+
+  /** 버튼 하나 만들기 */
+  function playBtn(key, label) {
+    if (!say.on) return '';
+    var on = (say.now === key);
+    return '<button class="btn-text play' + (on ? ' on' : '') + '" data-play="' + key + '" ' +
+      'title="' + (on ? '멈추기' : '한글 먼저, 그다음 영어로 읽어줍니다') + '">' +
+      (on ? '■ 멈춤' : '▶ ' + (label || '듣기')) + '</button>';
+  }
+
+  /** data-play 에 적힌 이름을 보고 무엇을 읽을지 정합니다. */
+  function playFrom(key) {
+    var p = String(key || '').split(':');
+    if (p[0] === 'q') {
+      var q = state.items[p[1]];
+      if (q) sayPair(key, q.korean, q.answer);
+      return;
+    }
+    if (p[0] === 'a') {
+      var ap = state.apply[p[1]];
+      var one = ap && ap.list[p[2]];
+      if (one) sayPair(key, one.ko, one.en);
+      return;
+    }
+    if (p[0] === 'rv') {
+      var cur = rvCurrent();
+      if (!cur) return;
+      var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
+      if (va && !va.busy && !va.err) sayPair(key, va.ko, va.en);
+      else sayPair(key, cur.korean, cur.answer);
+    }
   }
 
   /* ---------- 문장별 메모장 ---------- */
