@@ -1887,7 +1887,7 @@
     rv.vari[pos] = { busy: true, ko: '', en: '', point: '', err: '', seen: seen };
     if (pos === rv.pos) { rv.shown = false; renderReview(); }
 
-    call('getVariation', [q.korean, q.answer, q.note, seen], function (res) {
+    call('getVariation', [q.korean, q.answer, q.note, seen, 1], function (res) {
       if (res && res.ok) {
         if (seen.indexOf(res.ko) === -1) seen.push(res.ko);
         rv.vari[pos] = { busy: false, ko: res.ko, en: res.en,
@@ -2644,25 +2644,19 @@
     if (!ap) ap = state.apply[ix] = { busy: false, saving: false, list: [] };
     if (ap.busy) return;
 
-    // 미리 만들어 둔 게 있으면 그걸 바로 씁니다.
-    if (ap.ready) {
-      ap.list.push(ap.ready);
-      ap.ready = null;
-      msg('');
-      render();
-      preApply(ix);
+    if (!ap.pool) ap.pool = [];
+
+    // 받아둔 묶음에 남은 게 있으면 기다릴 것 없이 바로 꺼냅니다.
+    if (ap.pool.length) {
+      showOne(ix, ap.pool.shift());
       return;
     }
 
-    // 쌓아둔 게 남아 있으면 기다릴 것 없이 바로 띄웁니다.
+    // 시트에 쌓아둔 게 있으면 그것도 기다림 없이.
     var got = nextStored(ix);
     if (got) {
-      ap.list.push({ ko: got.ko, en: got.en, point: got.point,
-                     saved: true, on: got.on || '',
-                     shown: false, keep: false });
-      msg('');
-      render();
-      preApply(ix);
+      showOne(ix, { ko: got.ko, en: got.en, point: got.point,
+                    saved: true, on: got.on || '' });
       return;
     }
 
@@ -2670,7 +2664,7 @@
     render();
 
     var seen = ap.list.map(function (x) { return x.ko; });
-    call('getVariation', [q.korean, q.answer, q.note, seen], function (res) {
+    call('getVariation', [q.korean, q.answer, q.note, seen, 3], function (res) {
       ap.busy = false;
       if (!res || !res.ok) {
         if (!ap.list.length) delete state.apply[ix];
@@ -2678,18 +2672,27 @@
         msg((res && res.message) || '응용 문장을 못 만들었어요.', 'err');
         return;
       }
-      ap.list.push({ ko: res.ko, en: res.en, point: res.point,
-                     saved: !!res.saved, on: res.on || '',
-                     shown: false, keep: false });
-      msg('');
-      render();
-      preApply(ix);     // 다음 것을 미리 만들어 둡니다
+      var got2 = res.list && res.list.length ? res.list.slice()
+        : [{ ko: res.ko, en: res.en, point: res.point, saved: !!res.saved, on: res.on }];
+      ap.pool = got2.slice(1);          // 나머지는 다음에 씁니다
+      showOne(ix, got2[0]);
     }, function (e) {
       ap.busy = false;
       if (!ap.list.length) delete state.apply[ix];
       render();
       msg(errText(e), 'err');
     });
+  }
+
+  /** 받은 응용 하나를 화면에 붙입니다. */
+  function showOne(ix, v) {
+    var ap = state.apply[ix];
+    if (!ap || !v) return;
+    ap.list.push({ ko: v.ko, en: v.en, point: v.point,
+                   saved: !!v.saved, on: v.on || '',
+                   shown: false, keep: false });
+    msg('');
+    render();
   }
 
   /*
@@ -2699,17 +2702,16 @@
   function preApply(ix) {
     var q = state.items[ix];
     var ap = state.apply[ix];
-    if (!q || !ap || ap.pre || ap.ready) return;
-    if (nextStored(ix)) return;        // 쌓아둔 게 남아 있으면 그걸 쓰면 됩니다
+    if (!q || !ap || ap.pre) return;
+    if (ap.pool && ap.pool.length) return;
+    if (nextStored(ix)) return;
 
     ap.pre = true;
     var seen = ap.list.map(function (x) { return x.ko; });
-    call('getVariation', [q.korean, q.answer, q.note, seen], function (res) {
+    call('getVariation', [q.korean, q.answer, q.note, seen, 3], function (res) {
       ap.pre = false;
-      if (res && res.ok) {
-        ap.ready = { ko: res.ko, en: res.en, point: res.point,
-                     saved: !!res.saved, on: res.on || '',
-                     shown: false, keep: false };
+      if (res && res.ok && res.list && res.list.length) {
+        ap.pool = (ap.pool || []).concat(res.list);
       }
     }, function () { ap.pre = false; });
   }
