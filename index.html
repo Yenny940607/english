@@ -1081,8 +1081,8 @@
     var gaveUp = false;
     var bell = setTimeout(function () {
       gaveUp = true;
-      bad(new Error('너무 오래 걸려요. 잠시 뒤에 다시 눌러주세요.'));
-    }, 40000);
+      bad(new Error('2분 넘게 답이 없어요. 잠시 뒤에 다시 눌러주세요.'));
+    }, 150000);
 
     fetch(API, {
       method: 'POST',
@@ -2570,7 +2570,7 @@
     var ap = state.apply[ix];
     if (!ap) return '';
     if (!ap.list.length) {
-      return ap.busy ? '<div class="applybox quiet">응용 문장을 만드는 중…</div>' : '';
+      return ap.busy ? ('<div class="applybox quiet">' + waitText(ap) + '</div>') : '';
     }
 
     var h = '<div class="applybox">';
@@ -2610,7 +2610,7 @@
       h += '</div></div>';
     }
 
-    if (ap.busy) h += '<div class="aitem more quiet">응용 문장을 만드는 중…</div>';
+    if (ap.busy) h += '<div class="aitem more quiet">' + waitText(ap) + '</div>';
 
     var keeps = keepCount(ix);
     if (keeps) {
@@ -2622,6 +2622,33 @@
     }
 
     return h + '</div>';
+  }
+
+  /** 기다린 시간을 알려줍니다. 오래 걸리면 까닭도 덧붙입니다. */
+  function waitText(ap) {
+    var sec = ap.since ? Math.round((Date.now() - ap.since) / 1000) : 0;
+    var t = '응용 문장을 만드는 중… ' + sec + '초';
+    if (sec >= 15) t += ' (AI 가 붐비면 1분 넘게 걸리기도 합니다)';
+    return t;
+  }
+
+  /** 기다리는 동안 숫자가 올라가게 */
+  var waitTick = null;
+  function waitWatch() {
+    var any = false;
+    for (var k in state.apply) {
+      if (state.apply.hasOwnProperty(k) && state.apply[k].busy) any = true;
+    }
+    if (any && !waitTick) {
+      waitTick = setInterval(function () {
+        var on = false;
+        for (var k2 in state.apply) {
+          if (state.apply.hasOwnProperty(k2) && state.apply[k2].busy) on = true;
+        }
+        if (!on) { clearInterval(waitTick); waitTick = null; return; }
+        if (state.tab === 'quiz') renderQuiz();
+      }, 1000);
+    }
   }
 
   function keepCount(ix) {
@@ -2671,7 +2698,9 @@
     }
 
     ap.busy = true;
+    ap.since = Date.now();
     render();
+    waitWatch();
 
     var seen = ap.list.map(function (x) { return x.ko; });
     call('getVariation', [q.korean, q.answer, q.note, seen, 3], function (res) {
