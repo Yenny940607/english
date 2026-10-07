@@ -2644,6 +2644,16 @@
     if (!ap) ap = state.apply[ix] = { busy: false, saving: false, list: [] };
     if (ap.busy) return;
 
+    // 미리 만들어 둔 게 있으면 그걸 바로 씁니다.
+    if (ap.ready) {
+      ap.list.push(ap.ready);
+      ap.ready = null;
+      msg('');
+      render();
+      preApply(ix);
+      return;
+    }
+
     // 쌓아둔 게 남아 있으면 기다릴 것 없이 바로 띄웁니다.
     var got = nextStored(ix);
     if (got) {
@@ -2652,6 +2662,7 @@
                      shown: false, keep: false });
       msg('');
       render();
+      preApply(ix);
       return;
     }
 
@@ -2672,6 +2683,7 @@
                      shown: false, keep: false });
       msg('');
       render();
+      preApply(ix);     // 다음 것을 미리 만들어 둡니다
     }, function (e) {
       ap.busy = false;
       if (!ap.list.length) delete state.apply[ix];
@@ -2679,6 +2691,29 @@
       msg(errText(e), 'err');
     });
   }
+
+  /*
+   * 다음 응용을 뒤에서 미리 받아둡니다.
+   * '응용 더' 를 누를 때 기다리지 않게 하려는 것입니다. 화면은 안 건드립니다.
+   */
+  function preApply(ix) {
+    var q = state.items[ix];
+    var ap = state.apply[ix];
+    if (!q || !ap || ap.pre || ap.ready) return;
+    if (nextStored(ix)) return;        // 쌓아둔 게 남아 있으면 그걸 쓰면 됩니다
+
+    ap.pre = true;
+    var seen = ap.list.map(function (x) { return x.ko; });
+    call('getVariation', [q.korean, q.answer, q.note, seen], function (res) {
+      ap.pre = false;
+      if (res && res.ok) {
+        ap.ready = { ko: res.ko, en: res.en, point: res.point,
+                     saved: !!res.saved, on: res.on || '',
+                     shown: false, keep: false };
+      }
+    }, function () { ap.pre = false; });
+  }
+
 
   /** 네모 친 것들을 시트 '응용' 장에 쌓습니다. */
   function applySave(ix) {
