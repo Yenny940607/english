@@ -2186,7 +2186,7 @@
       for (var i = 0; i < list.length; i++) { if (list[i].name === name) v = list[i]; }
       var u = new window.SpeechSynthesisUtterance(VSAMPLE[lang.slice(0, 2)]);
       u.lang = lang;
-      u.rate = (lang.slice(0, 2) === 'en') ? 0.92 : 1;
+      u.rate = (lang.slice(0, 2) === 'en') ? EN_RATE : KO_RATE;
       if (v) u.voice = v;
       try { window.speechSynthesis.speak(u); } catch (err) {}
     }
@@ -2272,14 +2272,14 @@
       auto.r = k;
       renderReview();
       var who = (k % 2 === 0) ? 'f' : 'm';
-      sayVoice(pair.en, 'en-US', voiceByGender('en-US', who), 0.92, 1, function () {
+      sayVoice(pair.en, 'en-US', voiceByGender('en-US', who), EN_RATE, 1, function () {
         if (!auto.on) return;
         setTimeout(function () { enTurn(k + 1); }, GAP_MID);
       });
     }
 
     auto.r = 0;
-    sayVoice(pair.ko, 'ko-KR', koVoice(), 1, KO_PITCH, function () {
+    sayVoice(pair.ko, 'ko-KR', koVoice(), KO_RATE, koPitch(), function () {
       if (!auto.on) return;
       setTimeout(function () { enTurn(0); }, GAP_MID);
     });
@@ -2492,11 +2492,12 @@
       // 영어면 미국식을 먼저, 영국·호주·인도식은 뒤로
       if (/-(GB|AU|IN|IE|ZA|NZ)$/i.test(vl)) sc -= 3;
     }
-    if (nm.indexOf('google') !== -1) sc += 6;
-    if (nm.indexOf('natural') !== -1 || nm.indexOf('neural') !== -1) sc += 6;
+    // Natural·Neural 이 가장 사람 같습니다. 듣기에 제일 편합니다.
+    if (nm.indexOf('natural') !== -1 || nm.indexOf('neural') !== -1) sc += 9;
+    if (nm.indexOf('premium') !== -1 || nm.indexOf('enhanced') !== -1) sc += 6;
+    if (nm.indexOf('siri') !== -1) sc += 5;
+    if (nm.indexOf('google') !== -1) sc += 4;
     if (nm.indexOf('online') !== -1 || nm.indexOf('온라인') !== -1) sc += 3;
-    if (nm.indexOf('premium') !== -1 || nm.indexOf('enhanced') !== -1) sc += 4;
-    if (nm.indexOf('siri') !== -1) sc += 3;
     if (nm.indexOf('desktop') !== -1) sc -= 4;      // 윈도우 기본값, 많이 딱딱합니다
     if (nm.indexOf('espeak') !== -1 || nm.indexOf('compact') !== -1) sc -= 6;
     if (v.localService === false) sc += 1;           // 서버에서 만드는 쪽이 대개 낫습니다
@@ -2662,14 +2663,24 @@
     return asked ? { ko: addMark(k), en: addMark(e) } : { ko: k, en: e };
   }
 
-  /** 한국어는 남자 목소리로, 조금 낮게 */
+  /*
+   * 한국어는 남자 목소리로.
+   * 진짜 남자 목소리면 그대로 두고(억지로 낮추면 웅얼거립니다),
+   * 남자 목소리가 없는 기기에서만 살짝 낮춰서 비슷하게 들리게 합니다.
+   */
   function koVoice() { return voiceByGender('ko-KR', 'm'); }
-  var KO_PITCH = 0.8;
+
+  function koPitch() {
+    var v = koVoice();
+    return (v && genderOf(v) === 'm') ? 0.96 : 0.86;
+  }
+  var KO_RATE = 0.98;
+  var EN_RATE = 0.9;
 
   function sayOne(text, lang, rate, done) {
     var low = (lang.slice(0, 2) === 'ko');
     sayVoice(text, lang, low ? koVoice() : pickVoice(lang), rate,
-             low ? KO_PITCH : 1, done);
+             low ? koPitch() : 1, done);
   }
   function sayStop() {
     if (!say.on) return;
@@ -2709,11 +2720,11 @@
     // cancel() 직후에 바로 말하면 삼켜지는 기기가 있어서 한 박자 쉽니다.
     setTimeout(function () {
       if (say.stop || say.now !== key) { finish(); return; }
-      sayOne(ko, 'ko-KR', 1, function () {
+      sayOne(ko, 'ko-KR', KO_RATE, function () {
         if (say.stop || say.now !== key) { finish(); return; }
         setTimeout(function () {
           if (say.stop || say.now !== key) { finish(); return; }
-          sayOne(en, 'en-US', 0.92, finish);
+          sayOne(en, 'en-US', EN_RATE, finish);
         }, GAP_MID);
       });
     }, 120);
