@@ -2146,7 +2146,10 @@
       if (!list.length) {
         h += '<p class="vnone">이 기기에 ' + g[1] + ' 목소리가 없어요.</p>';
       }
-      for (var i = 0; i < list.length && i < 12; i++) {
+      if (list.length === 1) {
+        h += '<p class="vnone">이 기기엔 ' + g[1] + ' 목소리가 하나뿐이라 고를 게 없어요.</p>';
+      }
+      for (var i = 0; i < list.length; i++) {
         var v = list[i];
         var on = pref[g[0]] ? (pref[g[0]] === v.name) : (i === 0);
         h += '<div class="vrow' + (on ? ' on' : '') + '">' +
@@ -2162,8 +2165,14 @@
       h += '</div>';
     });
 
-    return h + '<p class="vtip">기기에 깔린 목소리만 나옵니다. ' +
-      '윈도우라면 설정 → 시간 및 언어 → 음성 에서 자연스러운 목소리를 더 받으실 수 있어요 (무료).</p>' +
+    var all = say.voices.length;
+    return h + '<p class="vtip">이 기기가 알려준 목소리는 모두 ' + all + '개입니다. ' +
+      '깔린 것만 나옵니다. 무료로 더 받으실 수 있어요 — ' +
+      '<b>아이폰</b> 설정 → 손쉬운 사용 → 말하기 콘텐츠 → 음성 (Enhanced·Premium), ' +
+      '<b>안드로이드</b> 설정 → 텍스트 음성 변환 → 음성 데이터 설치, ' +
+      '<b>윈도우</b> 설정 → 시간 및 언어 → 음성. ' +
+      '받은 뒤 브라우저를 껐다 켜면 목록에 나타납니다.</p>' +
+      (all ? '' : '<p class="vnone">아직 목소리를 못 읽었어요. 잠시 뒤 다시 열어보세요.</p>') +
       '</div>';
   }
 
@@ -2171,9 +2180,24 @@
     var box = $('vbox');
     if (!box) return;
     if (!on) { box.hidden = true; sayStop(); return; }
+
     loadVoices();
     box.innerHTML = voiceBoxHtml();
     box.hidden = false;
+
+    // 폰에서는 목록이 늦게 옵니다. 들어오면 다시 그립니다.
+    if (!say.voices.length) {
+      unlockSay();          // 한 번 말을 걸어야 목록을 주는 기기가 있습니다
+      var tries = 0;
+      var tick = setInterval(function () {
+        loadVoices();
+        tries++;
+        if (say.voices.length || tries > 12) {
+          clearInterval(tick);
+          if (!$('vbox').hidden) $('vbox').innerHTML = voiceBoxHtml();
+        }
+      }, 400);
+    }
   }
 
   $('voice-pick').addEventListener('click', function () {
