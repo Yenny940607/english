@@ -685,6 +685,8 @@
       font-size:.84rem; font-weight:700;
     }
     .rv-pick button:hover{background:var(--sky); color:var(--sky-ink)}
+    .rv-pick + .rv-pick{margin-top:-6px}
+    .rv-pick button.on{background:var(--sky); color:var(--sky-ink)}
     .rv-pick button.plain{
       background:transparent; color:#fff; opacity:.75; font-weight:500;
     }
@@ -1888,6 +1890,13 @@
     }
     wire('rv-auto', function () { rv.askRep = !rv.askRep; renderReview(); });
     wire('rv-pick-no', function () { rv.askRep = false; renderReview(); });
+    var aws = box.querySelectorAll('[data-aw]');
+    for (var a0 = 0; a0 < aws.length; a0++) {
+      aws[a0].addEventListener('click', function () {
+        rv.autoWhat = this.getAttribute('data-aw');
+        renderReview();
+      });
+    }
     var reps = box.querySelectorAll('[data-rep]');
     for (var r0 = 0; r0 < reps.length; r0++) {
       reps[r0].addEventListener('click', function () {
@@ -2247,7 +2256,7 @@
    *   1번 한글 → 영어 (고른 횟수만큼) → 2번 한글 → 영어 → …
    * 화면을 안 봐도 되게, 읽는 동안은 화면이 꺼지지 않게 해둡니다.
    */
-  var auto = { on: false, i: 0, r: 0, rep: 1, wake: null };
+  var auto = { on: false, i: 0, r: 0, rep: 1, what: 'both', wake: null };
 
   function keepAwake(on) {
     try {
@@ -2288,6 +2297,7 @@
     sayStop();
     auto.on = true;
     auto.rep = Math.max(1, Math.min(5, Number(rep) || 1));
+    auto.what = rv.autoWhat || 'both';
     auto.i = Math.min(rv.pos, rv.queue.length - 1);
     if (auto.i < 0) auto.i = 0;
     auto.r = 0;
@@ -2321,37 +2331,66 @@
       }, GAP_SET);
     }
 
-    /** 영어를 k 번째로 읽습니다. 처음은 여자, 그다음 남자, 번갈아. */
-    function enTurn(k) {
+    var mode = auto.what || 'both';
+
+    /** 고른 횟수만큼 거듭 읽습니다. */
+    function turn(k) {
       if (!auto.on) return;
       if (k >= auto.rep) { toNext(); return; }
       auto.r = k;
       renderReview();
+
+      function thenNext() {
+        if (!auto.on) return;
+        setTimeout(function () { turn(k + 1); }, GAP_REP);
+      }
+
+      if (mode === 'ko') {
+        var ks = koSet();
+        var c = ALT_CYCLE[k % ALT_CYCLE.length];
+        sayVoice(pair.ko, 'ko-KR', ks.voice, c.rate, ks.pitch, thenNext);
+        return;
+      }
       var who = (k % 2 === 0) ? 'f' : 'm';
       var set = speakAs('en-US', who, k, hasMark(pair.en));
-      sayVoice(pair.en, 'en-US', set.voice, set.rate || EN_RATE, set.pitch, function () {
-        if (!auto.on) return;
-        setTimeout(function () { enTurn(k + 1); }, GAP_REP);
-      });
+      sayVoice(pair.en, 'en-US', set.voice, set.rate || EN_RATE, set.pitch, thenNext);
     }
 
     auto.r = 0;
-    var kset = koSet();
-    sayVoice(pair.ko, 'ko-KR', kset.voice, KO_RATE, kset.pitch, function () {
-      if (!auto.on) return;
-      setTimeout(function () { enTurn(0); }, GAP_MID);
-    });
+
+    // 통합이면 한글을 한 번 읽고 시작합니다.
+    if (mode === 'both') {
+      var kset = koSet();
+      sayVoice(pair.ko, 'ko-KR', kset.voice, KO_RATE, kset.pitch, function () {
+        if (!auto.on) return;
+        setTimeout(function () { turn(0); }, GAP_MID);
+      });
+      return;
+    }
+    turn(0);
   }
 
   /** 몇 번씩 읽을지 고르는 줄 */
   function repPickHtml() {
+    var w = rv.autoWhat || 'both';
     var h = '<div class="rv-pick">' +
-      '<span class="lab">영어를 몇 번씩 읽을까요? (한글은 한 번)</span>';
+      '<span class="lab">무엇을</span>' +
+      '<button data-aw="ko"' + (w === 'ko' ? ' class="on"' : '') + '>한글만</button>' +
+      '<button data-aw="en"' + (w === 'en' ? ' class="on"' : '') + '>영어만</button>' +
+      '<button data-aw="both"' + (w === 'both' ? ' class="on"' : '') + '>통합</button>' +
+      '<span class="grow"></span>' +
+      '<button class="plain" id="rv-pick-no">취소</button>' +
+      '</div>';
+
+    h += '<div class="rv-pick">' +
+      '<span class="lab">' +
+      (w === 'ko' ? '한글을 몇 번씩'
+        : w === 'en' ? '영어를 몇 번씩' : '영어를 몇 번씩 (한글은 한 번)') +
+      '</span>';
     for (var k = 1; k <= 5; k++) {
       h += '<button data-rep="' + k + '">' + k + '회</button>';
     }
-    return h + '<span class="grow"></span>' +
-      '<button class="plain" id="rv-pick-no">취소</button></div>';
+    return h + '</div>';
   }
 
   /** 듣는 중 화면 */
@@ -2369,7 +2408,8 @@
       '<div class="rv-card">' +
         '<div class="rv-head">' +
           '<span class="rv-date">' + esc(rvDate(q ? q.date : '')) + '</span>' +
-          '<span class="rv-point">이어 듣는 중 · 영어 ' +
+          '<span class="rv-point">이어 듣는 중 · ' +
+            (auto.what === 'ko' ? '한글 ' : '영어 ') +
             (auto.r + 1) + '/' + auto.rep + '</span>' +
         '</div>' +
         '<p class="rv-ko">' + esc(q ? q.korean : '') + '</p>' +
