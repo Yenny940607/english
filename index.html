@@ -2252,6 +2252,8 @@
     var q = autoCurrent();
     if (!q) { autoStop(); return; }
 
+    var pair = askPair(q.korean, q.answer);
+
     function toNext() {
       setTimeout(function () {
         if (!auto.on) return;
@@ -2270,14 +2272,14 @@
       auto.r = k;
       renderReview();
       var who = (k % 2 === 0) ? 'f' : 'm';
-      sayVoice(q.answer, 'en-US', voiceByGender('en-US', who), 0.92, 1, function () {
+      sayVoice(pair.en, 'en-US', voiceByGender('en-US', who), 0.92, 1, function () {
         if (!auto.on) return;
         setTimeout(function () { enTurn(k + 1); }, GAP_MID);
       });
     }
 
     auto.r = 0;
-    sayVoice(q.korean, 'ko-KR', koVoice(), 1, KO_PITCH, function () {
+    sayVoice(pair.ko, 'ko-KR', koVoice(), 1, KO_PITCH, function () {
       if (!auto.on) return;
       setTimeout(function () { enTurn(0); }, GAP_MID);
     });
@@ -2631,6 +2633,35 @@
     }, 1200);
   }
 
+  /*
+   * 물음표가 없으면 읽어주기가 평서문처럼 쭉 내려 읽습니다.
+   * 한쪽에만 물음표가 있으면 다른 쪽에도 붙여서 끝을 올려 읽게 합니다.
+   * (시트 글자는 안 건드립니다. 읽을 때만 붙입니다)
+   */
+  var EN_ASK = /^(do|does|did|are|is|was|were|am|can|could|will|would|shall|should|have|has|had|may|might|who|what|when|where|why|how|which|whose|whom|any|anyone|anybody)\b/i;
+  var KO_ASK = /(까요|까|나요|가요|래요|래|죠|지요|니|냐|는데|은데|신가요|실까요|을까|ㄹ까)[\s.!…]*$/;
+
+  function hasMark(t) {
+    return /\?["'’”)\]\s]*$/.test(String(t || '').trim());
+  }
+  function addMark(t) {
+    var v = String(t || '').trim();
+    if (!v || hasMark(v)) return v;
+    return v.replace(/[.!…]+$/, '') + '?';
+  }
+
+  /** 한글·영어를 함께 보고 물음표를 맞춰줍니다. */
+  function askPair(ko, en) {
+    var k = String(ko || '').trim();
+    var e = String(en || '').trim();
+
+    var asked = hasMark(k) || hasMark(e);
+    // 양쪽 다 물음표가 없어도, 둘 다 묻는 꼴이면 물음으로 봅니다.
+    if (!asked && KO_ASK.test(k) && EN_ASK.test(e)) asked = true;
+
+    return asked ? { ko: addMark(k), en: addMark(e) } : { ko: k, en: e };
+  }
+
   /** 한국어는 남자 목소리로, 조금 낮게 */
   function koVoice() { return voiceByGender('ko-KR', 'm'); }
   var KO_PITCH = 0.8;
@@ -2664,6 +2695,10 @@
     say.stop = false;
     say.now = key;
     render();
+
+    var pair = askPair(ko, en);
+    ko = pair.ko;
+    en = pair.en;
 
     function finish() {
       if (say.now === key) say.now = '';
