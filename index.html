@@ -648,6 +648,29 @@
     .rv-modes button:hover{opacity:.85}
     .rv-modes button.on{background:rgba(255,255,255,.2); opacity:1}
 
+    /* 무엇을 들을지 고르는 줄 */
+    .whatpick{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      margin-top:10px; padding:9px 11px; border-radius:10px;
+      background:var(--sunken);
+    }
+    .whatpick .lab{font-size:.74rem; color:var(--ink-3); margin-right:2px}
+    .whatpick .grow{flex:1}
+    .whatpick button{
+      padding:6px 13px; border:none; border-radius:8px;
+      background:var(--panel); color:var(--ink);
+      font-size:.8rem; font-weight:600;
+      box-shadow:inset 0 0 0 1px var(--line);
+    }
+    .whatpick button:hover{background:var(--sky); color:var(--sky-ink)}
+    .whatpick button.plain{
+      background:transparent; box-shadow:none; color:var(--ink-3); font-weight:400;
+    }
+    /* 복습 창 안에서는 어두운 바탕에 얹힙니다 */
+    .sheet .whatpick{background:rgba(255,255,255,.14); margin:0 0 12px}
+    .sheet .whatpick .lab{color:#fff; opacity:.85}
+    .sheet .whatpick button.plain{color:#fff; opacity:.75}
+
     /* 몇 번씩 읽을지 고르는 줄 */
     .rv-pick{
       display:flex; align-items:center; gap:8px; flex-wrap:wrap;
@@ -979,6 +1002,7 @@
     token: '',
     items: [], hasKey: false, loading: true,
     y: now.getFullYear(), m: now.getMonth(),
+    askPlay: '',        // 무엇을 들을지 묻고 있는 단추
     stale: false,       // 지난번 것을 먼저 띄운 상태
     scope: 'all',       // all | today | week | review | done | date
     selDate: '',
@@ -1783,6 +1807,7 @@
     }
 
     if (rv.askRep) h += repPickHtml();
+    if (state.askPlay === 'rv') h += whatPickHtml('rv');
 
     h += '<div class="rv-card">' +
       '<div class="rv-head">' +
@@ -1847,7 +1872,20 @@
     wire('rv-hide', function () { rv.shown = false; renderReview(); });
     wire('rv-note', function () { rv.noteOpen = !rv.noteOpen; renderReview(); });
     wire('rv-pad', function () { rv.padOpen = !rv.padOpen; renderReview(); });
-    wire('rv-play', function () { playFrom('rv'); });
+    wire('rv-play', function () {
+      if (say.now === 'rv') { sayStop(); renderReview(); return; }
+      state.askPlay = (state.askPlay === 'rv') ? '' : 'rv';
+      renderReview();
+    });
+    var whats = box.querySelectorAll('[data-what]');
+    for (var w0 = 0; w0 < whats.length; w0++) {
+      whats[w0].addEventListener('click', function () {
+        var w = this.getAttribute('data-what').split('|');
+        state.askPlay = '';
+        if (w[0] === 'x') { renderReview(); return; }
+        playFrom(w.slice(1).join('|'), w[0]);
+      });
+    }
     wire('rv-auto', function () { rv.askRep = !rv.askRep; renderReview(); });
     wire('rv-pick-no', function () { rv.askRep = false; renderReview(); });
     var reps = box.querySelectorAll('[data-rep]');
@@ -2412,6 +2450,8 @@
         (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</div>';
     }
 
+    if (state.askPlay === ('q:' + ix)) h += whatPickHtml('q:' + ix);
+
     h += padHtml(ix);
     h += applyHtml(ix);
 
@@ -2785,37 +2825,65 @@
    * 한글 → (쉬고) → 영어 순서로 읽습니다.
    * key 는 어느 버튼이 눌렸는지 표시해 두는 이름입니다.
    */
-  function sayPair(key, ko, en, after) {
+  /** 화면과 복습 창을 함께 다시 그립니다. */
+  function redraw() {
+    render();
+    if (rv.open && !auto.on) renderReview();
+  }
+
+  /**
+   * what — 'ko' 한글만 · 'en' 영어만 · 'both' 한글 다음 영어
+   */
+  function sayPair(key, ko, en, after, what) {
     if (!say.on) return;
     unlockSay();                                            // 폰 자물쇠 풀기
-    if (say.now === key) { sayStop(); render(); return; }   // 다시 누르면 멈춤
+    if (say.now === key) { sayStop(); redraw(); return; }   // 다시 누르면 멈춤
 
     sayStop();
     say.stop = false;
     say.now = key;
-    render();
+    redraw();
 
     var pair = askPair(ko, en);
     ko = pair.ko;
     en = pair.en;
+    var mode = what || 'both';
 
     function finish() {
       if (say.now === key) say.now = '';
-      render();
+      redraw();
       if (after) after();
+    }
+    function alive() { return !say.stop && say.now === key; }
+
+    function sayEn() {
+      if (!alive()) { finish(); return; }
+      sayOne(en, 'en-US', EN_RATE, finish);
     }
 
     // cancel() 직후에 바로 말하면 삼켜지는 기기가 있어서 한 박자 쉽니다.
     setTimeout(function () {
-      if (say.stop || say.now !== key) { finish(); return; }
+      if (!alive()) { finish(); return; }
+      if (mode === 'en') { sayEn(); return; }
+
       sayOne(ko, 'ko-KR', KO_RATE, function () {
-        if (say.stop || say.now !== key) { finish(); return; }
-        setTimeout(function () {
-          if (say.stop || say.now !== key) { finish(); return; }
-          sayOne(en, 'en-US', EN_RATE, finish);
-        }, GAP_MID);
+        if (!alive()) { finish(); return; }
+        if (mode === 'ko') { finish(); return; }
+        setTimeout(sayEn, GAP_MID);
       });
     }, 120);
+  }
+
+  /** 무엇을 들을지 고르는 줄 */
+  function whatPickHtml(key) {
+    return '<div class="whatpick">' +
+      '<span class="lab">무엇을 들을까요?</span>' +
+      '<button data-what="ko|' + key + '">한글만</button>' +
+      '<button data-what="en|' + key + '">영어만</button>' +
+      '<button data-what="both|' + key + '">통합</button>' +
+      '<span class="grow"></span>' +
+      '<button class="plain" data-what="x|' + key + '">취소</button>' +
+      '</div>';
   }
   /** 버튼 하나 만들기 */
   function playBtn(key, label) {
@@ -2827,26 +2895,26 @@
   }
 
   /** data-play 에 적힌 이름을 보고 무엇을 읽을지 정합니다. */
-  function playFrom(key) {
+  function playFrom(key, what) {
     unlockSay();
     var p = String(key || '').split(':');
     if (p[0] === 'q') {
       var q = state.items[p[1]];
-      if (q) sayPair(key, q.korean, q.answer);
+      if (q) sayPair(key, q.korean, q.answer, null, what);
       return;
     }
     if (p[0] === 'a') {
       var ap = state.apply[p[1]];
       var one = ap && ap.list[p[2]];
-      if (one) sayPair(key, one.ko, one.en);
+      if (one) sayPair(key, one.ko, one.en, null, what);
       return;
     }
     if (p[0] === 'rv') {
       var cur = rvCurrent();
       if (!cur) return;
       var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
-      if (va && !va.busy && !va.err) sayPair(key, va.ko, va.en);
-      else sayPair(key, cur.korean, cur.answer);
+      if (va && !va.busy && !va.err) sayPair(key, va.ko, va.en, null, what);
+      else sayPair(key, cur.korean, cur.answer, null, what);
     }
   }
 
@@ -2935,6 +3003,9 @@
           '<button class="btn-text" data-ashow="' + ix + ':' + j + '">답 보기</button>' +
           playBtn('a:' + ix + ':' + j) +
           '</div>';
+      }
+      if (state.askPlay === ('a:' + ix + ':' + j)) {
+        h += whatPickHtml('a:' + ix + ':' + j);
       }
       h += '</div></div>';
     }
@@ -3852,7 +3923,20 @@
     }
 
     var pk = b.getAttribute('data-play');
-    if (pk !== null) { playFrom(pk); return; }
+    if (pk !== null) {
+      if (say.now === pk) { sayStop(); render(); return; }   // 듣는 중이면 멈춤
+      state.askPlay = (state.askPlay === pk) ? '' : pk;
+      render();
+      return;
+    }
+    var wk = b.getAttribute('data-what');
+    if (wk !== null) {
+      var w = wk.split('|');
+      state.askPlay = '';
+      if (w[0] === 'x') { render(); return; }
+      playFrom(w.slice(1).join('|'), w[0]);
+      return;
+    }
     ix = b.getAttribute('data-apply');
     if (ix !== null) { askApply(ix); return; }
     var pair = b.getAttribute('data-ashow') || b.getAttribute('data-ahide');
