@@ -348,6 +348,7 @@
     li.q.done .qn{color:var(--accent)}
     .qtop{display:flex; align-items:flex-start; gap:14px}
     .qtop .qko{flex:1; min-width:0}
+    .qko.muted, .rv-ko.muted{color:var(--ink-3); font-weight:400; font-style:italic}
     .qko.foldable{cursor:pointer}
     .qko.foldable:hover{color:var(--accent)}
     .qsave{
@@ -1004,7 +1005,8 @@
     token: '',
     items: [], hasKey: false, loading: true,
     y: now.getFullYear(), m: now.getMonth(),
-    askPlay: '',        // 무엇을 들을지 묻고 있는 단추
+    askPlay: '',        // 무엇을 보일지 묻고 있는 단추
+    showMode: {},       // items 인덱스 -> 'ko' | 'en' | 'both'
     stale: false,       // 지난번 것을 먼저 띄운 상태
     scope: 'all',       // all | today | week | review | done | date
     selDate: '',
@@ -1265,6 +1267,7 @@
     state.padOpen = {};
     state.padDirty = {};
     state.padSaved = {};
+    state.showMode = {};
     state.checked = {};
     state.noteOpen = {};
     state.revealed = {};
@@ -1824,7 +1827,9 @@
         : (oops
           ? ('<p class="rv-wait">' + esc(oops) + '</p>' +
              '<button class="rv-retry" id="rv-revar">다시 만들기</button>')
-          : ('<p class="rv-ko">' + esc(askKo) + '</p>' +
+          : ((rv.show === 'en'
+              ? '<p class="rv-ko muted">— 한글 가림 —</p>'
+              : '<p class="rv-ko">' + esc(askKo) + '</p>') +
              (rv.shown
                ? ('<p class="rv-en">' +
                   (askEn ? esc(askEn) : '영어 문장이 비어 있어요') + '</p>')
@@ -1871,12 +1876,13 @@
 
     wire('rv-close', closeReview);
     wire('rv-show', rvShow);
-    wire('rv-hide', function () { rv.shown = false; renderReview(); });
+    wire('rv-hide', function () { rv.shown = false; rv.show = ''; renderReview(); });
     wire('rv-note', function () { rv.noteOpen = !rv.noteOpen; renderReview(); });
     wire('rv-pad', function () { rv.padOpen = !rv.padOpen; renderReview(); });
     wire('rv-play', function () {
       if (say.now === 'rv') { sayStop(); renderReview(); return; }
       state.askPlay = (state.askPlay === 'rv') ? '' : 'rv';
+      rv.askRep = false;            // 한 번에 한 줄만 띄웁니다
       renderReview();
     });
     var whats = box.querySelectorAll('[data-what]');
@@ -1888,7 +1894,11 @@
         playFrom(w.slice(1).join('|'), w[0]);
       });
     }
-    wire('rv-auto', function () { rv.askRep = !rv.askRep; renderReview(); });
+    wire('rv-auto', function () {
+      rv.askRep = !rv.askRep;
+      state.askPlay = '';          // 한 번에 한 줄만 띄웁니다
+      renderReview();
+    });
     wire('rv-pick-no', function () { rv.askRep = false; renderReview(); });
     var aws = box.querySelectorAll('[data-aw]');
     for (var a0 = 0; a0 < aws.length; a0++) {
@@ -1982,6 +1992,7 @@
     sayStop();
     rv.pos = next;
     rv.shown = false;
+    rv.show = '';
     rv.noteOpen = false;
     rv.padOpen = false;
     renderReview();
@@ -2447,10 +2458,11 @@
           : n2) +
       '</span>' +
       '<div class="qtop">' +
-        '<p class="qko' + (ap && ap.list.length ? ' foldable' : '') + '"' +
+        '<p class="qko' + (ap && ap.list.length ? ' foldable' : '') +
+        (state.showMode[ix] === 'en' ? ' muted' : '') + '"' +
         (ap && ap.list.length
           ? (' data-kofold="' + ix + '" title="눌러서 응용 접기"') : '') +
-        '>' + esc(q.korean) + '</p>' +
+        '>' + (state.showMode[ix] === 'en' ? '— 한글 가림 —' : esc(q.korean)) + '</p>' +
         (st ? '<span class="tag ' + (st === ST_DONE ? 'ok' : 'rv') + '">' +
               esc(st) + '</span>' +
               '<button class="qsave undo" data-unmark="' + ix + '" ' +
@@ -2926,6 +2938,7 @@
       var q = state.items[p[1]];
       if (!q) return;
       if (show) {
+        state.showMode[p[1]] = show;
         if (open) state.revealed[p[1]] = true;
         else delete state.revealed[p[1]];
       }
@@ -2943,7 +2956,7 @@
     if (p[0] === 'rv') {
       var cur = rvCurrent();
       if (!cur) return;
-      if (show) rv.shown = open;
+      if (show) { rv.show = show; rv.shown = open; }
       var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
       if (va && !va.busy && !va.err) sayPair(key, va.ko, va.en);
       else sayPair(key, cur.korean, cur.answer);
@@ -3988,7 +4001,12 @@
     ix = b.getAttribute('data-show');
     if (ix !== null) { state.revealed[ix] = true; render(); return; }
     ix = b.getAttribute('data-hide');
-    if (ix !== null) { delete state.revealed[ix]; state.focusIx = ix; render(); return; }
+    if (ix !== null) {
+      delete state.revealed[ix];
+      delete state.showMode[ix];
+      render();
+      return;
+    }
     ix = b.getAttribute('data-unmark');
     if (ix !== null) { markOne(ix, ''); return; }
     var mk = b.getAttribute('data-mark');
