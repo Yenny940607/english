@@ -2179,6 +2179,7 @@
     if (tryIt) {
       var q = tryIt.split('|');
       var lang = q[0], name = q.slice(1).join('|');
+      unlockSay();
       sayStop();
       var list = voicesFor(lang), v = null;
       for (var i = 0; i < list.length; i++) { if (list[i].name === name) v = list[i]; }
@@ -2226,6 +2227,7 @@
 
   function autoStart(rep) {
     if (!say.on || !rv.queue.length) return;
+    unlockSay();            // 손으로 누른 그 순간에 폰 자물쇠를 풉니다
     sayStop();
     auto.on = true;
     auto.rep = Math.max(1, Math.min(9, Number(rep) || 1));
@@ -2235,7 +2237,7 @@
     rv.askRep = false;
     keepAwake(true);
     renderReview();
-    autoStep();
+    setTimeout(autoStep, 120);
   }
 
   /** 한 문장을 한글 → 영어로 읽고, 다음으로 넘깁니다. */
@@ -2505,23 +2507,83 @@
     return list[0];
   }
 
+  /*
+   * 폰에서 읽어주기가 막히는 까닭이 몇 가지 있습니다.
+   *  - 아이폰은 '손으로 누른 그 순간' 한 번 소리를 내야 그 뒤로 허락해 줍니다.
+   *  - cancel() 바로 뒤에 speak() 하면 삼켜지는 일이 있습니다.
+   *  - 안드로이드 크롬은 15초쯤 지나면 혼자 멈춥니다.
+   * 아래 세 가지로 그걸 피해 갑니다.
+   */
+  var sayReady = false;     // 아이폰 자물쇠를 푼 적이 있는지
+  var sayAlive = null;      // 안드로이드용 깨우기
+
+  /** 손으로 누른 그 순간에 불러야 합니다. */
+  function unlockSay() {
+    if (!say.on || sayReady) return;
+    try {
+      var u = new window.SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
+      sayReady = true;
+    } catch (e) {}
+  }
+
+  /** 안드로이드 크롬이 중간에 멈추는 걸 막습니다. */
+  function keepSaying(on) {
+    if (sayAlive) { clearInterval(sayAlive); sayAlive = null; }
+    if (!on) return;
+    sayAlive = setInterval(function () {
+      try {
+        var s = window.speechSynthesis;
+        if (!s.speaking) { clearInterval(sayAlive); sayAlive = null; return; }
+        s.pause();
+        s.resume();
+      } catch (e) {}
+    }, 9000);
+  }
+
   function sayOne(text, lang, rate, done) {
     var t = String(text || '').trim();
     if (!t) { done(); return; }
+
     var u = new window.SpeechSynthesisUtterance(t);
     u.lang = lang;
     u.rate = rate || 1;
     var v = pickVoice(lang);
     if (v) u.voice = v;
-    u.onend = done;
-    u.onerror = done;
-    try { window.speechSynthesis.speak(u); } catch (e) { done(); }
+
+    var over = false;
+    function once() {
+      if (over) return;
+      over = true;
+      keepSaying(false);
+      done();
+    }
+    u.onend = once;
+    u.onerror = once;
+
+    try {
+      window.speechSynthesis.speak(u);
+      keepSaying(true);
+    } catch (e) { once(); }
+
+    // 아예 시작조차 못 하는 기기가 있습니다. 그럴 땐 넘어갑니다.
+    setTimeout(function () {
+      try {
+        var s = window.speechSynthesis;
+        if (!over && !s.speaking && !s.pending) once();
+      } catch (e) {}
+    }, 1200);
   }
 
   function sayStop() {
     if (!say.on) return;
     say.stop = true;
-    try { window.speechSynthesis.cancel(); } catch (e) {}
+    keepSaying(false);
+    try {
+      var s = window.speechSynthesis;
+      if (s.speaking || s.pending) s.cancel();
+    } catch (e) {}
     say.now = '';
   }
 
@@ -2531,6 +2593,7 @@
    */
   function sayPair(key, ko, en, after) {
     if (!say.on) return;
+    unlockSay();                                            // 폰 자물쇠 풀기
     if (say.now === key) { sayStop(); render(); return; }   // 다시 누르면 멈춤
 
     sayStop();
@@ -2544,15 +2607,18 @@
       if (after) after();
     }
 
-    sayOne(ko, 'ko-KR', 1, function () {
+    // cancel() 직후에 바로 말하면 삼켜지는 기기가 있어서 한 박자 쉽니다.
+    setTimeout(function () {
       if (say.stop || say.now !== key) { finish(); return; }
-      setTimeout(function () {
+      sayOne(ko, 'ko-KR', 1, function () {
         if (say.stop || say.now !== key) { finish(); return; }
-        sayOne(en, 'en-US', 0.92, finish);
-      }, GAP_MID);
-    });
+        setTimeout(function () {
+          if (say.stop || say.now !== key) { finish(); return; }
+          sayOne(en, 'en-US', 0.92, finish);
+        }, GAP_MID);
+      });
+    }, 120);
   }
-
   /** 버튼 하나 만들기 */
   function playBtn(key, label) {
     if (!say.on) return '';
@@ -2564,6 +2630,7 @@
 
   /** data-play 에 적힌 이름을 보고 무엇을 읽을지 정합니다. */
   function playFrom(key) {
+    unlockSay();
     var p = String(key || '').split(':');
     if (p[0] === 'q') {
       var q = state.items[p[1]];
