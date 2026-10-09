@@ -2136,8 +2136,11 @@
         '영어를 남녀 번갈아 읽기</button>' +
         '<span class="grow"></span>' +
       '</div>' +
-      '<p class="vtip ontop">목소리가 하나뿐인 기기(대개 폰)에서는 높낮이를 조금 바꿔서 ' +
-      '갈라 들려줍니다. 기계음처럼 들리면 꺼주세요.</p>';
+      '<p class="vtip ontop">' +
+      (hasTwoVoices()
+        ? '이 기기엔 남녀 목소리가 따로 있어서 그대로 번갈아 읽습니다.'
+        : '이 기기엔 목소리가 하나뿐입니다. 켜면 높낮이를 바꿔서 갈라 들려주는데, ' +
+          '기계음처럼 들릴 수 있어 꺼두었습니다.') + '</p>';
 
     [['ko', '한국어', 'ko-KR'], ['en', '영어', 'en-US']].forEach(function (g) {
       var list = voicesFor(g[2]);
@@ -2536,10 +2539,28 @@
     try { return JSON.parse(localStorage.getItem(VOICE_STORE) || '{}') || {}; }
     catch (e) { return {}; }
   }
-  /** 남녀 번갈아 읽기 (끄면 목소리를 안 비틉니다) */
+  /** 남녀 목소리가 따로 있는 기기인지 (대개 컴퓨터) */
+  function hasTwoVoices() {
+    var list = voicesFor('en-US');
+    var m = false, f = false;
+    for (var i = 0; i < list.length; i++) {
+      var g = genderOf(list[i]);
+      if (g === 'm') m = true;
+      if (g === 'f') f = true;
+    }
+    return m && f;
+  }
+
+  /*
+   * 남녀 번갈아 읽기.
+   * 진짜 두 목소리가 있는 기기에서만 저절로 켭니다.
+   * 하나뿐인 기기(폰)에서 높낮이를 비틀면 기계음이 나서, 꺼둔 채로 둡니다.
+   * 회원님이 직접 켜고 끄신 적이 있으면 그 뜻을 따릅니다.
+   */
   function altOn() {
     var p = voicePrefs();
-    return p.alt !== false;        // 따로 끄지 않았으면 켜짐
+    if (typeof p.alt === 'boolean') return p.alt;
+    return hasTwoVoices();
   }
   function setAlt(on) {
     var p = voicePrefs();
