@@ -2256,7 +2256,7 @@
    *   1번 한글 → 영어 (고른 횟수만큼) → 2번 한글 → 영어 → …
    * 화면을 안 봐도 되게, 읽는 동안은 화면이 꺼지지 않게 해둡니다.
    */
-  var auto = { on: false, i: 0, r: 0, rep: 1, what: 'both', wake: null };
+  var auto = { on: false, i: 0, r: 0, rep: 1, show: 'both', wake: null };
 
   function keepAwake(on) {
     try {
@@ -2297,7 +2297,7 @@
     sayStop();
     auto.on = true;
     auto.rep = Math.max(1, Math.min(5, Number(rep) || 1));
-    auto.what = rv.autoWhat || 'both';
+    auto.show = rv.autoWhat || 'both';   // 화면에 무엇을 보일지 (소리는 늘 한글→영어)
     auto.i = Math.min(rv.pos, rv.queue.length - 1);
     if (auto.i < 0) auto.i = 0;
     auto.r = 0;
@@ -2331,50 +2331,33 @@
       }, GAP_SET);
     }
 
-    var mode = auto.what || 'both';
-
-    /** 고른 횟수만큼 거듭 읽습니다. */
-    function turn(k) {
+    /** 영어를 k 번째로 읽습니다. 처음은 여자, 그다음 남자, 번갈아. */
+    function enTurn(k) {
       if (!auto.on) return;
       if (k >= auto.rep) { toNext(); return; }
       auto.r = k;
       renderReview();
-
-      function thenNext() {
-        if (!auto.on) return;
-        setTimeout(function () { turn(k + 1); }, GAP_REP);
-      }
-
-      if (mode === 'ko') {
-        var ks = koSet();
-        var c = ALT_CYCLE[k % ALT_CYCLE.length];
-        sayVoice(pair.ko, 'ko-KR', ks.voice, c.rate, ks.pitch, thenNext);
-        return;
-      }
       var who = (k % 2 === 0) ? 'f' : 'm';
       var set = speakAs('en-US', who, k, hasMark(pair.en));
-      sayVoice(pair.en, 'en-US', set.voice, set.rate || EN_RATE, set.pitch, thenNext);
+      sayVoice(pair.en, 'en-US', set.voice, set.rate || EN_RATE, set.pitch, function () {
+        if (!auto.on) return;
+        setTimeout(function () { enTurn(k + 1); }, GAP_REP);
+      });
     }
 
     auto.r = 0;
-
-    // 통합이면 한글을 한 번 읽고 시작합니다.
-    if (mode === 'both') {
-      var kset = koSet();
-      sayVoice(pair.ko, 'ko-KR', kset.voice, KO_RATE, kset.pitch, function () {
-        if (!auto.on) return;
-        setTimeout(function () { turn(0); }, GAP_MID);
-      });
-      return;
-    }
-    turn(0);
+    var kset = koSet();
+    sayVoice(pair.ko, 'ko-KR', kset.voice, KO_RATE, kset.pitch, function () {
+      if (!auto.on) return;
+      setTimeout(function () { enTurn(0); }, GAP_MID);
+    });
   }
 
   /** 몇 번씩 읽을지 고르는 줄 */
   function repPickHtml() {
     var w = rv.autoWhat || 'both';
     var h = '<div class="rv-pick">' +
-      '<span class="lab">무엇을</span>' +
+      '<span class="lab">화면에</span>' +
       '<button data-aw="ko"' + (w === 'ko' ? ' class="on"' : '') + '>한글만</button>' +
       '<button data-aw="en"' + (w === 'en' ? ' class="on"' : '') + '>영어만</button>' +
       '<button data-aw="both"' + (w === 'both' ? ' class="on"' : '') + '>통합</button>' +
@@ -2384,8 +2367,7 @@
 
     h += '<div class="rv-pick">' +
       '<span class="lab">' +
-      (w === 'ko' ? '한글을 몇 번씩'
-        : w === 'en' ? '영어를 몇 번씩' : '영어를 몇 번씩 (한글은 한 번)') +
+      '영어를 몇 번씩 읽을까요 (한글은 한 번)' +
       '</span>';
     for (var k = 1; k <= 5; k++) {
       h += '<button data-rep="' + k + '">' + k + '회</button>';
@@ -2408,12 +2390,13 @@
       '<div class="rv-card">' +
         '<div class="rv-head">' +
           '<span class="rv-date">' + esc(rvDate(q ? q.date : '')) + '</span>' +
-          '<span class="rv-point">이어 듣는 중 · ' +
-            (auto.what === 'ko' ? '한글 ' : '영어 ') +
+          '<span class="rv-point">이어 듣는 중 · 영어 ' +
             (auto.r + 1) + '/' + auto.rep + '</span>' +
         '</div>' +
-        '<p class="rv-ko">' + esc(q ? q.korean : '') + '</p>' +
-        '<p class="rv-en">' + esc(q ? q.answer : '') + '</p>' +
+        (auto.show === 'en' ? ''
+          : '<p class="rv-ko">' + esc(q ? q.korean : '') + '</p>') +
+        (auto.show === 'ko' ? ''
+          : '<p class="rv-en">' + esc(q ? q.answer : '') + '</p>') +
       '</div>' +
       '<button class="rv-main" id="auto-stop">■ 멈추기</button>' +
       '<div class="rv-nav">' +
@@ -2871,10 +2854,8 @@
     if (rv.open && !auto.on) renderReview();
   }
 
-  /**
-   * what — 'ko' 한글만 · 'en' 영어만 · 'both' 한글 다음 영어
-   */
-  function sayPair(key, ko, en, after, what) {
+  /** 한글을 읽고, 한 박자 쉬었다가 영어를 읽습니다. */
+  function sayPair(key, ko, en, after) {
     if (!say.on) return;
     unlockSay();                                            // 폰 자물쇠 풀기
     if (say.now === key) { sayStop(); redraw(); return; }   // 다시 누르면 멈춤
@@ -2887,7 +2868,6 @@
     var pair = askPair(ko, en);
     ko = pair.ko;
     en = pair.en;
-    var mode = what || 'both';
 
     function finish() {
       if (say.now === key) say.now = '';
@@ -2904,11 +2884,9 @@
     // cancel() 직후에 바로 말하면 삼켜지는 기기가 있어서 한 박자 쉽니다.
     setTimeout(function () {
       if (!alive()) { finish(); return; }
-      if (mode === 'en') { sayEn(); return; }
 
       sayOne(ko, 'ko-KR', KO_RATE, function () {
         if (!alive()) { finish(); return; }
-        if (mode === 'ko') { finish(); return; }
         setTimeout(sayEn, GAP_MID);
       });
     }, 120);
@@ -2917,7 +2895,7 @@
   /** 무엇을 들을지 고르는 줄 */
   function whatPickHtml(key) {
     return '<div class="whatpick">' +
-      '<span class="lab">무엇을 들을까요?</span>' +
+      '<span class="lab">화면에 무엇을 보일까요?</span>' +
       '<button data-what="ko|' + key + '">한글만</button>' +
       '<button data-what="en|' + key + '">영어만</button>' +
       '<button data-what="both|' + key + '">통합</button>' +
@@ -2935,26 +2913,40 @@
   }
 
   /** data-play 에 적힌 이름을 보고 무엇을 읽을지 정합니다. */
-  function playFrom(key, what) {
+  /**
+   * show — 화면에 무엇을 보일지. 소리는 늘 한글 다음 영어입니다.
+   *   'ko' 한글만 (영어는 가림) · 'en'·'both' 영어도 펼침
+   */
+  function playFrom(key, show) {
     unlockSay();
     var p = String(key || '').split(':');
+    var open = (show === 'en' || show === 'both');
+
     if (p[0] === 'q') {
       var q = state.items[p[1]];
-      if (q) sayPair(key, q.korean, q.answer, null, what);
+      if (!q) return;
+      if (show) {
+        if (open) state.revealed[p[1]] = true;
+        else delete state.revealed[p[1]];
+      }
+      sayPair(key, q.korean, q.answer);
       return;
     }
     if (p[0] === 'a') {
       var ap = state.apply[p[1]];
       var one = ap && ap.list[p[2]];
-      if (one) sayPair(key, one.ko, one.en, null, what);
+      if (!one) return;
+      if (show) one.shown = open;
+      sayPair(key, one.ko, one.en);
       return;
     }
     if (p[0] === 'rv') {
       var cur = rvCurrent();
       if (!cur) return;
+      if (show) rv.shown = open;
       var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
-      if (va && !va.busy && !va.err) sayPair(key, va.ko, va.en, null, what);
-      else sayPair(key, cur.korean, cur.answer, null, what);
+      if (va && !va.busy && !va.err) sayPair(key, va.ko, va.en);
+      else sayPair(key, cur.korean, cur.answer);
     }
   }
 
