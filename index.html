@@ -2133,14 +2133,15 @@
       '<button class="x" id="v-close" title="닫기">&times;</button></div>' +
       '<div class="vrow valt' + (altOn() ? ' on' : '') + '">' +
         '<button class="vuse" id="v-alt">' + (altOn() ? '● ' : '○ ') +
-        '영어를 남녀 번갈아 읽기</button>' +
+        (hasTwoVoices() ? '영어를 남녀 번갈아 읽기'
+                        : '거듭 읽을 때 높낮이 바꾸기') + '</button>' +
         '<span class="grow"></span>' +
       '</div>' +
       '<p class="vtip ontop">' +
       (hasTwoVoices()
-        ? '이 기기엔 남녀 목소리가 따로 있어서 그대로 번갈아 읽습니다.'
-        : '이 기기엔 목소리가 하나뿐이라 남녀로 갈리진 않습니다.') +
-      ' 어느 쪽이든 거듭 읽을 때마다 빠르기와 높낮이를 조금씩 달리합니다.</p>';
+        ? '이 기기엔 남녀 목소리가 따로 있어서 목소리를 번갈아 씁니다. 빠르기만 조금씩 달라집니다.'
+        : '이 기기엔 목소리가 하나뿐입니다. 그 목소리 그대로 두고 높낮이와 빠르기만 조금씩 달리합니다.') +
+      '</p>';
 
     [['ko', '한국어', 'ko-KR'], ['en', '영어', 'en-US']].forEach(function (g) {
       var list = voicesFor(g[2]);
@@ -2218,7 +2219,7 @@
     if (b.id === 'v-alt') {
       setAlt(!altOn());
       voiceBox(true);
-      msg(altOn() ? '남녀 번갈아 읽습니다.' : '한 목소리로만 읽습니다.', 'ok');
+      msg(altOn() ? '거듭 읽을 때 소리를 바꿉니다.' : '늘 같은 소리로 읽습니다.', 'ok');
       return;
     }
 
@@ -2552,15 +2553,13 @@
   }
 
   /*
-   * 남녀 번갈아 읽기.
-   * 진짜 두 목소리가 있는 기기에서만 저절로 켭니다.
-   * 하나뿐인 기기(폰)에서 높낮이를 비틀면 기계음이 나서, 꺼둔 채로 둡니다.
-   * 회원님이 직접 켜고 끄신 적이 있으면 그 뜻을 따릅니다.
+   * 거듭 읽을 때 소리를 바꿀지.
+   *   남녀 목소리가 따로 있는 기기 → 목소리를 번갈아 (높낮이는 그대로)
+   *   하나뿐인 기기(폰)            → 한 목소리로, 높낮이만 달리
    */
   function altOn() {
     var p = voicePrefs();
-    if (typeof p.alt === 'boolean') return p.alt;
-    return hasTwoVoices();
+    return (typeof p.alt === 'boolean') ? p.alt : true;
   }
   function setAlt(on) {
     var p = voicePrefs();
@@ -2705,15 +2704,18 @@
   /** k 는 몇 번째로 읽는지 (0부터) */
   function speakAs(lang, want, k, asking) {
     var list = voicesFor(lang);
-    var best = list.length ? list[0] : null;
+    var best = list.length ? list[0] : pickVoice(lang);
     var c = ALT_CYCLE[(Number(k) || 0) % ALT_CYCLE.length];
 
     // 묻는 문장을 낮게 깔면 끝이 안 올라간 것처럼 들립니다.
     if (asking) c = { pitch: Math.max(1.02, c.pitch), rate: c.rate };
 
-    // 남녀 목소리가 따로 있으면 그걸 씁니다. (컴퓨터)
-    // 목소리가 이미 다르니 높낮이는 그대로 두고 빠르기만 달리합니다.
-    if (altOn()) {
+    // 꺼두셨으면 늘 같은 소리로 읽습니다.
+    if (!altOn()) return { voice: best, pitch: 1, rate: EN_RATE };
+
+    // 남녀 목소리가 따로 있는 기기(컴퓨터)는 목소리를 번갈아 씁니다.
+    // 목소리가 이미 다르니 높낮이는 안 건드리고 빠르기만 달리합니다.
+    if (hasTwoVoices()) {
       for (var i = 0; i < list.length; i++) {
         if (genderOf(list[i]) === want) {
           return { voice: list[i], pitch: 1, rate: c.rate };
@@ -2721,8 +2723,8 @@
       }
     }
 
-    // 하나뿐이면(폰) 회차마다 높낮이와 빠르기를 조금씩 달리 읽습니다.
-    return { voice: best || pickVoice(lang), pitch: c.pitch, rate: c.rate };
+    // 하나뿐인 기기(폰)는 그 목소리 그대로, 높낮이와 빠르기만 달리합니다.
+    return { voice: best, pitch: c.pitch, rate: c.rate };
   }
 
   /** 예전 이름 (목소리 하나만 필요할 때) */
