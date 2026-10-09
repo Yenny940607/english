@@ -92,6 +92,8 @@
     .mrev:hover:not(:disabled){background:var(--sky); color:var(--sky-ink)}
     .mrev.done{color:var(--ok)}
     .mrev:disabled{opacity:.35}
+    .cal-head{flex-wrap:wrap}
+    .cal-head .mrev{font-size:.66rem; padding:3px 8px}
 
     /* 맨 앞 한 칸은 주간 복습 버튼 자리 */
     .grid{display:grid; grid-template-columns:19px repeat(7,minmax(0,1fr));
@@ -918,6 +920,7 @@
             <button class="nav" id="prev" title="지난 달">‹</button>
             <span class="ym" id="ym">—</span>
             <button class="mrev" id="month-rev" title="이 달 문장을 통째로 복습">월 복습</button>
+            <button class="mrev" id="all-rev" title="달 상관없이 시트에 있는 문장 전부">전체</button>
             <button class="nav" id="next" title="다음 달">›</button>
           </div>
           <div class="grid" id="dow-row"></div>
@@ -1295,6 +1298,18 @@
     var mk = monthKeyOf(state.y, state.m);
     var mN = itemsInMonth(mk).length;
     var mDone = lastReviewOf(mk, '월간');
+    var ab = $('all-rev');
+    if (ab) {
+      var aN = state.items.length;
+      var aDone = lastAllReview();
+      ab.disabled = !aN;
+      ab.className = 'mrev' + (aDone ? ' done' : '');
+      ab.title = aN
+        ? ('달 상관없이 ' + aN + '문장 전부를 무작위로 복습합니다' +
+           (aDone ? (' · 지난 복습 ' + aDone.logged) : ''))
+        : '시트에 문장이 없어요';
+    }
+
     var mb = $('month-rev');
     if (mb) {
       mb.disabled = !mN;
@@ -1601,6 +1616,12 @@
     var p = String(key || '').split('-');
     return (+p[0]) + '년 ' + (+p[1]) + '월';
   }
+  function itemsAll() {
+    var out = [];
+    for (var i = 0; i < state.items.length; i++) out.push(i);
+    return out;
+  }
+
   function itemsInMonth(key) {
     var pre = String(key || '').slice(0, 8);   // 2026-09-
     var out = [];
@@ -1609,6 +1630,14 @@
       if (d && d.slice(0, 8) === pre) out.push(i);
     }
     return out;
+  }
+
+  /** 전체 복습은 날짜가 매번 달라서 종류로만 찾습니다. */
+  function lastAllReview() {
+    for (var i = 0; i < state.reviews.length; i++) {
+      if ((state.reviews[i].kind || '') === '전체') return state.reviews[i];
+    }
+    return null;
   }
 
   /** 지난 복습 기록. 주간과 월간은 따로 셉니다. */
@@ -1637,6 +1666,7 @@
 
   /** 지금 복습하는 범위 이름 (9.6 – 9.12 / 2026년 9월) */
   function rvScopeLabel() {
+    if (rv.kind === '전체') return '전체 ' + rv.queue.length + '문장';
     return rv.kind === '월간' ? monthLabel(rv.key) : weekLabel(rv.key);
   }
 
@@ -1665,10 +1695,13 @@
   }
 
   function openReview(key, kind) {
-    var scope = (kind === '월간') ? '월간' : '주간';
-    var idx = (scope === '월간') ? itemsInMonth(key) : itemsInWeek(key);
+    var scope = (kind === '전체') ? '전체'
+              : (kind === '월간') ? '월간' : '주간';
+    var idx = (scope === '전체') ? itemsAll()
+            : (scope === '월간') ? itemsInMonth(key) : itemsInWeek(key);
     if (!idx.length) {
-      msg((scope === '월간' ? monthLabel(key) : weekLabel(key) + ' 주') +
+      msg((scope === '전체' ? '시트'
+           : scope === '월간' ? monthLabel(key) : weekLabel(key) + ' 주') +
           '에는 문장이 없어요.', 'err');
       return;
     }
@@ -1737,7 +1770,7 @@
     var h = '<div class="sheet rv">';
 
     if (!q) {
-      var past = lastReviewOf(rv.key, rv.kind);
+      var past = (rv.kind === '전체') ? lastAllReview() : lastReviewOf(rv.key, rv.kind);
       var rate = total ? Math.round(t.done * 100 / total) : 0;
       h += '<div class="rv-done">' +
         '<div class="scope">' + esc(rv.kind + ' 복습 · ' + rvScopeLabel()) + '</div>' +
@@ -2032,7 +2065,8 @@
     if (send.length) call('markMany', [send], function () {}, function () {});
 
     call('saveReview',
-      [rv.key, rv.queue.length, t.done, t.review, rvMissed(), rv.kind],
+      [(rv.kind === '전체') ? todayKey() : rv.key,
+       rv.queue.length, t.done, t.review, rvMissed(), rv.kind],
       function (rows) {
         state.reviews = rows || state.reviews;
         rv.saving = false;
@@ -2770,37 +2804,49 @@
 
   /*
    * 물음표가 없으면 읽어주기가 평서문처럼 쭉 내려 읽습니다.
-   * 한쪽에만 물음표가 있으면 다른 쪽에도 붙여서 끝을 올려 읽게 합니다.
+   * 그래서 '묻는 꼴'인 문장에만 읽기 직전에 물음표를 붙입니다.
+   * 한글과 영어는 따로따로 봅니다 —
+   * 한글이 의문문이어도 영어가 평서문이면 영어는 그대로 둡니다.
    * (시트 글자는 안 건드립니다. 읽을 때만 붙입니다)
    */
-  var EN_ASK = /^(do|does|did|are|is|was|were|am|can|could|will|would|shall|should|have|has|had|may|might|who|what|when|where|why|how|which|whose|whom|any|anyone|anybody)\b/i;
-  var KO_ASK = /(까요|까|나요|가요|래요|래|죠|지요|니|냐|는데|은데|신가요|실까요|을까|ㄹ까)[\s.!…]*$/;
+
+  // 영어: do/are/can/what 처럼 묻는 말로 시작하면
+  var EN_ASK = /^(do|does|did|are|is|was|were|am|can|could|will|would|shall|should|have|has|had|may|might|who|what|when|where|why|how|which|whose|whom)\b/i;
+
+  // 영어: "…, right?" "…, haven't you?" 처럼 뒤에 붙여 묻는 꼴
+  var EN_TAG = /,\s*(right|correct|ok|okay|huh|eh|yeah|no)\s*[.!]*$/i;
+  var EN_TAG2 = /,\s*(is|are|was|were|am|do|does|did|have|has|had|can|could|will|would|should|shall|may|might)\s*n[o']?t?\s+(i|you|he|she|it|we|they|there)\s*[.!]*$/i;
+  var EN_TAG3 = /,\s*(is|are|was|were|am|do|does|did|have|has|had|can|could|will|would)\s+(i|you|he|she|it|we|they|there)\s*[.!]*$/i;
+
+  // 한글: 분명히 묻는 끝맺음만 (…했는데 처럼 평서문에도 쓰는 건 뺐습니다)
+  var KO_ASK = /(까요|나요|가요|을까|ㄹ까|신가요|실까요|할까|인가요|대요|니까)[\s.!…]*$/;
 
   function hasMark(t) {
     return /\?["'’”)\]\s]*$/.test(String(t || '').trim());
   }
+
   function addMark(t) {
     var v = String(t || '').trim();
     if (!v || hasMark(v)) return v;
     return v.replace(/[.!…]+$/, '') + '?';
   }
 
-  /** 한글·영어를 함께 보고 물음표를 맞춰줍니다. */
+  function isAskEn(t) {
+    var v = String(t || '').trim();
+    return EN_ASK.test(v) || EN_TAG.test(v) || EN_TAG2.test(v) || EN_TAG3.test(v);
+  }
+
+  /** 한글·영어를 각각 제 꼴대로 보고 물음표를 붙입니다. */
   function askPair(ko, en) {
     var k = String(ko || '').trim();
     var e = String(en || '').trim();
 
-    var asked = hasMark(k) || hasMark(e);
-    // 양쪽 다 물음표가 없어도, 둘 다 묻는 꼴이면 물음으로 봅니다.
-    if (!asked && KO_ASK.test(k) && EN_ASK.test(e)) asked = true;
+    if (!hasMark(k) && KO_ASK.test(k)) k = addMark(k);
+    if (!hasMark(e) && isAskEn(e)) e = addMark(e);
 
-    return asked ? { ko: addMark(k), en: addMark(e) } : { ko: k, en: e };
+    return { ko: k, en: e };
   }
 
-  /*
-   * 한국어는 기기에서 가장 나은 목소리를 그대로 씁니다.
-   * 억지로 남자처럼 낮추면 웅얼거려서 듣기 나쁩니다.
-   */
   function koSet() { return { voice: pickVoice('ko-KR'), pitch: 1 }; }
   function koVoice() { return koSet().voice; }
   function koPitch() { return 1; }
@@ -3987,6 +4033,9 @@
   });
   $('month-rev').addEventListener('click', function () {
     openReview(monthKeyOf(state.y, state.m), '월간');
+  });
+  $('all-rev').addEventListener('click', function () {
+    openReview(todayKey(), '전체');
   });
   $('next').addEventListener('click', function () {
     state.m++; if (state.m > 11) { state.m = 0; state.y++; }
