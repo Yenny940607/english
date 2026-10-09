@@ -2272,14 +2272,16 @@
       auto.r = k;
       renderReview();
       var who = (k % 2 === 0) ? 'f' : 'm';
-      sayVoice(pair.en, 'en-US', voiceByGender('en-US', who), EN_RATE, 1, function () {
+      var set = speakAs('en-US', who);
+      sayVoice(pair.en, 'en-US', set.voice, EN_RATE, set.pitch, function () {
         if (!auto.on) return;
-        setTimeout(function () { enTurn(k + 1); }, GAP_MID);
+        setTimeout(function () { enTurn(k + 1); }, GAP_REP);
       });
     }
 
     auto.r = 0;
-    sayVoice(pair.ko, 'ko-KR', koVoice(), KO_RATE, koPitch(), function () {
+    var kset = koSet();
+    sayVoice(pair.ko, 'ko-KR', kset.voice, KO_RATE, kset.pitch, function () {
       if (!auto.on) return;
       setTimeout(function () { enTurn(0); }, GAP_MID);
     });
@@ -2587,19 +2589,29 @@
   }
 
   /**
-   * 그 말의 목소리 중 원하는 성별을 고릅니다.
-   * 없으면 좋은 것 아무거나 내주되, 번갈아 쓰도록 두 번째 것을 내주기도 합니다.
+   * 원하는 성별로 말할 채비를 합니다. { voice, pitch }
+   * 폰에는 목소리가 한 가지뿐인 때가 많습니다.
+   * 그럴 땐 높낮이를 바꿔서 남자·여자처럼 들리게 만듭니다.
    */
-  function voiceByGender(lang, want) {
+  function speakAs(lang, want) {
     var list = voicesFor(lang);
-    if (!list.length) return null;
-    for (var i = 0; i < list.length; i++) {
-      if (genderOf(list[i]) === want) return list[i];
+    if (!list.length) {
+      return { voice: null, pitch: (want === 'm') ? 0.72 : 1.18 };
     }
-    // 성별을 모르겠으면 남자 자리에는 두 번째 목소리를 씁니다 (그래야 번갈아 들립니다)
-    if (want === 'm' && list.length > 1) return list[1];
-    return list[0];
+
+    // 1) 이름으로 성별을 알 수 있는 게 있으면 그걸 씁니다.
+    for (var i = 0; i < list.length; i++) {
+      if (genderOf(list[i]) === want) {
+        return { voice: list[i], pitch: (want === 'm') ? 0.96 : 1 };
+      }
+    }
+
+    // 2) 없으면 가장 좋은 목소리에 높낮이를 입혀 흉내 냅니다.
+    return { voice: list[0], pitch: (want === 'm') ? 0.72 : 1.18 };
   }
+
+  /** 예전 이름 (목소리 하나만 필요할 때) */
+  function voiceByGender(lang, want) { return speakAs(lang, want).voice; }
 
   function sayVoice(text, lang, v, rate, pitch, done) {
     var t = String(text || '').trim();
@@ -2668,14 +2680,12 @@
    * 진짜 남자 목소리면 그대로 두고(억지로 낮추면 웅얼거립니다),
    * 남자 목소리가 없는 기기에서만 살짝 낮춰서 비슷하게 들리게 합니다.
    */
-  function koVoice() { return voiceByGender('ko-KR', 'm'); }
-
-  function koPitch() {
-    var v = koVoice();
-    return (v && genderOf(v) === 'm') ? 0.96 : 0.86;
-  }
+  function koSet() { return speakAs('ko-KR', 'm'); }
+  function koVoice() { return koSet().voice; }
+  function koPitch() { return koSet().pitch; }
   var KO_RATE = 0.98;
   var EN_RATE = 0.9;
+  var GAP_REP = 1100;   // 영어를 거듭 읽을 때 사이
 
   function sayOne(text, lang, rate, done) {
     var low = (lang.slice(0, 2) === 'ko');
