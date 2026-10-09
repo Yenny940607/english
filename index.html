@@ -2131,7 +2131,8 @@
         h += '<div class="vrow' + (on ? ' on' : '') + '">' +
           '<button class="vuse" data-vuse="' + g[0] + '|' + esc(v.name) + '">' +
           (on ? '● ' : '○ ') + esc(v.name) + '</button>' +
-          '<span class="vlang">' + esc(String(v.lang || '').replace('_', '-')) + '</span>' +
+          '<span class="vlang">' + esc(String(v.lang || '').replace('_', '-')) +
+          (genderOf(v) === 'm' ? ' · 남' : genderOf(v) === 'f' ? ' · 여' : '') + '</span>' +
           '<span class="grow"></span>' +
           (voiceScore(v, g[2]) >= 12 ? '<span class="good">또렷함</span>' : '') +
           '<button class="vtry" data-vtry="' + g[2] + '|' + esc(v.name) + '">▶ 들어보기</button>' +
@@ -2230,7 +2231,7 @@
     unlockSay();            // 손으로 누른 그 순간에 폰 자물쇠를 풉니다
     sayStop();
     auto.on = true;
-    auto.rep = Math.max(1, Math.min(9, Number(rep) || 1));
+    auto.rep = Math.max(1, Math.min(5, Number(rep) || 1));
     auto.i = Math.min(rv.pos, rv.queue.length - 1);
     if (auto.i < 0) auto.i = 0;
     auto.r = 0;
@@ -2241,35 +2242,52 @@
   }
 
   /** 한 문장을 한글 → 영어로 읽고, 다음으로 넘깁니다. */
+  /*
+   * 한 문장 차례:
+   *   한글 1번 (남자, 중저음) → 영어를 고른 횟수만큼 (여자·남자 번갈아)
+   * 그러고 다음 문장으로 넘어갑니다.
+   */
   function autoStep() {
     if (!auto.on) return;
     var q = autoCurrent();
     if (!q) { autoStop(); return; }
 
-    sayOne(q.korean, 'ko-KR', 1, function () {
-      if (!auto.on) return;
+    function toNext() {
       setTimeout(function () {
         if (!auto.on) return;
-        sayOne(q.answer, 'en-US', 0.92, function () {
-          if (!auto.on) return;
-          setTimeout(function () {
-            if (!auto.on) return;
-            auto.r++;
-            if (auto.r >= auto.rep) { auto.r = 0; auto.i++; }
-            if (auto.i >= rv.queue.length) { autoStop(); return; }
-            renderReview();
-            autoStep();
-          }, GAP_SET);
-        });
-      }, GAP_MID);
+        auto.i++;
+        auto.r = 0;
+        if (auto.i >= rv.queue.length) { autoStop(); return; }
+        renderReview();
+        autoStep();
+      }, GAP_SET);
+    }
+
+    /** 영어를 k 번째로 읽습니다. 처음은 여자, 그다음 남자, 번갈아. */
+    function enTurn(k) {
+      if (!auto.on) return;
+      if (k >= auto.rep) { toNext(); return; }
+      auto.r = k;
+      renderReview();
+      var who = (k % 2 === 0) ? 'f' : 'm';
+      sayVoice(q.answer, 'en-US', voiceByGender('en-US', who), 0.92, 1, function () {
+        if (!auto.on) return;
+        setTimeout(function () { enTurn(k + 1); }, GAP_MID);
+      });
+    }
+
+    auto.r = 0;
+    sayVoice(q.korean, 'ko-KR', koVoice(), 1, KO_PITCH, function () {
+      if (!auto.on) return;
+      setTimeout(function () { enTurn(0); }, GAP_MID);
     });
   }
 
   /** 몇 번씩 읽을지 고르는 줄 */
   function repPickHtml() {
     var h = '<div class="rv-pick">' +
-      '<span class="lab">같은 문장을 몇 번씩 읽을까요?</span>';
-    for (var k = 1; k <= 4; k++) {
+      '<span class="lab">영어를 몇 번씩 읽을까요? (한글은 한 번)</span>';
+    for (var k = 1; k <= 5; k++) {
       h += '<button data-rep="' + k + '">' + k + '회</button>';
     }
     return h + '<span class="grow"></span>' +
@@ -2291,7 +2309,8 @@
       '<div class="rv-card">' +
         '<div class="rv-head">' +
           '<span class="rv-date">' + esc(rvDate(q ? q.date : '')) + '</span>' +
-          '<span class="rv-point">이어 듣는 중 · ' + auto.rep + '회씩</span>' +
+          '<span class="rv-point">이어 듣는 중 · 영어 ' +
+            (auto.r + 1) + '/' + auto.rep + '</span>' +
         '</div>' +
         '<p class="rv-ko">' + esc(q ? q.korean : '') + '</p>' +
         '<p class="rv-en">' + esc(q ? q.answer : '') + '</p>' +
@@ -2542,14 +2561,51 @@
     }, 9000);
   }
 
-  function sayOne(text, lang, rate, done) {
+  /*
+   * 남자 목소리 / 여자 목소리 가려내기.
+   * 기기마다 이름이 다 달라서, 흔한 이름들을 적어두고 맞춰봅니다.
+   */
+  var V_MALE = ' injoon inJoon guy david ryan mark christopher eric brian andrew ' +
+    'roger steffan thomas george daniel alex fred aaron tom james john male 남성 남자 ';
+  var V_FEMALE = ' sunhi heami yuna aria zira jenny michelle ana sara emma ava ' +
+    'samantha karen moira tessa nicky serena allison female 여성 여자 ';
+
+  /** 'm' 남자 · 'f' 여자 · '' 모르겠음 */
+  function genderOf(v) {
+    var nm = ' ' + String(v && v.name || '').toLowerCase() + ' ';
+    var words = nm.split(/[^a-z가-힣]+/);
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      if (!w) continue;
+      if (V_MALE.toLowerCase().indexOf(' ' + w + ' ') !== -1) return 'm';
+      if (V_FEMALE.toLowerCase().indexOf(' ' + w + ' ') !== -1) return 'f';
+    }
+    return '';
+  }
+
+  /**
+   * 그 말의 목소리 중 원하는 성별을 고릅니다.
+   * 없으면 좋은 것 아무거나 내주되, 번갈아 쓰도록 두 번째 것을 내주기도 합니다.
+   */
+  function voiceByGender(lang, want) {
+    var list = voicesFor(lang);
+    if (!list.length) return null;
+    for (var i = 0; i < list.length; i++) {
+      if (genderOf(list[i]) === want) return list[i];
+    }
+    // 성별을 모르겠으면 남자 자리에는 두 번째 목소리를 씁니다 (그래야 번갈아 들립니다)
+    if (want === 'm' && list.length > 1) return list[1];
+    return list[0];
+  }
+
+  function sayVoice(text, lang, v, rate, pitch, done) {
     var t = String(text || '').trim();
     if (!t) { done(); return; }
 
     var u = new window.SpeechSynthesisUtterance(t);
     u.lang = lang;
     u.rate = rate || 1;
-    var v = pickVoice(lang);
+    if (pitch) u.pitch = pitch;
     if (v) u.voice = v;
 
     var over = false;
@@ -2567,7 +2623,6 @@
       keepSaying(true);
     } catch (e) { once(); }
 
-    // 아예 시작조차 못 하는 기기가 있습니다. 그럴 땐 넘어갑니다.
     setTimeout(function () {
       try {
         var s = window.speechSynthesis;
@@ -2576,6 +2631,15 @@
     }, 1200);
   }
 
+  /** 한국어는 남자 목소리로, 조금 낮게 */
+  function koVoice() { return voiceByGender('ko-KR', 'm'); }
+  var KO_PITCH = 0.8;
+
+  function sayOne(text, lang, rate, done) {
+    var low = (lang.slice(0, 2) === 'ko');
+    sayVoice(text, lang, low ? koVoice() : pickVoice(lang), rate,
+             low ? KO_PITCH : 1, done);
+  }
   function sayStop() {
     if (!say.on) return;
     say.stop = true;
