@@ -415,17 +415,6 @@
     .btn-text.play.on{color:var(--bad)}
     .btn-text.lead:hover:not(:disabled){border-bottom-color:var(--accent)}
 
-    /* 힌트 — 색 블록 대신 왼쪽 획 하나 */
-    .hintbox{
-      margin-top:10px; padding:1px 0 1px 12px;
-      border-left:2px solid var(--mid); color:var(--ink-2);
-      font-size:.85rem; line-height:1.55;
-    }
-    .hintbox .tag{
-      display:block; font-size:.62rem; font-weight:600; letter-spacing:.09em;
-      color:var(--mid); text-transform:uppercase; margin-bottom:3px;
-    }
-
     /* 응용 — 같은 표현으로 다른 문장 써보기 */
     .applybox{
       margin-top:10px; padding:12px 14px; border-radius:10px;
@@ -723,10 +712,6 @@
       font-size:.8rem; line-height:1.55; color:var(--ink-2);
     }
     .rv-memo.pad{border-left-color:var(--sky-ink); color:var(--ink)}
-    .rv-hint{
-      margin:12px 0 0; padding-left:11px; border-left:2px solid var(--mid);
-      font-size:.84rem; line-height:1.55; color:var(--ink-2);
-    }
 
     /* 카드와 같은 결로. 검은 덩어리는 눈에 세게 박힙니다. */
     .rv-main{
@@ -1001,7 +986,6 @@
     page: 0,            // 몇 번째 묶음
     pageSize: 5,        // 한 화면에 몇 문제
 
-    hints: {},          // items 인덱스 -> {text, level, ai}
     checked: {},        // 되돌리려고 고른 문제
     noteOpen: {},       // 메모를 펼쳐둔 문제
 
@@ -1259,7 +1243,6 @@
     state.noteOpen = {};
     state.revealed = {};
     state.marked = {};
-    state.hints = {};
     state.tally = { done: 0, review: 0 };
   }
 
@@ -1662,7 +1645,7 @@
   var rv = {
     open: false, key: '', kind: '주간', queue: [], pos: 0,
     shown: false, marks: {}, saving: false,
-    noteOpen: false, padOpen: false, hint: null, hintBusy: false,
+    noteOpen: false, padOpen: false,
     mode: 'base',   // base = 적어둔 문장 그대로, apply = 응용 문장
     vari: {}       // 자리 -> {busy, ko, en, point, err}
   };
@@ -1671,30 +1654,6 @@
   function rvScopeLabel() {
     if (rv.kind === '전체') return '전체 ' + rv.queue.length + '문장';
     return rv.kind === '월간' ? monthLabel(rv.key) : weekLabel(rv.key);
-  }
-
-  // 힌트는 시트에 적어둔 답에서 바로 뽑습니다. 서버에 안 다녀옵니다.
-  var RV_STOP = ' a an the i you he she it we they me him her us them my your his its our their is are am was were be been being do does did have has had will would can could should may might to of in on at for with by from as that this these those and or but if so not no ';
-
-  function localHint(ans, lv) {
-    var words = String(ans || '').trim().split(/\s+/).filter(Boolean);
-    if (!words.length) return '';
-    if (lv === 1) {
-      var kw = [];
-      for (var i = 0; i < words.length; i++) {
-        var b = words[i].toLowerCase().replace(/[^a-z']/g, '');
-        if (!b || RV_STOP.indexOf(' ' + b + ' ') !== -1) continue;
-        if (kw.indexOf(words[i]) === -1) kw.push(words[i]);
-        if (kw.length >= 4) break;
-      }
-      if (!kw.length) kw = words.slice(0, 2);
-      return '이런 단어를 써보세요 — ' + kw.join(', ');
-    }
-    if (lv === 2) {
-      var half = Math.max(1, Math.ceil(words.length / 2));
-      return words.slice(0, half).join(' ') + ' …';
-    }
-    return words.join(' ');
   }
 
   function openReview(key, kind) {
@@ -1714,7 +1673,7 @@
     }
     rv = { open: true, key: key, kind: scope, queue: idx, pos: 0,
            shown: false, marks: {}, saving: false,
-           noteOpen: false, padOpen: false, hint: null, hintBusy: false,
+           noteOpen: false, padOpen: false,
            mode: 'base', vari: {} };
     renderReview();
     document.body.style.overflow = 'hidden';
@@ -1848,8 +1807,7 @@
       (rv.noteOpen && q.note ? '<p class="rv-memo">' + esc(q.note) + '</p>' : '') +
       (rv.padOpen && q.pad
         ? '<p class="rv-memo pad">' + esc(q.pad) + '</p>' : '') +
-      (rv.hint && rv.hint.text && !rv.shown
-        ? '<p class="rv-hint">' + esc(rv.hint.text) + '</p>' : '') +
+
       '</div>';
 
     if (rv.shown) {
@@ -1868,12 +1826,7 @@
       '</div>';
 
     h += '<div class="rv-foot">' +
-      (rv.shown ? '<button id="rv-hide">답 가리기</button>'
-        : ('<button id="rv-hint"' + (rv.hintBusy ? ' disabled' : '') + '>' +
-           (rv.hintBusy ? '생각하는 중…'
-             : (rv.hint ? (rv.hint.level >= 3 ? '힌트 다시' : '힌트 더') : '힌트')) +
-           '</button>' +
-           (rv.hint ? '<button id="rv-nohint">힌트 닫기</button>' : ''))) +
+      (rv.shown ? '<button id="rv-hide">답 가리기</button>' : '') +
       (q.note ? '<button id="rv-note">' + (rv.noteOpen ? '메모 닫기' : '메모') +
                 '</button>' : '') +
       (q.pad ? '<button id="rv-pad">' + (rv.padOpen ? '메모장 닫기' : '메모장') +
@@ -1903,8 +1856,6 @@
         autoStart(this.getAttribute('data-rep'));
       });
     }
-    wire('rv-hint', rvHint);
-    wire('rv-nohint', function () { rv.hint = null; renderReview(); });
     wire('rv-ok', function () { rvMark(true); });
     wire('rv-no', function () { rvMark(false); });
     wire('rv-prev', function () { rvGo(-1); });
@@ -1919,7 +1870,6 @@
     if (rv.mode === m) return;
     rv.mode = m;
     rv.shown = false;
-    rv.hint = null;
     renderReview();
     if (m === 'apply') rvVar(rv.pos);
   }
@@ -1972,37 +1922,6 @@
     });
   }
 
-  function rvHint() {
-    var q = rvCurrent();
-    if (!q) return;
-    var lv = rv.hint ? Math.min(3, rv.hint.level + 1) : 1;
-
-    // 응용편에서는 그 응용 문장의 영어로 힌트를 만듭니다.
-    var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
-    if (rv.mode === 'apply' && (!va || va.busy || va.err)) return;
-    var base = va ? va.en : q.answer;
-
-    var local = localHint(base, lv);
-    if (local) {
-      rv.hint = { text: local, level: lv };
-      renderReview();
-      return;
-    }
-
-    // 답이 비어 있으면 그때만 서버에 물어봅니다.
-    rv.hintBusy = true;
-    renderReview();
-    call('getHint', [va ? va.ko : q.korean, base, '', lv], function (res) {
-      rv.hintBusy = false;
-      rv.hint = { text: (res && res.text) || '', level: lv };
-      renderReview();
-    }, function (e) {
-      rv.hintBusy = false;
-      renderReview();
-      msg(errText(e), 'err');
-    });
-  }
-
   function rvShow() {
     rv.shown = true;
     renderReview();
@@ -2018,7 +1937,6 @@
     rv.shown = false;
     rv.noteOpen = false;
     rv.padOpen = false;
-    rv.hint = null;
     renderReview();
     if (rv.mode === 'apply') rvVar(rv.pos);
   }
@@ -2322,8 +2240,7 @@
       rv.shown = false;
       rv.noteOpen = false;
       rv.padOpen = false;
-      rv.hint = null;
-    }
+      }
     renderReview();
   }
 
@@ -2455,7 +2372,6 @@
 
   function cardHtml(ix, num) {
     var q = state.items[ix];
-    var hint = state.hints[ix];
     var open = !!state.revealed[ix];
     var ap = state.apply[ix];
     var st = statusOf(ix);
@@ -2488,10 +2404,6 @@
       (q.note && state.noteOpen[ix] ? '<p class="qnote">' + esc(q.note) + '</p>' : '') +
       (state.histOpen[ix] ? histHtml(q.korean) : '');
 
-    if (hint && hint.text) {
-      h += '<div class="hintbox"><span class="tag">힌트 ' + hint.level + '/3' +
-           (hint.ai ? '' : ' · 기본') + '</span>' + esc(hint.text) + '</div>';
-    }
 
     if (open) {
       h += '<div class="rans">' +
@@ -2511,10 +2423,6 @@
         '</div>';
     } else {
       h += '<div class="acts">' +
-        '<button class="btn-text lead" data-hint="' + ix + '"' +
-        (state.busy ? ' disabled' : '') + '>' +
-        (hint ? (hint.level >= 3 ? '힌트 다시' : '힌트 더') : '힌트') + '</button>' +
-        (hint ? '<button class="btn-text" data-nohint="' + ix + '">힌트 닫기</button>' : '') +
         '<button class="btn-text" data-show="' + ix + '">답 보기</button>' +
         playBtn('q:' + ix) +
         '<button class="btn-text" data-apply="' + ix + '"' +
@@ -3343,8 +3251,8 @@
 
   function renderFoot() {
     $('ai-state').innerHTML = state.hasKey
-      ? '<span class="ai-on">AI 힌트 켜짐</span>'
-      : 'AI 힌트 꺼짐 — 시트에 적어둔 답으로 힌트를 만듭니다';
+      ? '<span class="ai-on">AI 켜짐</span>'
+      : 'AI 꺼짐 — 응용 문장을 만들려면 settings 장에 Gemini API 키가 필요합니다';
   }
 
 
@@ -3391,7 +3299,6 @@
       state.marked[ix] = { status: status };
       if (status === ST_DONE) state.tally.done++; else state.tally.review++;
       delete state.revealed[ix];
-      delete state.hints[ix];
 
     } else {
       delete state.marked[ix];
@@ -3428,35 +3335,6 @@
     render();
     msg(send.length + '문장을 되돌렸어요.', 'ok');
     call('markMany', [send], function () {}, function (e) {
-      msg(errText(e), 'err');
-    });
-  }
-
-  function doHint(ix) {
-    var q = state.items[ix];
-    if (!q) return;
-    var lv = state.hints[ix] ? Math.min(3, state.hints[ix].level + 1) : 1;
-
-    // 시트에 답이 있으면 서버에 안 물어보고 바로 만듭니다.
-    var local = localHint(q.answer, lv);
-    if (local) {
-      state.hints[ix] = { text: local, level: lv, ai: false };
-      render();
-      return;
-    }
-
-    state.busy = true;
-    state.hints[ix] = { text: '생각하는 중…', level: lv, ai: state.hasKey };
-    render();
-
-    call('getHint', [q.korean, q.answer, '', lv], function (res) {
-      state.busy = false;
-      state.hints[ix] = { text: (res && res.text) || '', level: lv, ai: !!(res && res.ai) };
-      render();
-    }, function (e) {
-      state.busy = false;
-      delete state.hints[ix];
-      render();
       msg(errText(e), 'err');
     });
   }
@@ -3972,8 +3850,6 @@
       render();
       return;
     }
-    ix = b.getAttribute('data-hint');
-    if (ix !== null) { doHint(ix); return; }
 
     var pk = b.getAttribute('data-play');
     if (pk !== null) { playFrom(pk); return; }
@@ -3993,8 +3869,6 @@
     if (ix !== null) { applySave(ix); return; }
     ix = b.getAttribute('data-aclose');
     if (ix !== null) { delete state.apply[ix]; render(); return; }
-    ix = b.getAttribute('data-nohint');
-    if (ix !== null) { delete state.hints[ix]; state.focusIx = ix; render(); return; }
     ix = b.getAttribute('data-show');
     if (ix !== null) { state.revealed[ix] = true; render(); return; }
     ix = b.getAttribute('data-hide');
