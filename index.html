@@ -2561,9 +2561,9 @@
 
     // 말씨가 딱 맞는 것(en-US, ko-KR)을 가장 먼저 봅니다.
     if (lang && vl === lang) sc += 10;
-    else if (lang && vl.slice(0, 2) === lang.slice(0, 2)) {
+    else if (lang && baseLang(vl) === baseLang(lang)) {
       // 영어면 미국식을 먼저, 영국·호주·인도식은 뒤로
-      if (/-(GB|AU|IN|IE|ZA|NZ)$/i.test(vl)) sc -= 3;
+      if (/-(GB|AU|IN|IE|ZA|NZ|NG|PH|SG|HK)$/i.test(vl)) sc -= 5;
     }
     // Natural·Neural 이 가장 사람 같습니다. 듣기에 제일 편합니다.
     if (nm.indexOf('natural') !== -1 || nm.indexOf('neural') !== -1) sc += 9;
@@ -2577,14 +2577,18 @@
     return sc;
   }
 
+  /** 'ko-KR' 에서 말 이름만 (kok-IN 같은 다른 말에 안 걸리게) */
+  function baseLang(v) {
+    return String(v || '').replace(/_/g, '-').split('-')[0].toLowerCase();
+  }
+
   /** 그 말로 쓸 수 있는 목소리들, 좋은 것부터 */
   function voicesFor(lang) {
     if (!say.voices.length) loadVoices();
-    var want = lang.slice(0, 2);
+    var want = baseLang(lang);
     var out = [];
     for (var i = 0; i < say.voices.length; i++) {
-      var v = say.voices[i];
-      if (String(v.lang || '').replace('_', '-').slice(0, 2) === want) out.push(v);
+      if (baseLang(say.voices[i].lang) === want) out.push(say.voices[i]);
     }
     out.sort(function (a, b) { return voiceScore(b, lang) - voiceScore(a, lang); });
     return out;
