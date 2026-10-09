@@ -72,7 +72,10 @@
 
     /* ---------- 달력 ---------- */
     @media (min-width:900px){ .cal-col{position:sticky; top:18px} }
-    .cal-head{display:flex; align-items:center; gap:4px; margin-bottom:14px}
+    .cal-head{display:flex; align-items:center; gap:4px; margin-bottom:8px}
+    /* 복습 단추는 연도·월 아래 한 줄로 */
+    .cal-revs{display:flex; gap:6px; margin-bottom:12px}
+    .cal-revs .mrev{flex:1; text-align:center}
     .cal-head .ym{
       flex:1; font-size:.78rem; font-weight:600; letter-spacing:.04em;
       color:var(--ink-2); font-variant-numeric:tabular-nums;
@@ -92,8 +95,6 @@
     .mrev:hover:not(:disabled){background:var(--sky); color:var(--sky-ink)}
     .mrev.done{color:var(--ok)}
     .mrev:disabled{opacity:.35}
-    .cal-head{flex-wrap:wrap}
-    .cal-head .mrev{font-size:.66rem; padding:3px 8px}
 
     /* 맨 앞 한 칸은 주간 복습 버튼 자리 */
     .grid{display:grid; grid-template-columns:19px repeat(7,minmax(0,1fr));
@@ -919,9 +920,11 @@
           <div class="cal-head">
             <button class="nav" id="prev" title="지난 달">‹</button>
             <span class="ym" id="ym">—</span>
-            <button class="mrev" id="month-rev" title="이 달 문장을 통째로 복습">월 복습</button>
-            <button class="mrev" id="all-rev" title="달 상관없이 시트에 있는 문장 전부">전체</button>
             <button class="nav" id="next" title="다음 달">›</button>
+          </div>
+          <div class="cal-revs">
+            <button class="mrev" id="month-rev" title="이 달 문장을 통째로 복습">월 복습</button>
+            <button class="mrev" id="all-rev" title="달 상관없이 시트에 있는 문장 전부">전체 복습</button>
           </div>
           <div class="grid" id="dow-row"></div>
           <div class="grid" id="cal-grid"></div>
