@@ -719,6 +719,7 @@
       margin:12px 0 0; padding-left:11px; border-left:2px solid var(--line);
       font-size:.8rem; line-height:1.55; color:var(--ink-2);
     }
+    .rv-memo.pad{border-left-color:var(--sky-ink); color:var(--ink)}
     .rv-hint{
       margin:12px 0 0; padding-left:11px; border-left:2px solid var(--mid);
       font-size:.84rem; line-height:1.55; color:var(--ink-2);
@@ -1629,7 +1630,7 @@
   var rv = {
     open: false, key: '', kind: '주간', queue: [], pos: 0,
     shown: false, marks: {}, saving: false,
-    noteOpen: false, hint: null, hintBusy: false,
+    noteOpen: false, padOpen: false, hint: null, hintBusy: false,
     mode: 'base',   // base = 적어둔 문장 그대로, apply = 응용 문장
     vari: {}       // 자리 -> {busy, ko, en, point, err}
   };
@@ -1677,7 +1678,7 @@
     }
     rv = { open: true, key: key, kind: scope, queue: idx, pos: 0,
            shown: false, marks: {}, saving: false,
-           noteOpen: false, hint: null, hintBusy: false,
+           noteOpen: false, padOpen: false, hint: null, hintBusy: false,
            mode: 'base', vari: {} };
     renderReview();
     document.body.style.overflow = 'hidden';
@@ -1809,6 +1810,8 @@
       (rv.mode === 'apply' && !wait && !oops
         ? '<p class="rv-from">원문 — ' + esc(q.korean) + '</p>' : '') +
       (rv.noteOpen && q.note ? '<p class="rv-memo">' + esc(q.note) + '</p>' : '') +
+      (rv.padOpen && q.pad
+        ? '<p class="rv-memo pad">' + esc(q.pad) + '</p>' : '') +
       (rv.hint && rv.hint.text && !rv.shown
         ? '<p class="rv-hint">' + esc(rv.hint.text) + '</p>' : '') +
       '</div>';
@@ -1837,6 +1840,8 @@
            (rv.hint ? '<button id="rv-nohint">힌트 닫기</button>' : ''))) +
       (q.note ? '<button id="rv-note">' + (rv.noteOpen ? '메모 닫기' : '메모') +
                 '</button>' : '') +
+      (q.pad ? '<button id="rv-pad">' + (rv.padOpen ? '메모장 닫기' : '메모장') +
+               '</button>' : '') +
       (say.on ? '<button id="rv-play">' +
         (say.now === 'rv' ? '■ 멈춤' : '▶ 듣기') + '</button>' : '') +
       (say.on ? '<button id="rv-auto">▶▶ 전체 듣기</button>' : '') +
@@ -1852,6 +1857,7 @@
     wire('rv-show', rvShow);
     wire('rv-hide', function () { rv.shown = false; renderReview(); });
     wire('rv-note', function () { rv.noteOpen = !rv.noteOpen; renderReview(); });
+    wire('rv-pad', function () { rv.padOpen = !rv.padOpen; renderReview(); });
     wire('rv-play', function () { playFrom('rv'); });
     wire('rv-auto', function () { rv.askRep = !rv.askRep; renderReview(); });
     wire('rv-pick-no', function () { rv.askRep = false; renderReview(); });
@@ -1975,6 +1981,7 @@
     rv.pos = next;
     rv.shown = false;
     rv.noteOpen = false;
+    rv.padOpen = false;
     rv.hint = null;
     renderReview();
     if (rv.mode === 'apply') rvVar(rv.pos);
@@ -2244,6 +2251,14 @@
     auto.on = false;
     sayStop();
     keepAwake(false);
+    // 듣다 멈춘 그 문장에 그대로 서 있게 합니다. (1번으로 안 돌아갑니다)
+    if (auto.i >= 0 && auto.i < rv.queue.length) {
+      rv.pos = auto.i;
+      rv.shown = false;
+      rv.noteOpen = false;
+      rv.padOpen = false;
+      rv.hint = null;
+    }
     renderReview();
   }
 
