@@ -2676,14 +2676,13 @@
   }
 
   /*
-   * 한국어는 남자 목소리로.
-   * 진짜 남자 목소리면 그대로 두고(억지로 낮추면 웅얼거립니다),
-   * 남자 목소리가 없는 기기에서만 살짝 낮춰서 비슷하게 들리게 합니다.
+   * 한국어는 기기에서 가장 나은 목소리를 그대로 씁니다.
+   * 억지로 남자처럼 낮추면 웅얼거려서 듣기 나쁩니다.
    */
-  function koSet() { return speakAs('ko-KR', 'm'); }
+  function koSet() { return { voice: pickVoice('ko-KR'), pitch: 1 }; }
   function koVoice() { return koSet().voice; }
-  function koPitch() { return koSet().pitch; }
-  var KO_RATE = 0.98;
+  function koPitch() { return 1; }
+  var KO_RATE = 1;
   var EN_RATE = 0.9;
   var GAP_REP = 1100;   // 영어를 거듭 읽을 때 사이
 
