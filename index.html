@@ -2308,8 +2308,8 @@
       auto.r = k;
       renderReview();
       var who = (k % 2 === 0) ? 'f' : 'm';
-      var set = speakAs('en-US', who);
-      sayVoice(pair.en, 'en-US', set.voice, EN_RATE, set.pitch, function () {
+      var set = speakAs('en-US', who, k);
+      sayVoice(pair.en, 'en-US', set.voice, set.rate || EN_RATE, set.pitch, function () {
         if (!auto.on) return;
         setTimeout(function () { enTurn(k + 1); }, GAP_REP);
       });
@@ -2640,24 +2640,35 @@
    * 폰에는 목소리가 한 가지뿐인 때가 많습니다.
    * 그럴 땐 높낮이를 바꿔서 남자·여자처럼 들리게 만듭니다.
    */
-  // 목소리를 비틀면 기계음이 납니다. 티는 나되 거슬리지 않을 만큼만.
-  var ALT_LOW = 0.9;
-  var ALT_HIGH = 1.08;
+  /*
+   * 목소리가 하나뿐인 기기(대개 폰)에서는 회차마다 높낮이와 빠르기를
+   * 조금씩 달리해서 같은 소리가 되풀이되지 않게 합니다.
+   * 차이를 크게 두면 기계음이 나므로 좁은 폭 안에서만 움직입니다.
+   */
+  var ALT_CYCLE = [
+    { pitch: 1.06, rate: 0.93 },
+    { pitch: 0.92, rate: 0.86 },
+    { pitch: 1.01, rate: 0.97 },
+    { pitch: 0.88, rate: 0.90 },
+    { pitch: 1.09, rate: 0.83 }
+  ];
 
-  function speakAs(lang, want) {
+  /** k 는 몇 번째로 읽는지 (0부터) */
+  function speakAs(lang, want, k) {
     var list = voicesFor(lang);
     var best = list.length ? list[0] : null;
 
     // 번갈아 읽기를 꺼두셨으면 있는 목소리를 그대로 씁니다.
     if (!altOn()) return { voice: pickVoice(lang), pitch: 1 };
 
-    // 1) 이름으로 성별을 알 수 있는 게 있으면 그걸 씁니다. (비틀지 않음)
+    // 1) 남녀 목소리가 따로 있으면 그걸 씁니다. (컴퓨터) 비틀지 않습니다.
     for (var i = 0; i < list.length; i++) {
       if (genderOf(list[i]) === want) return { voice: list[i], pitch: 1 };
     }
 
-    // 2) 없으면 높낮이를 살짝만 바꿔 갈라 들리게 합니다.
-    return { voice: best, pitch: (want === 'm') ? ALT_LOW : ALT_HIGH };
+    // 2) 하나뿐이면 회차마다 조금씩 달리 읽습니다. (폰)
+    var c = ALT_CYCLE[(Number(k) || 0) % ALT_CYCLE.length];
+    return { voice: best, pitch: c.pitch, rate: c.rate };
   }
 
   /** 예전 이름 (목소리 하나만 필요할 때) */
