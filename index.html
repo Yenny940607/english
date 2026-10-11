@@ -411,6 +411,8 @@
     .btn-text:hover:not(:disabled){color:var(--ink); border-bottom-color:var(--line)}
     .btn-text.lead{color:var(--accent)}
     /* 소리로 듣기 */
+    .plays{display:inline-flex; align-items:center; gap:9px}
+    .plays .play{font-size:.78rem}
     .btn-text.play{color:var(--sky-ink); font-variant-numeric:tabular-nums}
     .btn-text.play:hover{border-bottom-color:var(--sky-ink)}
     .btn-text.play.on{color:var(--bad)}
@@ -1857,8 +1859,7 @@
                 '</button>' : '') +
       (q.pad ? '<button id="rv-pad">' + (rv.padOpen ? '메모장 닫기' : '메모장') +
                '</button>' : '') +
-      (say.on ? '<button id="rv-play">' +
-        (say.now === 'rv' ? '■ 멈춤' : '▶ 듣기') + '</button>' : '') +
+      playBtn('rv') +
       (say.on ? '<button id="rv-auto">▶▶ 전체 듣기</button>' : '') +
       (rv.mode === 'apply' && !wait
         ? '<button id="rv-revar">다른 문장</button>' : '') +
@@ -1873,9 +1874,17 @@
     wire('rv-hide', function () { rv.shown = false; renderReview(); });
     wire('rv-note', function () { rv.noteOpen = !rv.noteOpen; renderReview(); });
     wire('rv-pad', function () { rv.padOpen = !rv.padOpen; renderReview(); });
-    wire('rv-play', function () { playFrom('rv'); });
     wire('rv-auto', function () { rv.askRep = !rv.askRep; renderReview(); });
     wire('rv-pick-no', function () { rv.askRep = false; renderReview(); });
+    var plays = box.querySelectorAll('[data-play]');
+    for (var p0 = 0; p0 < plays.length; p0++) {
+      plays[p0].addEventListener('click', function () {
+        var id = this.getAttribute('data-play');
+        if (say.now === id) { sayStop(); redraw(); return; }
+        playFrom(id);
+      });
+    }
+
     var aws = box.querySelectorAll('[data-aw]');
     for (var a0 = 0; a0 < aws.length; a0++) {
       aws[a0].addEventListener('click', function () {
@@ -2839,8 +2848,10 @@
     if (rv.open && !auto.on) renderReview();
   }
 
-  /** 한글을 읽고, 한 박자 쉬었다가 영어를 읽습니다. */
-  function sayPair(key, ko, en, after) {
+  /**
+   * what — 'both' 한글 다음 영어 · 'ko' 한글만 · 'en' 영어만
+   */
+  function sayPair(key, ko, en, after, what) {
     if (!say.on) return;
     unlockSay();                                            // 폰 자물쇠 풀기
     if (say.now === key) { sayStop(); redraw(); return; }   // 다시 누르면 멈춤
@@ -2853,6 +2864,7 @@
     var pair = askPair(ko, en);
     ko = pair.ko;
     en = pair.en;
+    var mode = what || 'both';
 
     function finish() {
       if (say.now === key) say.now = '';
@@ -2869,46 +2881,63 @@
     // cancel() 직후에 바로 말하면 삼켜지는 기기가 있어서 한 박자 쉽니다.
     setTimeout(function () {
       if (!alive()) { finish(); return; }
+      if (mode === 'en') { sayEn(); return; }
 
       sayOne(ko, 'ko-KR', KO_RATE, function () {
         if (!alive()) { finish(); return; }
+        if (mode === 'ko') { finish(); return; }
         setTimeout(sayEn, GAP_MID);
       });
     }, 120);
   }
 
   /** data-play 에 적힌 이름을 보고 무엇을 읽을지 정합니다. */
-  /** 듣기 단추 하나 만들기 */
-  function playBtn(key, label) {
+  /*
+   * 듣기 단추 셋을 한 줄로 내놓습니다.
+   *   전체 = 한글 다음 영어 · 영어 = 영어만 · 한글 = 한글만
+   * 누르면 바로 읽습니다. 읽는 중인 것은 ■ 로 바뀝니다.
+   */
+  function playBtn(key) {
     if (!say.on) return '';
-    var on = (say.now === key);
-    return '<button class="btn-text play' + (on ? ' on' : '') + '" data-play="' + key + '" ' +
-      'title="' + (on ? '멈추기' : '한글 먼저, 그다음 영어로 읽어줍니다') + '">' +
-      (on ? '■ 멈춤' : '▶ ' + (label || '듣기')) + '</button>';
+    function one(mode, label, tip) {
+      var id = mode + '|' + key;
+      var on = (say.now === id);
+      return '<button class="btn-text play' + (on ? ' on' : '') + '" ' +
+        'data-play="' + id + '" title="' + (on ? '멈추기' : tip) + '">' +
+        (on ? '■ 멈춤' : label) + '</button>';
+    }
+    return '<span class="plays">' +
+      one('both', '▶ 전체', '한글 다음 영어') +
+      one('en', '영어', '영어만') +
+      one('ko', '한글', '한글만') +
+      '</span>';
   }
 
-  /** 늘 한글 한 번, 영어 한 번. 화면은 그대로 둡니다. */
-  function playFrom(key) {
+  /** id 는 '갈래|자리' 꼴입니다. 예: both|q:3 */
+  function playFrom(id) {
     unlockSay();
-    var p = String(key || '').split(':');
+    var cut = String(id || '').indexOf('|');
+    var what = (cut > 0) ? id.slice(0, cut) : 'both';
+    var key = (cut > 0) ? id.slice(cut + 1) : id;
+    var p = key.split(':');
 
     if (p[0] === 'q') {
       var q = state.items[p[1]];
-      if (q) sayPair(key, q.korean, q.answer);
+      if (q) sayPair(id, q.korean, q.answer, null, what);
       return;
     }
     if (p[0] === 'a') {
       var ap = state.apply[p[1]];
       var one = ap && ap.list[p[2]];
-      if (one) sayPair(key, one.ko, one.en);
+      if (one) sayPair(id, one.ko, one.en, null, what);
       return;
     }
     if (p[0] === 'rv') {
       var cur = rvCurrent();
       if (!cur) return;
       var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
-      if (va && !va.busy && !va.err) sayPair(key, va.ko, va.en);
-      else sayPair(key, cur.korean, cur.answer);
+      if (va && !va.busy && !va.err) sayPair(id, va.ko, va.en, null, what);
+      else sayPair(id, cur.korean, cur.answer, null, what);
     }
   }
 
@@ -3915,7 +3944,7 @@
 
     var pk = b.getAttribute('data-play');
     if (pk !== null) {
-      // 테스트 화면에서는 묻지 않고 바로 읽습니다. (한글 다음 영어)
+      if (say.now === pk) { sayStop(); redraw(); return; }   // 듣는 중이면 멈춤
       playFrom(pk);
       return;
     }
