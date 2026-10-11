@@ -2485,7 +2485,6 @@
         (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</div>';
     }
 
-    if (state.askPlay === ('q:' + ix)) h += whatPickHtml('q:' + ix);
 
     h += padHtml(ix);
     h += applyHtml(ix);
@@ -2904,13 +2903,16 @@
     }, 120);
   }
 
-  /** 무엇을 들을지 고르는 줄 */
+  /** 복습 창에서 화면에 무엇을 보일지 고르는 줄 */
   function whatPickHtml(key) {
+    var w = rv.show || 'both';
+    function one(v, label) {
+      return '<button data-what="' + v + '|' + key + '"' +
+        (w === v ? ' class="on"' : '') + '>' + label + '</button>';
+    }
     return '<div class="whatpick">' +
-      '<span class="lab">화면에 무엇을 보일까요?</span>' +
-      '<button data-what="ko|' + key + '">한글만</button>' +
-      '<button data-what="en|' + key + '">영어만</button>' +
-      '<button data-what="both|' + key + '">통합</button>' +
+      '<span class="lab">화면에</span>' +
+      one('ko', '한글만') + one('en', '영어만') + one('both', '통합') +
       '<span class="grow"></span>' +
       '<button class="plain" data-what="x|' + key + '">취소</button>' +
       '</div>';
@@ -3048,9 +3050,6 @@
           '<button class="btn-text" data-ashow="' + ix + ':' + j + '">답 보기</button>' +
           playBtn('a:' + ix + ':' + j) +
           '</div>';
-      }
-      if (state.askPlay === ('a:' + ix + ':' + j)) {
-        h += whatPickHtml('a:' + ix + ':' + j);
       }
       h += '</div></div>';
     }
@@ -3969,17 +3968,8 @@
 
     var pk = b.getAttribute('data-play');
     if (pk !== null) {
-      if (say.now === pk) { sayStop(); render(); return; }   // 듣는 중이면 멈춤
-      state.askPlay = (state.askPlay === pk) ? '' : pk;
-      render();
-      return;
-    }
-    var wk = b.getAttribute('data-what');
-    if (wk !== null) {
-      var w = wk.split('|');
-      state.askPlay = '';
-      if (w[0] === 'x') { render(); return; }
-      playFrom(w.slice(1).join('|'), w[0]);
+      // 테스트 화면에서는 묻지 않고 바로 읽습니다. (한글 다음 영어)
+      playFrom(pk);
       return;
     }
     ix = b.getAttribute('data-apply');
