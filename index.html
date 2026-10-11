@@ -610,7 +610,7 @@
     #modal{
       position:fixed; inset:0; z-index:50; display:flex;
       align-items:center; justify-content:center; padding:24px;
-      background:rgba(18,19,22,.66);
+      background:rgba(18,19,22,.78);
     }
     #modal[hidden]{display:none}
     .sheet{
@@ -759,22 +759,31 @@
     /* 앞뒤로 넘기는 건 한 단계 여리게 */
     .rv-nav{display:flex; gap:10px; margin-top:10px}
     .rv-nav button{
+      background:rgba(255,255,255,.1);
       flex:1; padding:13px 16px; border-radius:12px;
-      background:transparent; color:#fff;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.34);
+      color:#fff;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);
       font-size:.9rem; font-weight:500;
     }
     .rv-nav button:hover:not(:disabled){background:rgba(255,255,255,.14)}
     .rv-nav button:disabled{opacity:.3}
 
-    .rv-foot{display:flex; align-items:center; gap:14px; margin-top:13px}
+    /* 아래 줄은 뒤 화면이 비쳐 보여서 잘 안 읽힙니다. 바탕을 깔아줍니다. */
+    .rv-foot{
+      display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+      margin-top:10px; padding:10px 13px; border-radius:10px;
+      background:rgba(255,255,255,.14);
+    }
+    .sheet .btn-text.play{color:#fff; opacity:.9; border-bottom-color:transparent}
+    .sheet .btn-text.play:hover{opacity:1; border-bottom-color:rgba(255,255,255,.5)}
+    .sheet .btn-text.play.on{color:#ffc9bf; opacity:1}
     .rv-foot .grow{flex:1}
     .rv-foot button{
       background:none; border:none; padding:2px 0;
-      font-size:.78rem; color:#fff; opacity:.8;
+      font-size:.8rem; color:#fff; opacity:.92;
     }
     .rv-foot button:hover:not(:disabled){opacity:1}
-    .rv-cnt{font-size:.76rem; color:#fff; opacity:.7;
+    .rv-cnt{font-size:.76rem; color:#fff; opacity:.85;
             font-variant-numeric:tabular-nums}
 
     .rv-done{
