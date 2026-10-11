@@ -1005,8 +1005,6 @@
     token: '',
     items: [], hasKey: false, loading: true,
     y: now.getFullYear(), m: now.getMonth(),
-    askPlay: '',        // 무엇을 보일지 묻고 있는 단추
-    showMode: {},       // items 인덱스 -> 'ko' | 'en' | 'both'
     stale: false,       // 지난번 것을 먼저 띄운 상태
     scope: 'all',       // all | today | week | review | done | date
     selDate: '',
@@ -1267,7 +1265,6 @@
     state.padOpen = {};
     state.padDirty = {};
     state.padSaved = {};
-    state.showMode = {};
     state.checked = {};
     state.noteOpen = {};
     state.revealed = {};
@@ -1812,7 +1809,6 @@
     }
 
     if (rv.askRep) h += repPickHtml();
-    if (state.askPlay === 'rv') h += whatPickHtml('rv');
 
     h += '<div class="rv-card">' +
       '<div class="rv-head">' +
@@ -1827,9 +1823,7 @@
         : (oops
           ? ('<p class="rv-wait">' + esc(oops) + '</p>' +
              '<button class="rv-retry" id="rv-revar">다시 만들기</button>')
-          : ((rv.show === 'en'
-              ? '<p class="rv-ko muted">— 한글 가림 —</p>'
-              : '<p class="rv-ko">' + esc(askKo) + '</p>') +
+          : ('<p class="rv-ko">' + esc(askKo) + '</p>' +
              (rv.shown
                ? ('<p class="rv-en">' +
                   (askEn ? esc(askEn) : '영어 문장이 비어 있어요') + '</p>')
@@ -1876,29 +1870,11 @@
 
     wire('rv-close', closeReview);
     wire('rv-show', rvShow);
-    wire('rv-hide', function () { rv.shown = false; rv.show = ''; renderReview(); });
+    wire('rv-hide', function () { rv.shown = false; renderReview(); });
     wire('rv-note', function () { rv.noteOpen = !rv.noteOpen; renderReview(); });
     wire('rv-pad', function () { rv.padOpen = !rv.padOpen; renderReview(); });
-    wire('rv-play', function () {
-      if (say.now === 'rv') { sayStop(); renderReview(); return; }
-      state.askPlay = (state.askPlay === 'rv') ? '' : 'rv';
-      rv.askRep = false;            // 한 번에 한 줄만 띄웁니다
-      renderReview();
-    });
-    var whats = box.querySelectorAll('[data-what]');
-    for (var w0 = 0; w0 < whats.length; w0++) {
-      whats[w0].addEventListener('click', function () {
-        var w = this.getAttribute('data-what').split('|');
-        state.askPlay = '';
-        if (w[0] === 'x') { renderReview(); return; }
-        playFrom(w.slice(1).join('|'), w[0]);
-      });
-    }
-    wire('rv-auto', function () {
-      rv.askRep = !rv.askRep;
-      state.askPlay = '';          // 한 번에 한 줄만 띄웁니다
-      renderReview();
-    });
+    wire('rv-play', function () { playFrom('rv'); });
+    wire('rv-auto', function () { rv.askRep = !rv.askRep; renderReview(); });
     wire('rv-pick-no', function () { rv.askRep = false; renderReview(); });
     var aws = box.querySelectorAll('[data-aw]');
     for (var a0 = 0; a0 < aws.length; a0++) {
@@ -1992,7 +1968,6 @@
     sayStop();
     rv.pos = next;
     rv.shown = false;
-    rv.show = '';
     rv.noteOpen = false;
     rv.padOpen = false;
     renderReview();
@@ -2458,11 +2433,10 @@
           : n2) +
       '</span>' +
       '<div class="qtop">' +
-        '<p class="qko' + (ap && ap.list.length ? ' foldable' : '') +
-        (state.showMode[ix] === 'en' ? ' muted' : '') + '"' +
+        '<p class="qko' + (ap && ap.list.length ? ' foldable' : '') + '"' +
         (ap && ap.list.length
           ? (' data-kofold="' + ix + '" title="눌러서 응용 접기"') : '') +
-        '>' + (state.showMode[ix] === 'en' ? '— 한글 가림 —' : esc(q.korean)) + '</p>' +
+        '>' + esc(q.korean) + '</p>' +
         (st ? '<span class="tag ' + (st === ST_DONE ? 'ok' : 'rv') + '">' +
               esc(st) + '</span>' +
               '<button class="qsave undo" data-unmark="' + ix + '" ' +
@@ -2903,21 +2877,8 @@
     }, 120);
   }
 
-  /** 복습 창에서 화면에 무엇을 보일지 고르는 줄 */
-  function whatPickHtml(key) {
-    var w = rv.show || 'both';
-    function one(v, label) {
-      return '<button data-what="' + v + '|' + key + '"' +
-        (w === v ? ' class="on"' : '') + '>' + label + '</button>';
-    }
-    return '<div class="whatpick">' +
-      '<span class="lab">화면에</span>' +
-      one('ko', '한글만') + one('en', '영어만') + one('both', '통합') +
-      '<span class="grow"></span>' +
-      '<button class="plain" data-what="x|' + key + '">취소</button>' +
-      '</div>';
-  }
-  /** 버튼 하나 만들기 */
+  /** data-play 에 적힌 이름을 보고 무엇을 읽을지 정합니다. */
+  /** 듣기 단추 하나 만들기 */
   function playBtn(key, label) {
     if (!say.on) return '';
     var on = (say.now === key);
@@ -2926,39 +2887,25 @@
       (on ? '■ 멈춤' : '▶ ' + (label || '듣기')) + '</button>';
   }
 
-  /** data-play 에 적힌 이름을 보고 무엇을 읽을지 정합니다. */
-  /**
-   * show — 화면에 무엇을 보일지. 소리는 늘 한글 다음 영어입니다.
-   *   'ko' 한글만 (영어는 가림) · 'en'·'both' 영어도 펼침
-   */
-  function playFrom(key, show) {
+  /** 늘 한글 한 번, 영어 한 번. 화면은 그대로 둡니다. */
+  function playFrom(key) {
     unlockSay();
     var p = String(key || '').split(':');
-    var open = (show === 'en' || show === 'both');
 
     if (p[0] === 'q') {
       var q = state.items[p[1]];
-      if (!q) return;
-      if (show) {
-        state.showMode[p[1]] = show;
-        if (open) state.revealed[p[1]] = true;
-        else delete state.revealed[p[1]];
-      }
-      sayPair(key, q.korean, q.answer);
+      if (q) sayPair(key, q.korean, q.answer);
       return;
     }
     if (p[0] === 'a') {
       var ap = state.apply[p[1]];
       var one = ap && ap.list[p[2]];
-      if (!one) return;
-      if (show) one.shown = open;
-      sayPair(key, one.ko, one.en);
+      if (one) sayPair(key, one.ko, one.en);
       return;
     }
     if (p[0] === 'rv') {
       var cur = rvCurrent();
       if (!cur) return;
-      if (show) { rv.show = show; rv.shown = open; }
       var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
       if (va && !va.busy && !va.err) sayPair(key, va.ko, va.en);
       else sayPair(key, cur.korean, cur.answer);
@@ -3993,7 +3940,6 @@
     ix = b.getAttribute('data-hide');
     if (ix !== null) {
       delete state.revealed[ix];
-      delete state.showMode[ix];
       render();
       return;
     }
