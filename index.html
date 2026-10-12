@@ -72,7 +72,10 @@
 
     /* ---------- 달력 ---------- */
     @media (min-width:900px){ .cal-col{position:sticky; top:18px} }
-    .cal-head{display:flex; align-items:center; gap:4px; margin-bottom:14px}
+    .cal-head{display:flex; align-items:center; gap:4px; margin-bottom:8px}
+    /* 복습 단추는 연도·월 아래 한 줄로 */
+    .cal-revs{display:flex; gap:6px; margin-bottom:12px}
+    .cal-revs .mrev{flex:1; text-align:center}
     .cal-head .ym{
       flex:1; font-size:.78rem; font-weight:600; letter-spacing:.04em;
       color:var(--ink-2); font-variant-numeric:tabular-nums;
@@ -345,6 +348,9 @@
     li.q.done .qn{color:var(--accent)}
     .qtop{display:flex; align-items:flex-start; gap:14px}
     .qtop .qko{flex:1; min-width:0}
+    .qko.muted, .rv-ko.muted{color:var(--ink-3); font-weight:400; font-style:italic}
+    .qko.foldable{cursor:pointer}
+    .qko.foldable:hover{color:var(--accent)}
     .qsave{
       flex:none; margin-top:2px; padding:2px 0; font-size:.73rem;
       color:var(--ink-3); border-bottom:1px solid transparent;
@@ -404,18 +410,64 @@
     }
     .btn-text:hover:not(:disabled){color:var(--ink); border-bottom-color:var(--line)}
     .btn-text.lead{color:var(--accent)}
+    /* 소리로 듣기 */
+    .plays{display:inline-flex; align-items:center; gap:9px}
+    .plays .play{font-size:.78rem}
+    .btn-text.play{color:var(--sky-ink); font-variant-numeric:tabular-nums}
+    .btn-text.play:hover{border-bottom-color:var(--sky-ink)}
+    .btn-text.play.on{color:var(--bad)}
     .btn-text.lead:hover:not(:disabled){border-bottom-color:var(--accent)}
 
-    /* 힌트 — 색 블록 대신 왼쪽 획 하나 */
-    .hintbox{
-      margin-top:10px; padding:1px 0 1px 12px;
-      border-left:2px solid var(--mid); color:var(--ink-2);
-      font-size:.85rem; line-height:1.55;
+    /* 응용 — 같은 표현으로 다른 문장 써보기 */
+    .applybox{
+      margin-top:10px; padding:12px 14px; border-radius:10px;
+      background:var(--sunken); border-left:2px solid var(--sky-ink);
     }
-    .hintbox .tag{
-      display:block; font-size:.62rem; font-weight:600; letter-spacing:.09em;
-      color:var(--mid); text-transform:uppercase; margin-bottom:3px;
+    .applybox.quiet{color:var(--ink-3); font-size:.8rem; border-left-color:var(--line)}
+    .ahead{display:flex; align-items:center; gap:10px; margin-bottom:7px}
+    .ahead .grow{flex:1}
+    .ahead .tag{
+      flex:none; font-size:.62rem; font-weight:600; letter-spacing:.06em;
+      color:var(--sky-ink); background:var(--sky);
+      padding:2px 7px; border-radius:99px; white-space:nowrap;
     }
+    .ahead .apoint{
+      font-size:.74rem; color:var(--ink-3); min-width:0;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .ahead .asaved{
+      flex:none; font-size:.62rem; color:var(--ink-3);
+      background:var(--panel); padding:2px 7px; border-radius:99px;
+      white-space:nowrap;
+    }
+    .ahead .btn-text{font-size:.74rem}
+
+    /* 네모는 문장 왼쪽에, 손가락으로도 누르기 좋게 */
+    .aitem{display:flex; align-items:flex-start; gap:11px}
+    .abody{flex:1; min-width:0}
+    .akeep{flex:none; margin-top:1px; padding:3px}
+    .akeep.ghost{width:26px; height:26px}
+    .akeep .box{width:20px; height:20px; border-radius:5px}
+    .akeep input:checked + .box::after{
+      left:6px; top:2px; width:5px; height:11px; border-width:0 2px 2px 0;
+    }
+    .aitem + .aitem, .aitem.more{
+      margin-top:12px; padding-top:12px; border-top:1px solid var(--line);
+    }
+    .aitem.quiet{color:var(--ink-3); font-size:.8rem}
+    .afoot{
+      display:flex; align-items:center; gap:14px;
+      margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
+    }
+    .afoot .grow{flex:1}
+    .afoot .btn-text{font-size:.78rem}
+    .ako{
+      margin:0 0 8px; font-family:var(--font-say); font-size:1.02rem;
+      line-height:1.5; word-break:keep-all;
+    }
+    .applybox textarea{background:var(--panel)}
+    .applybox .rans{margin-top:10px; border-left-color:var(--sky-ink)}
+    .applybox .acts{margin-top:6px}
 
     /* 답을 펼쳤을 때 고르는 두 버튼 */
     .btn-go.sm{padding:9px 20px; font-size:.82rem}
@@ -469,11 +521,96 @@
       color:var(--ink-2); font-size:1.5rem; margin-bottom:8px;
     }
 
+    /* ---------- 문장별 메모장 ---------- */
+    .qsave.has{color:var(--sky-ink)}
+    .qsave.has::after{content:" ●"; font-size:.5rem; vertical-align:middle}
+    .padbox{
+      margin-top:10px; padding:10px 12px; border-radius:10px;
+      background:var(--panel); box-shadow:inset 0 0 0 1px var(--line);
+    }
+    .phead{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+    .phead .grow{flex:1}
+    .phead .tag{
+      font-size:.62rem; font-weight:600; letter-spacing:.06em;
+      color:var(--ink-3); background:var(--sunken);
+      padding:2px 7px; border-radius:99px;
+    }
+    .phead .state{font-size:.72rem; color:var(--ok)}
+    .phead .state.dirty{color:var(--mid)}
+    .phead .btn-text{font-size:.74rem}
+    textarea.ptext{
+      background:var(--ground); font-size:.88rem; line-height:1.65;
+    }
+
+    /* ---------- 목소리 고르기 ---------- */
+    .vbox{
+      position:fixed; inset:0; z-index:55; display:flex;
+      align-items:center; justify-content:center; padding:20px;
+      background:rgba(18,19,22,.6);
+    }
+    .vbox[hidden]{display:none}
+    .vinner{
+      width:100%; max-width:460px; max-height:84vh; overflow-y:auto;
+      background:var(--ground); border-radius:12px; padding:16px 18px 18px;
+      box-shadow:0 18px 50px rgba(0,0,0,.26);
+    }
+    .vhead{display:flex; align-items:center; gap:10px; margin-bottom:12px}
+    .vhead b{font-size:.92rem}
+    .vhead .grow{flex:1}
+    .vhead .x{
+      border:none; background:none; color:var(--ink-3);
+      font-size:1.2rem; line-height:1; padding:0 2px;
+    }
+    .vgroup{margin-bottom:16px}
+    .vlab{
+      font-size:.66rem; font-weight:600; letter-spacing:.09em;
+      color:var(--ink-3); text-transform:uppercase; margin-bottom:6px;
+    }
+    .vlab .n{font-weight:400; letter-spacing:0; text-transform:none}
+    .vrow{
+      display:flex; align-items:center; gap:8px;
+      padding:7px 9px; border-radius:8px;
+    }
+    .vrow + .vrow{margin-top:2px}
+    .vrow.on{background:var(--sky)}
+    .vrow .grow{flex:1}
+    .vuse{
+      border:none; background:none; padding:0; text-align:left;
+      font-size:.84rem; color:var(--ink-2); min-width:0;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .vrow.on .vuse{color:var(--sky-ink); font-weight:600}
+    .vrow .vlang{
+      flex:none; font-size:.64rem; color:var(--ink-3);
+      font-variant-numeric:tabular-nums;
+    }
+    .vrow .good{
+      flex:none; font-size:.6rem; font-weight:600; color:var(--ok);
+      background:var(--sunken); padding:2px 6px; border-radius:99px;
+    }
+    .vtry{
+      flex:none; border:none; border-radius:6px; padding:4px 9px;
+      background:var(--sunken); color:var(--ink-2); font-size:.74rem;
+    }
+    .vtry:hover{background:var(--line); color:var(--ink)}
+    .vrow.valt{background:var(--sunken); margin-bottom:6px}
+    .vrow.valt.on{background:var(--sky)}
+    .vrow.valt.on .vuse{color:var(--sky-ink); font-weight:600}
+    .vtip.ontop{
+      margin:0 0 16px; padding:0 0 14px; border-top:none;
+      border-bottom:1px solid var(--line);
+    }
+    .vnone{margin:0; font-size:.8rem; color:var(--ink-3)}
+    .vtip{
+      margin:0; padding-top:12px; border-top:1px solid var(--line);
+      font-size:.74rem; line-height:1.6; color:var(--ink-3);
+    }
+
     /* ---------- 주간 복습 팝업 ---------- */
     #modal{
       position:fixed; inset:0; z-index:50; display:flex;
       align-items:center; justify-content:center; padding:24px;
-      background:rgba(18,19,22,.66);
+      background:rgba(18,19,22,.78);
     }
     #modal[hidden]{display:none}
     .sheet{
@@ -504,6 +641,59 @@
     }
     .rv-quit:hover{opacity:1}
 
+    /* 원문 / 응용 고르기 */
+    .rv-modes{display:flex; gap:2px; flex:none}
+    .rv-modes button{
+      padding:3px 10px; border:none; border-radius:99px;
+      background:transparent; color:#fff; opacity:.55;
+      font-size:.74rem; font-weight:600;
+    }
+    .rv-modes button:hover{opacity:.85}
+    .rv-modes button.on{background:rgba(255,255,255,.2); opacity:1}
+
+    /* 무엇을 들을지 고르는 줄 */
+    .whatpick{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      margin-top:10px; padding:9px 11px; border-radius:10px;
+      background:var(--sunken);
+    }
+    .whatpick .lab{font-size:.74rem; color:var(--ink-3); margin-right:2px}
+    .whatpick .grow{flex:1}
+    .whatpick button{
+      padding:6px 13px; border:none; border-radius:8px;
+      background:var(--panel); color:var(--ink);
+      font-size:.8rem; font-weight:600;
+      box-shadow:inset 0 0 0 1px var(--line);
+    }
+    .whatpick button:hover{background:var(--sky); color:var(--sky-ink)}
+    .whatpick button.plain{
+      background:transparent; box-shadow:none; color:var(--ink-3); font-weight:400;
+    }
+    /* 복습 창 안에서는 어두운 바탕에 얹힙니다 */
+    .sheet .whatpick{background:rgba(255,255,255,.14); margin:0 0 12px}
+    .sheet .whatpick .lab{color:#fff; opacity:.85}
+    .sheet .whatpick button.plain{color:#fff; opacity:.75}
+
+    /* 몇 번씩 읽을지 고르는 줄 */
+    .rv-pick{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      margin-bottom:12px; padding:10px 12px; border-radius:10px;
+      background:rgba(255,255,255,.14);
+    }
+    .rv-pick .lab{font-size:.78rem; color:#fff; opacity:.85; margin-right:4px}
+    .rv-pick .grow{flex:1}
+    .rv-pick button{
+      padding:7px 14px; border:none; border-radius:8px;
+      background:var(--panel); color:var(--ink);
+      font-size:.84rem; font-weight:700;
+    }
+    .rv-pick button:hover{background:var(--sky); color:var(--sky-ink)}
+    .rv-pick + .rv-pick{margin-top:-6px}
+    .rv-pick button.on{background:var(--sky); color:var(--sky-ink)}
+    .rv-pick button.plain{
+      background:transparent; color:#fff; opacity:.75; font-weight:500;
+    }
+
     .rv-card{
       background:var(--ground); border-radius:14px; padding:26px 24px;
       min-height:230px; display:flex; flex-direction:column; justify-content:center;
@@ -526,14 +716,30 @@
       margin:16px 0 0; padding-top:15px; border-top:1px solid var(--line);
       font-size:1.12rem; line-height:1.55; color:var(--accent);
     }
+    .rv-point{
+      font-size:.66rem; font-weight:600; letter-spacing:.04em;
+      color:var(--sky-ink); background:var(--sky);
+      padding:2px 8px; border-radius:99px;
+      min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .rv-wait{
+      margin:0; font-size:1rem; line-height:1.5; color:var(--ink-3);
+      word-break:keep-all;
+    }
+    .rv-retry{
+      margin-top:12px; padding:7px 14px; border:none; border-radius:8px;
+      background:var(--sunken); color:var(--ink); font-size:.8rem; font-weight:600;
+    }
+    .rv-retry:hover{background:var(--line)}
+    .rv-from{
+      margin:14px 0 0; padding-top:11px; border-top:1px dashed var(--line);
+      font-size:.74rem; color:var(--ink-3); word-break:keep-all;
+    }
     .rv-memo{
       margin:12px 0 0; padding-left:11px; border-left:2px solid var(--line);
       font-size:.8rem; line-height:1.55; color:var(--ink-2);
     }
-    .rv-hint{
-      margin:12px 0 0; padding-left:11px; border-left:2px solid var(--mid);
-      font-size:.84rem; line-height:1.55; color:var(--ink-2);
-    }
+    .rv-memo.pad{border-left-color:var(--sky-ink); color:var(--ink)}
 
     /* 카드와 같은 결로. 검은 덩어리는 눈에 세게 박힙니다. */
     .rv-main{
@@ -553,22 +759,31 @@
     /* 앞뒤로 넘기는 건 한 단계 여리게 */
     .rv-nav{display:flex; gap:10px; margin-top:10px}
     .rv-nav button{
+      background:rgba(255,255,255,.1);
       flex:1; padding:13px 16px; border-radius:12px;
-      background:transparent; color:#fff;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.34);
+      color:#fff;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);
       font-size:.9rem; font-weight:500;
     }
     .rv-nav button:hover:not(:disabled){background:rgba(255,255,255,.14)}
     .rv-nav button:disabled{opacity:.3}
 
-    .rv-foot{display:flex; align-items:center; gap:14px; margin-top:13px}
+    /* 아래 줄은 뒤 화면이 비쳐 보여서 잘 안 읽힙니다. 바탕을 깔아줍니다. */
+    .rv-foot{
+      display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+      margin-top:10px; padding:10px 13px; border-radius:10px;
+      background:rgba(255,255,255,.14);
+    }
+    .sheet .btn-text.play{color:#fff; opacity:.9; border-bottom-color:transparent}
+    .sheet .btn-text.play:hover{opacity:1; border-bottom-color:rgba(255,255,255,.5)}
+    .sheet .btn-text.play.on{color:#ffc9bf; opacity:1}
     .rv-foot .grow{flex:1}
     .rv-foot button{
       background:none; border:none; padding:2px 0;
-      font-size:.78rem; color:#fff; opacity:.8;
+      font-size:.8rem; color:#fff; opacity:.92;
     }
     .rv-foot button:hover:not(:disabled){opacity:1}
-    .rv-cnt{font-size:.76rem; color:#fff; opacity:.7;
+    .rv-cnt{font-size:.76rem; color:#fff; opacity:.85;
             font-variant-numeric:tabular-nums}
 
     .rv-done{
@@ -644,6 +859,8 @@
     }
     footer .grow{flex:1}
     footer .ai-on{color:var(--ok); font-weight:600}
+    .fill-state{font-size:.72rem; color:var(--ink-3)}
+    .fill-state.ok{color:var(--ok)}
     .mini{
       background:none; border:none; color:var(--ink-3); padding:2px 0;
       font-size:.74rem; cursor:pointer; border-bottom:1px solid transparent;
@@ -681,7 +898,17 @@
       .sheet.rv{max-height:none; overflow:visible}
       .rv-scope{display:none}
       .rv-ko{font-size:1.24rem}
-      .rv-card{min-height:190px; padding:22px 18px}
+      /* 원문 / 응용 고르기 */
+    .rv-modes{display:flex; gap:2px; flex:none}
+    .rv-modes button{
+      padding:3px 10px; border:none; border-radius:99px;
+      background:transparent; color:#fff; opacity:.55;
+      font-size:.74rem; font-weight:600;
+    }
+    .rv-modes button:hover{opacity:.85}
+    .rv-modes button.on{background:rgba(255,255,255,.2); opacity:1}
+
+    .rv-card{min-height:190px; padding:22px 18px}
     }
     /* 손가락으로 쓰는 화면에는 마우스를 올릴 수가 없습니다 */
     @media (hover:none){
@@ -715,8 +942,11 @@
           <div class="cal-head">
             <button class="nav" id="prev" title="지난 달">‹</button>
             <span class="ym" id="ym">—</span>
-            <button class="mrev" id="month-rev" title="이 달 문장을 통째로 복습">월 복습</button>
             <button class="nav" id="next" title="다음 달">›</button>
+          </div>
+          <div class="cal-revs">
+            <button class="mrev" id="month-rev" title="이 달 문장을 통째로 복습">월 복습</button>
+            <button class="mrev" id="all-rev" title="달 상관없이 시트에 있는 문장 전부">전체 복습</button>
           </div>
           <div class="grid" id="dow-row"></div>
           <div class="grid" id="cal-grid"></div>
@@ -759,10 +989,14 @@
     <footer>
       <span id="ai-state">—</span>
       <button class="mini" id="ai-test">AI 연결 확인</button>
+      <button class="mini" id="voice-pick">목소리 고르기</button>
+      <button class="mini" id="fill-btn">응용 미리 쌓기</button>
+      <span class="fill-state" id="fill-state"></span>
       <span class="grow"></span>
       <button class="mini" id="reload">시트에서 다시 읽기</button>
       <button class="mini" id="open-sheet">시트 열기</button>
     </footer>
+    <div class="vbox" id="vbox" hidden></div>
     <div id="modal" hidden></div>
   </div>
 
@@ -782,16 +1016,17 @@
     token: '',
     items: [], hasKey: false, loading: true,
     y: now.getFullYear(), m: now.getMonth(),
+    stale: false,       // 지난번 것을 먼저 띄운 상태
     scope: 'all',       // all | today | week | review | done | date
     selDate: '',
     queue: [],          // 문제 순서 (items 의 인덱스)
     page: 0,            // 몇 번째 묶음
     pageSize: 5,        // 한 화면에 몇 문제
-    answers: {},        // items 인덱스 -> 내가 쓴 답
-    hints: {},          // items 인덱스 -> {text, level, ai}
+
     checked: {},        // 되돌리려고 고른 문제
     noteOpen: {},       // 메모를 펼쳐둔 문제
-    saved: {},          // 시트에 넣어둔 답 (점검 전)
+
+    apply: {},          // items 인덱스 -> 응용 문제 {busy, list, pos, shown, mine}
     revealed: {},       // 답을 펼쳐둔 문제
     marked: {},         // items 인덱스 -> {status}  (이번에 고른 것)
     busy: false,
@@ -801,12 +1036,16 @@
     diaryFor: null,     // 지금 화면에 띄운 일기 날짜
     diaryDirty: false,
     notes: [],          // 노트 목록
+    fill: null,         // 응용 쌓기 상태
+    vars: {},           // 한글 -> 쌓아둔 응용들 (미리 받아둡니다)
+    padOpen: {},        // 메모장을 펼쳐둔 문장
+    padDirty: {},       // 아직 저장 안 한 메모장
+    padSaved: {},       // 방금 저장한 메모장
     noteFor: null,      // 지금 표에 띄운 노트 날짜
     noteRows: [],       // 표에 적힌 것 (화면 그대로)
     reviews: [],        // 주간 복습 기록
     history: {},        // 한글 -> [{date, mine}] (펼칠 때 받아옵니다)
     histOpen: {},       // 이력을 펼쳐둔 문제
-    dirtyAnswers: false,
     tally: { done: 0, review: 0 },
     missed: {}          // 틀린 문제 기억 (한글 기준)
   };
@@ -872,12 +1111,18 @@
       bad(new Error('서버 주소가 없어요.'));
       return;
     }
-    var tries = (left === undefined) ? 3 : left;
+    var tries = (left === undefined) ? 2 : left;
     function again() {
       if (tries <= 1) return false;
       setTimeout(function () { post(fn, args, ok, bad, tries - 1); }, 800);
       return true;
     }
+
+    var gaveUp = false;
+    var bell = setTimeout(function () {
+      gaveUp = true;
+      bad(new Error('2분 넘게 답이 없어요. 잠시 뒤에 다시 눌러주세요.'));
+    }, 150000);
 
     fetch(API, {
       method: 'POST',
@@ -887,6 +1132,8 @@
     })
       .then(function (r) { return r.text(); })
       .then(function (t) {
+        if (gaveUp) return;
+        clearTimeout(bell);
         var res = null;
         try { res = JSON.parse(t); } catch (e) { res = null; }
 
@@ -903,6 +1150,8 @@
         ok(res.data);
       })
       .catch(function () {
+        if (gaveUp) return;
+        clearTimeout(bell);
         if (again()) return;
         bad(new Error('연결이 안 돼요. 잠시 뒤에 다시 해보세요.'));
       });
@@ -913,22 +1162,70 @@
     post(fn, [state.token].concat(args), ok, bad);
   }
 
+  /*
+   * 지난번에 받아둔 것을 브라우저에 남겨뒀다가 먼저 띄웁니다.
+   * 그래서 열자마자 바로 보이고, 시트는 뒤에서 조용히 다시 읽습니다.
+   */
+  var SNAP = 'study.snap';
+
+  function saveSnap(data) {
+    try { localStorage.setItem(SNAP, JSON.stringify(data)); } catch (e) {}
+  }
+  function loadSnap() {
+    try {
+      var d = JSON.parse(localStorage.getItem(SNAP) || 'null');
+      return (d && d.items && d.items.length) ? d : null;
+    } catch (e) { return null; }
+  }
+
+  function applyData(data) {
+    state.items = (data && data.items) || [];
+    state.diary = {};
+    ((data && data.diary) || []).forEach(function (e) {
+      state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
+    });
+    state.notes = (data && data.notes) || [];
+    state.vars = {};
+    ((data && data.vars) || []).forEach(function (v) {
+      (state.vars[v.of] = state.vars[v.of] || []).push(v);
+    });
+    state.reviews = (data && data.reviews) || [];
+    state.hasKey = !!(data && data.hasKey);
+  }
+
+  /** 문장들이 그대로인지 가볍게 견줍니다. */
+  function stamp(items) {
+    var a = items || [];
+    if (!a.length) return '0';
+    return a.length + '|' + a[0].korean + '|' + a[a.length - 1].korean;
+  }
+
   function load(quiet) {
-    if (!quiet) { state.loading = true; render(); }
-    call('listAll', [], function (data) {
-      state.items = (data && data.items) || [];
-      state.diary = {};
-      ((data && data.diary) || []).forEach(function (e) {
-        state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
-      });
-      state.notes = (data && data.notes) || [];
-      state.reviews = (data && data.reviews) || [];
-      state.hasKey = !!(data && data.hasKey);
+    var snap = quiet ? null : loadSnap();
+    if (snap) {
+      applyData(snap);
       state.loading = false;
+      state.stale = true;
       build();
+      render();
+    } else if (!quiet) {
+      state.loading = true;
+      render();
+    }
+    var was = stamp(state.items);
+
+    call('listAll', [], function (data) {
+      applyData(data);
+      state.loading = false;
+      state.stale = false;
+      saveSnap(data);
+      fillCheck();
+      // 문장이 그대로면 풀던 순서를 흔들지 않습니다.
+      if (!snap || stamp(state.items) !== was) build();
       render();
     }, function (e) {
       state.loading = false;
+      state.stale = false;
       render();
       msg(errText(e), 'err');
     });
@@ -975,22 +1272,14 @@
     }
     state.queue = idx;
     state.page = 0;
-    state.answers = {};
-    state.saved = {};
-    // 써두고 아직 점검 안 한 답은 그대로 다시 띄웁니다.
-    for (var q = 0; q < state.items.length; q++) {
-      var it0 = state.items[q];
-      if (it0.mine && !it0.status) {
-        state.answers[q] = it0.mine;
-        state.saved[q] = true;
-      }
-    }
+    state.apply = {};
+    state.padOpen = {};
+    state.padDirty = {};
+    state.padSaved = {};
     state.checked = {};
     state.noteOpen = {};
     state.revealed = {};
     state.marked = {};
-    state.dirtyAnswers = false;
-    state.hints = {};
     state.tally = { done: 0, review: 0 };
   }
 
@@ -1032,6 +1321,18 @@
     var mk = monthKeyOf(state.y, state.m);
     var mN = itemsInMonth(mk).length;
     var mDone = lastReviewOf(mk, '월간');
+    var ab = $('all-rev');
+    if (ab) {
+      var aN = state.items.length;
+      var aDone = lastAllReview();
+      ab.disabled = !aN;
+      ab.className = 'mrev' + (aDone ? ' done' : '');
+      ab.title = aN
+        ? ('달 상관없이 ' + aN + '문장 전부를 무작위로 복습합니다' +
+           (aDone ? (' · 지난 복습 ' + aDone.logged) : ''))
+        : '시트에 문장이 없어요';
+    }
+
     var mb = $('month-rev');
     if (mb) {
       mb.disabled = !mN;
@@ -1087,7 +1388,10 @@
     }
     var days = 0;
     for (var dk in state.diary) { if (state.diary.hasOwnProperty(dk)) days++; }
-    $('tally').textContent = state.loading
+    $('tally').textContent = state.stale
+      ? ((state.tab === 'diary' ? ('일기 ' + days + '일치')
+                                 : ('시트에 ' + state.items.length + '문장')) + ' · 다시 읽는 중…')
+      : state.loading
       ? '불러오는 중…'
       : (state.tab === 'diary'
           ? ('일기 ' + days + '일치')
@@ -1335,6 +1639,12 @@
     var p = String(key || '').split('-');
     return (+p[0]) + '년 ' + (+p[1]) + '월';
   }
+  function itemsAll() {
+    var out = [];
+    for (var i = 0; i < state.items.length; i++) out.push(i);
+    return out;
+  }
+
   function itemsInMonth(key) {
     var pre = String(key || '').slice(0, 8);   // 2026-09-
     var out = [];
@@ -1343,6 +1653,14 @@
       if (d && d.slice(0, 8) === pre) out.push(i);
     }
     return out;
+  }
+
+  /** 전체 복습은 날짜가 매번 달라서 종류로만 찾습니다. */
+  function lastAllReview() {
+    for (var i = 0; i < state.reviews.length; i++) {
+      if ((state.reviews[i].kind || '') === '전체') return state.reviews[i];
+    }
+    return null;
   }
 
   /** 지난 복습 기록. 주간과 월간은 따로 셉니다. */
@@ -1364,43 +1682,25 @@
   var rv = {
     open: false, key: '', kind: '주간', queue: [], pos: 0,
     shown: false, marks: {}, saving: false,
-    noteOpen: false, hint: null, hintBusy: false
+    noteOpen: false, padOpen: false,
+    mode: 'base',   // base = 적어둔 문장 그대로, apply = 응용 문장
+    vari: {}       // 자리 -> {busy, ko, en, point, err}
   };
 
   /** 지금 복습하는 범위 이름 (9.6 – 9.12 / 2026년 9월) */
   function rvScopeLabel() {
+    if (rv.kind === '전체') return '전체 ' + rv.queue.length + '문장';
     return rv.kind === '월간' ? monthLabel(rv.key) : weekLabel(rv.key);
   }
 
-  // 힌트는 시트에 적어둔 답에서 바로 뽑습니다. 서버에 안 다녀옵니다.
-  var RV_STOP = ' a an the i you he she it we they me him her us them my your his its our their is are am was were be been being do does did have has had will would can could should may might to of in on at for with by from as that this these those and or but if so not no ';
-
-  function localHint(ans, lv) {
-    var words = String(ans || '').trim().split(/\s+/).filter(Boolean);
-    if (!words.length) return '';
-    if (lv === 1) {
-      var kw = [];
-      for (var i = 0; i < words.length; i++) {
-        var b = words[i].toLowerCase().replace(/[^a-z']/g, '');
-        if (!b || RV_STOP.indexOf(' ' + b + ' ') !== -1) continue;
-        if (kw.indexOf(words[i]) === -1) kw.push(words[i]);
-        if (kw.length >= 4) break;
-      }
-      if (!kw.length) kw = words.slice(0, 2);
-      return '이런 단어를 써보세요 — ' + kw.join(', ');
-    }
-    if (lv === 2) {
-      var half = Math.max(1, Math.ceil(words.length / 2));
-      return words.slice(0, half).join(' ') + ' …';
-    }
-    return words.join(' ');
-  }
-
   function openReview(key, kind) {
-    var scope = (kind === '월간') ? '월간' : '주간';
-    var idx = (scope === '월간') ? itemsInMonth(key) : itemsInWeek(key);
+    var scope = (kind === '전체') ? '전체'
+              : (kind === '월간') ? '월간' : '주간';
+    var idx = (scope === '전체') ? itemsAll()
+            : (scope === '월간') ? itemsInMonth(key) : itemsInWeek(key);
     if (!idx.length) {
-      msg((scope === '월간' ? monthLabel(key) : weekLabel(key) + ' 주') +
+      msg((scope === '전체' ? '시트'
+           : scope === '월간' ? monthLabel(key) : weekLabel(key) + ' 주') +
           '에는 문장이 없어요.', 'err');
       return;
     }
@@ -1410,12 +1710,16 @@
     }
     rv = { open: true, key: key, kind: scope, queue: idx, pos: 0,
            shown: false, marks: {}, saving: false,
-           noteOpen: false, hint: null, hintBusy: false };
+           noteOpen: false, padOpen: false,
+           mode: 'base', vari: {} };
     renderReview();
     document.body.style.overflow = 'hidden';
   }
 
   function closeReview() {
+    sayStop();
+    auto.on = false;
+    keepAwake(false);
     rv.open = false;
     $('modal').hidden = true;
     document.body.style.overflow = '';
@@ -1450,13 +1754,22 @@
     if (!rv.open) { box.hidden = true; return; }
     box.hidden = false;
 
+    if (auto.on) {
+      box.innerHTML = autoPanelHtml();
+      wire('auto-stop', autoStop);
+      wire('auto-x', function () { autoStop(); closeReview(); });
+      wire('auto-prev', function () { autoJump(-1); });
+      wire('auto-next', function () { autoJump(1); });
+      return;
+    }
+
     var total = rv.queue.length;
     var q = rvCurrent();
     var t = rvTally();
     var h = '<div class="sheet rv">';
 
     if (!q) {
-      var past = lastReviewOf(rv.key, rv.kind);
+      var past = (rv.kind === '전체') ? lastAllReview() : lastReviewOf(rv.key, rv.kind);
       var rate = total ? Math.round(t.done * 100 / total) : 0;
       h += '<div class="rv-done">' +
         '<div class="scope">' + esc(rv.kind + ' 복습 · ' + rvScopeLabel()) + '</div>' +
@@ -1484,27 +1797,54 @@
     var mark = rv.marks[rv.pos] || '';
     var pct = Math.round((rv.pos + (rv.shown ? 1 : 0)) * 100 / total);
 
+    var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
+
     h += '<div class="rv-top">' +
-      '<span class="rv-scope">' + esc(rvScopeLabel()) + '</span>' +
+      '<span class="rv-modes">' +
+        '<button id="rv-base"' + (rv.mode === 'base' ? ' class="on"' : '') +
+        '>원문</button>' +
+        '<button id="rv-apply"' + (rv.mode === 'apply' ? ' class="on"' : '') +
+        '>응용</button>' +
+      '</span>' +
       '<span class="rv-n">' + (rv.pos + 1) + ' / ' + total + '</span>' +
       '<div class="rv-bar"><div style="width:' + pct + '%"></div></div>' +
       '<button class="rv-quit" id="rv-close">그만</button>' +
       '</div>';
 
+    // 응용 모드에서는 AI 가 만든 새 문장을 냅니다.
+    var askKo = q.korean, askEn = q.answer, wait = false, oops = '';
+    if (rv.mode === 'apply') {
+      if (!va || va.busy) { wait = true; }
+      else if (va.err) { oops = va.err; }
+      else { askKo = va.ko; askEn = va.en; }
+    }
+
+    if (rv.askRep) h += repPickHtml();
+
     h += '<div class="rv-card">' +
       '<div class="rv-head">' +
         '<span class="rv-date">' + esc(rvDate(q.date)) + '</span>' +
+        (rv.mode === 'apply' && va && va.point
+          ? '<span class="rv-point">' + esc(va.point) + '</span>' : '') +
         (mark ? '<span class="tag ' + (mark === ST_DONE ? 'ok' : 'rv') + '">' +
                 esc(mark) + '</span>' : '') +
       '</div>' +
-      '<p class="rv-ko">' + esc(q.korean) + '</p>' +
-      (rv.shown
-        ? ('<p class="rv-en">' +
-           (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</p>')
-        : '') +
+      (wait
+        ? '<p class="rv-wait">응용 문장을 만드는 중…</p>'
+        : (oops
+          ? ('<p class="rv-wait">' + esc(oops) + '</p>' +
+             '<button class="rv-retry" id="rv-revar">다시 만들기</button>')
+          : ('<p class="rv-ko">' + esc(askKo) + '</p>' +
+             (rv.shown
+               ? ('<p class="rv-en">' +
+                  (askEn ? esc(askEn) : '영어 문장이 비어 있어요') + '</p>')
+               : '')))) +
+      (rv.mode === 'apply' && !wait && !oops
+        ? '<p class="rv-from">원문 — ' + esc(q.korean) + '</p>' : '') +
       (rv.noteOpen && q.note ? '<p class="rv-memo">' + esc(q.note) + '</p>' : '') +
-      (rv.hint && rv.hint.text && !rv.shown
-        ? '<p class="rv-hint">' + esc(rv.hint.text) + '</p>' : '') +
+      (rv.padOpen && q.pad
+        ? '<p class="rv-memo pad">' + esc(q.pad) + '</p>' : '') +
+
       '</div>';
 
     if (rv.shown) {
@@ -1513,7 +1853,8 @@
         '<button class="rv-main rev" id="rv-no">복습 필요</button>' +
         '</div>';
     } else {
-      h += '<button class="rv-main" id="rv-show">정답 확인</button>';
+      h += '<button class="rv-main" id="rv-show"' +
+        (wait || oops ? ' disabled' : '') + '>정답 확인</button>';
     }
 
     h += '<div class="rv-nav">' +
@@ -1522,13 +1863,15 @@
       '</div>';
 
     h += '<div class="rv-foot">' +
-      (rv.shown ? '<button id="rv-hide">답 가리기</button>'
-        : ('<button id="rv-hint"' + (rv.hintBusy ? ' disabled' : '') + '>' +
-           (rv.hintBusy ? '생각하는 중…'
-             : (rv.hint ? (rv.hint.level >= 3 ? '힌트 다시' : '힌트 더') : '힌트')) +
-           '</button>')) +
+      (rv.shown ? '<button id="rv-hide">답 가리기</button>' : '') +
       (q.note ? '<button id="rv-note">' + (rv.noteOpen ? '메모 닫기' : '메모') +
                 '</button>' : '') +
+      (q.pad ? '<button id="rv-pad">' + (rv.padOpen ? '메모장 닫기' : '메모장') +
+               '</button>' : '') +
+      playBtn('rv') +
+      (say.on ? '<button id="rv-auto">▶▶ 전체 듣기</button>' : '') +
+      (rv.mode === 'apply' && !wait
+        ? '<button id="rv-revar">다른 문장</button>' : '') +
       '<span class="grow"></span>' +
       '<span class="rv-cnt">암기 ' + t.done + ' · 복습 ' + t.review + '</span>' +
       '</div>';
@@ -1539,37 +1882,94 @@
     wire('rv-show', rvShow);
     wire('rv-hide', function () { rv.shown = false; renderReview(); });
     wire('rv-note', function () { rv.noteOpen = !rv.noteOpen; renderReview(); });
-    wire('rv-hint', rvHint);
+    wire('rv-pad', function () { rv.padOpen = !rv.padOpen; renderReview(); });
+    wire('rv-auto', function () { rv.askRep = !rv.askRep; renderReview(); });
+    wire('rv-pick-no', function () { rv.askRep = false; renderReview(); });
+    var plays = box.querySelectorAll('[data-play]');
+    for (var p0 = 0; p0 < plays.length; p0++) {
+      plays[p0].addEventListener('click', function () {
+        var id = this.getAttribute('data-play');
+        if (say.now === id) { sayStop(); redraw(); return; }
+        playFrom(id);
+      });
+    }
+
+    var aws = box.querySelectorAll('[data-aw]');
+    for (var a0 = 0; a0 < aws.length; a0++) {
+      aws[a0].addEventListener('click', function () {
+        rv.autoWhat = this.getAttribute('data-aw');
+        renderReview();
+      });
+    }
+    var reps = box.querySelectorAll('[data-rep]');
+    for (var r0 = 0; r0 < reps.length; r0++) {
+      reps[r0].addEventListener('click', function () {
+        autoStart(this.getAttribute('data-rep'));
+      });
+    }
     wire('rv-ok', function () { rvMark(true); });
     wire('rv-no', function () { rvMark(false); });
     wire('rv-prev', function () { rvGo(-1); });
     wire('rv-next', function () { rvGo(1); });
+    wire('rv-base', function () { rvMode('base'); });
+    wire('rv-apply', function () { rvMode('apply'); });
+    wire('rv-revar', function () { rvVar(rv.pos, true); });
   }
 
-  function rvHint() {
-    var q = rvCurrent();
-    if (!q) return;
-    var lv = rv.hint ? Math.min(3, rv.hint.level + 1) : 1;
+  /* ---------- 응용편 ---------- */
+  function rvMode(m) {
+    if (rv.mode === m) return;
+    rv.mode = m;
+    rv.shown = false;
+    renderReview();
+    if (m === 'apply') rvVar(rv.pos);
+  }
 
-    // 시트에 답이 있으면 바로 만들어 보여줍니다.
-    var local = localHint(q.answer, lv);
-    if (local) {
-      rv.hint = { text: local, level: lv };
-      renderReview();
+  /** 그 자리의 응용 문장을 받아옵니다. again 이면 새로 하나 더 뽑습니다. */
+  function rvVar(pos, again) {
+    if (pos < 0 || pos >= rv.queue.length) return;
+    var cur = rv.vari[pos];
+    if (cur && cur.busy) return;
+    if (cur && !cur.err && !again) return;
+
+    var q = state.items[rv.queue[pos]];
+    if (!q) return;
+
+    var seen = (cur && cur.seen) ? cur.seen.slice() : [];
+    if (cur && cur.ko && seen.indexOf(cur.ko) === -1) seen.push(cur.ko);
+
+    // 쌓아둔 게 남아 있으면 기다릴 것 없이 바로 띄웁니다.
+    var had = state.vars[q.korean] || [];
+    for (var i = 0; i < had.length; i++) {
+      if (seen.indexOf(had[i].ko) !== -1) continue;
+      seen.push(had[i].ko);
+      rv.vari[pos] = { busy: false, ko: had[i].ko, en: had[i].en,
+                       point: had[i].point, err: '', saved: true, seen: seen };
+      if (pos === rv.pos) { rv.shown = false; renderReview(); }
+      if (rv.open && rv.mode === 'apply' && pos === rv.pos) rvVar(pos + 1);
       return;
     }
 
-    // 답이 비어 있으면 그때만 서버에 물어봅니다.
-    rv.hintBusy = true;
-    renderReview();
-    call('getHint', [q.korean, q.answer, '', lv], function (res) {
-      rv.hintBusy = false;
-      rv.hint = { text: (res && res.text) || '', level: lv };
-      renderReview();
+    rv.vari[pos] = { busy: true, ko: '', en: '', point: '', err: '', seen: seen };
+    if (pos === rv.pos) { rv.shown = false; renderReview(); }
+
+    call('getVariation', [q.korean, q.answer, q.note, seen, 1], function (res) {
+      if (res && res.ok) {
+        if (seen.indexOf(res.ko) === -1) seen.push(res.ko);
+        rv.vari[pos] = { busy: false, ko: res.ko, en: res.en,
+                         point: res.point, err: '', saved: !!res.saved,
+                         seen: seen };
+      } else {
+        rv.vari[pos] = { busy: false, ko: '', en: '', point: '', seen: seen,
+          err: (res && res.message) || '응용 문장을 못 만들었어요.' };
+      }
+      if (rv.open) renderReview();
+      // 다음 장을 미리 받아두면 기다림이 줄어듭니다.
+      if (rv.open && rv.mode === 'apply' && pos === rv.pos) rvVar(pos + 1);
     }, function (e) {
-      rv.hintBusy = false;
-      renderReview();
-      msg(errText(e), 'err');
+      rv.vari[pos] = { busy: false, ko: '', en: '', point: '', seen: seen,
+                       err: errText(e) };
+      if (rv.open) renderReview();
     });
   }
 
@@ -1583,11 +1983,13 @@
     var next = rv.pos + step;
     if (next < 0) return;
     if (next > rv.queue.length) next = rv.queue.length;
+    sayStop();
     rv.pos = next;
     rv.shown = false;
     rv.noteOpen = false;
-    rv.hint = null;
+    rv.padOpen = false;
     renderReview();
+    if (rv.mode === 'apply') rvVar(rv.pos);
   }
 
   function rvMark(ok) {
@@ -1635,7 +2037,8 @@
     if (send.length) call('markMany', [send], function () {}, function () {});
 
     call('saveReview',
-      [rv.key, rv.queue.length, t.done, t.review, rvMissed(), rv.kind],
+      [(rv.kind === '전체') ? todayKey() : rv.key,
+       rv.queue.length, t.done, t.review, rvMissed(), rv.kind],
       function (rows) {
         state.reviews = rows || state.reviews;
         rv.saving = false;
@@ -1664,6 +2067,364 @@
     if (rv.shown && (e.key === '2' || e.key === 'x')) { e.preventDefault(); rvMark(false); }
   });
 
+  /* ---------- 응용 미리 쌓기 ---------- */
+  /*
+   * 시트에 문장을 적어두면 뒤에서 응용을 2개씩 만들어 쌓아둡니다.
+   * 그러면 '응용'을 눌렀을 때 AI 를 안 거치고 바로 뜹니다.
+   */
+  function fillSay(t, kind) {
+    var el = $('fill-state');
+    if (!el) return;
+    el.textContent = t || '';
+    el.className = 'fill-state' + (kind ? ' ' + kind : '');
+  }
+
+  function fillCheck() {
+    call('fillStatus', [], function (r) {
+      if (!r || !r.ok) return;
+      state.fill = r;
+      if (!r.need) {
+        fillSay('응용 다 쌓였어요 (' + r.done + '문장)', 'ok');
+      } else {
+        fillSay(r.need + '문장은 아직 응용이 없어요' +
+          (r.auto ? ' · 10분마다 채우는 중' : ''));
+      }
+    }, function () {});
+  }
+
+  function fillRun() {
+    fillSay('지금 채우는 중… 몇 분 걸립니다');
+    call('fillNow', [], function (r) {
+      if (r && r.ok) {
+        msg('응용 ' + r.made + '개를 쌓았어요.' +
+            (r.left ? (' 아직 ' + r.left + '문장 남았습니다.') : ''), 'ok');
+        load(true);          // 쌓인 것을 바로 들고 옵니다
+      } else {
+        msg((r && r.message) || '못 채웠어요.', 'err');
+      }
+      fillCheck();
+    }, function (e) {
+      fillSay('');
+      msg(errText(e), 'err');
+    });
+  }
+
+  $('fill-btn').addEventListener('click', function () {
+    var f = state.fill;
+    if (f && !f.auto) {
+      var ask = '10분마다 저절로 채우게 할까요? ' +
+        '켜두면 시트에 새 문장을 적을 때마다 응용이 알아서 쌓입니다.';
+      if (window.confirm(ask)) {
+        call('setAutoFill', [true], function () {
+          msg('10분마다 저절로 채웁니다.', 'ok');
+          fillCheck();
+          fillRun();
+        }, function (e) { msg(errText(e), 'err'); });
+        return;
+      }
+    }
+    fillRun();
+  });
+  /* ---------- 목소리 고르기 ---------- */
+  var VSAMPLE = {
+    ko: '오늘 하루도 고생 많으셨어요.',
+    en: 'You have been doing really well lately.'
+  };
+
+  function voiceBoxHtml() {
+    var pref = voicePrefs();
+    var h = '<div class="vinner">' +
+      '<div class="vhead"><b>목소리 고르기</b>' +
+      '<span class="grow"></span>' +
+      '<button class="x" id="v-close" title="닫기">&times;</button></div>' +
+      '<div class="vrow valt' + (altOn() ? ' on' : '') + '">' +
+        '<button class="vuse" id="v-alt">' + (altOn() ? '● ' : '○ ') +
+        (hasTwoVoices() ? '영어를 남녀 번갈아 읽기'
+                        : '거듭 읽을 때 높낮이 바꾸기') + '</button>' +
+        '<span class="grow"></span>' +
+      '</div>' +
+      '<p class="vtip ontop">' +
+      (hasTwoVoices()
+        ? '이 기기엔 남녀 목소리가 따로 있어서 목소리를 번갈아 씁니다. 빠르기만 조금씩 달라집니다.'
+        : '이 기기엔 목소리가 하나뿐입니다. 그 목소리 그대로 두고 높낮이와 빠르기만 조금씩 달리합니다.') +
+      '</p>';
+
+    [['ko', '한국어', 'ko-KR'], ['en', '영어', 'en-US']].forEach(function (g) {
+      var list = voicesFor(g[2]);
+      h += '<div class="vgroup"><div class="vlab">' + g[1] +
+        ' <span class="n">' + list.length + '개</span></div>';
+      if (!list.length) {
+        h += '<p class="vnone">이 기기에 ' + g[1] + ' 목소리가 없어요.</p>';
+      }
+      if (list.length === 1) {
+        h += '<p class="vnone">이 기기엔 ' + g[1] + ' 목소리가 하나뿐이라 고를 게 없어요.</p>';
+      }
+      for (var i = 0; i < list.length; i++) {
+        var v = list[i];
+        var on = pref[g[0]] ? (pref[g[0]] === v.name) : (i === 0);
+        h += '<div class="vrow' + (on ? ' on' : '') + '">' +
+          '<button class="vuse" data-vuse="' + g[0] + '|' + esc(v.name) + '">' +
+          (on ? '● ' : '○ ') + esc(v.name) + '</button>' +
+          '<span class="vlang">' + esc(String(v.lang || '').replace('_', '-')) +
+          (genderOf(v) === 'm' ? ' · 남' : genderOf(v) === 'f' ? ' · 여' : '') + '</span>' +
+          '<span class="grow"></span>' +
+          (voiceScore(v, g[2]) >= 12 ? '<span class="good">또렷함</span>' : '') +
+          '<button class="vtry" data-vtry="' + g[2] + '|' + esc(v.name) + '">▶ 들어보기</button>' +
+          '</div>';
+      }
+      h += '</div>';
+    });
+
+    var all = say.voices.length;
+    return h + '<p class="vtip">이 기기가 알려준 목소리는 모두 ' + all + '개입니다. ' +
+      '깔린 것만 나옵니다. 무료로 더 받으실 수 있어요 — ' +
+      '<b>아이폰</b> 설정 → 손쉬운 사용 → 말하기 콘텐츠 → 음성 (Enhanced·Premium), ' +
+      '<b>안드로이드</b> 설정 → 텍스트 음성 변환 → 음성 데이터 설치, ' +
+      '<b>윈도우</b> 설정 → 시간 및 언어 → 음성. ' +
+      '받은 뒤 브라우저를 껐다 켜면 목록에 나타납니다.</p>' +
+      (all ? '' : '<p class="vnone">아직 목소리를 못 읽었어요. 잠시 뒤 다시 열어보세요.</p>') +
+      '</div>';
+  }
+
+  function voiceBox(on) {
+    var box = $('vbox');
+    if (!box) return;
+    if (!on) { box.hidden = true; sayStop(); return; }
+
+    loadVoices();
+    box.innerHTML = voiceBoxHtml();
+    box.hidden = false;
+
+    // 폰에서는 목록이 늦게 옵니다. 들어오면 다시 그립니다.
+    if (!say.voices.length) {
+      unlockSay();          // 한 번 말을 걸어야 목록을 주는 기기가 있습니다
+      var tries = 0;
+      var tick = setInterval(function () {
+        loadVoices();
+        tries++;
+        if (say.voices.length || tries > 12) {
+          clearInterval(tick);
+          if (!$('vbox').hidden) $('vbox').innerHTML = voiceBoxHtml();
+        }
+      }, 400);
+    }
+  }
+
+  $('voice-pick').addEventListener('click', function () {
+    if (!say.on) { msg('이 브라우저는 읽어주기를 안 해요.', 'err'); return; }
+    voiceBox($('vbox').hidden);
+  });
+
+  $('vbox').addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    var b = e.target.closest('button');
+    if (!b) return;
+
+    if (b.id === 'v-close') { voiceBox(false); return; }
+
+    if (b.id === 'v-alt') {
+      setAlt(!altOn());
+      voiceBox(true);
+      msg(altOn() ? '거듭 읽을 때 소리를 바꿉니다.' : '늘 같은 소리로 읽습니다.', 'ok');
+      return;
+    }
+
+    var use = b.getAttribute('data-vuse');
+    if (use) {
+      var p = use.split('|');
+      setVoicePref(p[0], p.slice(1).join('|'));
+      voiceBox(true);
+      msg('목소리를 바꿨어요.', 'ok');
+      return;
+    }
+
+    var tryIt = b.getAttribute('data-vtry');
+    if (tryIt) {
+      var q = tryIt.split('|');
+      var lang = q[0], name = q.slice(1).join('|');
+      unlockSay();
+      sayStop();
+      var list = voicesFor(lang), v = null;
+      for (var i = 0; i < list.length; i++) { if (list[i].name === name) v = list[i]; }
+      var u = new window.SpeechSynthesisUtterance(VSAMPLE[lang.slice(0, 2)]);
+      u.lang = lang;
+      u.rate = (lang.slice(0, 2) === 'en') ? EN_RATE : KO_RATE;
+      if (v) u.voice = v;
+      try { window.speechSynthesis.speak(u); } catch (err) {}
+    }
+  });
+
+  /* ---------- 이어 듣기 (운전하면서) ---------- */
+  /*
+   * 복습 창에 담긴 문장들을 처음부터 끝까지 이어서 읽어줍니다.
+   *   1번 한글 → 영어 (고른 횟수만큼) → 2번 한글 → 영어 → …
+   * 화면을 안 봐도 되게, 읽는 동안은 화면이 꺼지지 않게 해둡니다.
+   */
+  var auto = { on: false, i: 0, r: 0, rep: 1, show: 'both', wake: null };
+
+  function keepAwake(on) {
+    try {
+      if (on) {
+        if (navigator.wakeLock && !auto.wake) {
+          navigator.wakeLock.request('screen').then(function (w) { auto.wake = w; },
+            function () {});
+        }
+      } else if (auto.wake) {
+        auto.wake.release();
+        auto.wake = null;
+      }
+    } catch (e) {}
+  }
+
+  function autoCurrent() {
+    if (auto.i < 0 || auto.i >= rv.queue.length) return null;
+    return state.items[rv.queue[auto.i]];
+  }
+
+  function autoStop() {
+    auto.on = false;
+    sayStop();
+    keepAwake(false);
+    // 듣다 멈춘 그 문장에 그대로 서 있게 합니다. (1번으로 안 돌아갑니다)
+    if (auto.i >= 0 && auto.i < rv.queue.length) {
+      rv.pos = auto.i;
+      rv.shown = false;
+      rv.noteOpen = false;
+      rv.padOpen = false;
+      }
+    renderReview();
+  }
+
+  function autoStart(rep) {
+    if (!say.on || !rv.queue.length) return;
+    unlockSay();            // 손으로 누른 그 순간에 폰 자물쇠를 풉니다
+    sayStop();
+    auto.on = true;
+    auto.rep = Math.max(1, Math.min(5, Number(rep) || 1));
+    auto.show = rv.autoWhat || 'both';   // 화면에 무엇을 보일지 (소리는 늘 한글→영어)
+    auto.i = Math.min(rv.pos, rv.queue.length - 1);
+    if (auto.i < 0) auto.i = 0;
+    auto.r = 0;
+    rv.askRep = false;
+    keepAwake(true);
+    renderReview();
+    setTimeout(autoStep, 120);
+  }
+
+  /** 한 문장을 한글 → 영어로 읽고, 다음으로 넘깁니다. */
+  /*
+   * 한 문장 차례:
+   *   한글 1번 (남자, 중저음) → 영어를 고른 횟수만큼 (여자·남자 번갈아)
+   * 그러고 다음 문장으로 넘어갑니다.
+   */
+  function autoStep() {
+    if (!auto.on) return;
+    var q = autoCurrent();
+    if (!q) { autoStop(); return; }
+
+    var pair = askPair(q.korean, q.answer);
+
+    function toNext() {
+      setTimeout(function () {
+        if (!auto.on) return;
+        auto.i++;
+        auto.r = 0;
+        if (auto.i >= rv.queue.length) { autoStop(); return; }
+        renderReview();
+        autoStep();
+      }, GAP_SET);
+    }
+
+    /** 영어를 k 번째로 읽습니다. 처음은 여자, 그다음 남자, 번갈아. */
+    function enTurn(k) {
+      if (!auto.on) return;
+      if (k >= auto.rep) { toNext(); return; }
+      auto.r = k;
+      renderReview();
+      var who = (k % 2 === 0) ? 'f' : 'm';
+      var set = speakAs('en-US', who, k, hasMark(pair.en));
+      sayVoice(pair.en, 'en-US', set.voice, set.rate || EN_RATE, set.pitch, function () {
+        if (!auto.on) return;
+        setTimeout(function () { enTurn(k + 1); }, GAP_REP);
+      });
+    }
+
+    auto.r = 0;
+    var kset = koSet();
+    sayVoice(pair.ko, 'ko-KR', kset.voice, KO_RATE, kset.pitch, function () {
+      if (!auto.on) return;
+      setTimeout(function () { enTurn(0); }, GAP_MID);
+    });
+  }
+
+  /** 몇 번씩 읽을지 고르는 줄 */
+  function repPickHtml() {
+    var w = rv.autoWhat || 'both';
+    var h = '<div class="rv-pick">' +
+      '<span class="lab">화면에</span>' +
+      '<button data-aw="ko"' + (w === 'ko' ? ' class="on"' : '') + '>한글만</button>' +
+      '<button data-aw="en"' + (w === 'en' ? ' class="on"' : '') + '>영어만</button>' +
+      '<button data-aw="both"' + (w === 'both' ? ' class="on"' : '') + '>통합</button>' +
+      '<span class="grow"></span>' +
+      '<button class="plain" id="rv-pick-no">취소</button>' +
+      '</div>';
+
+    h += '<div class="rv-pick">' +
+      '<span class="lab">' +
+      '영어를 몇 번씩 읽을까요 (한글은 한 번)' +
+      '</span>';
+    for (var k = 1; k <= 5; k++) {
+      h += '<button data-rep="' + k + '">' + k + '회</button>';
+    }
+    return h + '</div>';
+  }
+
+  /** 듣는 중 화면 */
+  function autoPanelHtml() {
+    var q = autoCurrent();
+    var total = rv.queue.length;
+    return '<div class="sheet rv">' +
+      '<div class="rv-top">' +
+        '<span class="rv-scope">' + esc(rvScopeLabel()) + '</span>' +
+        '<span class="rv-n">' + (auto.i + 1) + ' / ' + total + '</span>' +
+        '<div class="rv-bar"><div style="width:' +
+          Math.round((auto.i + 1) * 100 / total) + '%"></div></div>' +
+        '<button class="rv-quit" id="auto-x">그만</button>' +
+      '</div>' +
+      '<div class="rv-card">' +
+        '<div class="rv-head">' +
+          '<span class="rv-date">' + esc(rvDate(q ? q.date : '')) + '</span>' +
+          '<span class="rv-point">이어 듣는 중 · 영어 ' +
+            (auto.r + 1) + '/' + auto.rep + '</span>' +
+        '</div>' +
+        (auto.show === 'en' ? ''
+          : '<p class="rv-ko">' + esc(q ? q.korean : '') + '</p>') +
+        (auto.show === 'ko' ? ''
+          : '<p class="rv-en">' + esc(q ? q.answer : '') + '</p>') +
+      '</div>' +
+      '<button class="rv-main" id="auto-stop">■ 멈추기</button>' +
+      '<div class="rv-nav">' +
+        '<button id="auto-prev">‹ 이전 문장</button>' +
+        '<button id="auto-next">다음 문장 ›</button>' +
+      '</div>' +
+      '<div class="rv-foot">' +
+        '<span class="grow"></span>' +
+        '<span class="rv-cnt">화면이 꺼지지 않게 해뒀어요</span>' +
+      '</div>' +
+      '</div>';
+  }
+
+  function autoJump(step) {
+    if (!auto.on) return;
+    var n = auto.i + step;
+    if (n < 0 || n >= rv.queue.length) return;
+    sayStop();
+    auto.i = n;
+    auto.r = 0;
+    renderReview();
+    autoStep();
+  }
+
   /* ---------- 테스트 ---------- */
   var ST_REVIEW = '복습 필요';
   var ST_DONE = '암기 완료';
@@ -1676,9 +2437,8 @@
 
   function cardHtml(ix, num) {
     var q = state.items[ix];
-    var ans = state.answers[ix] || '';
-    var hint = state.hints[ix];
     var open = !!state.revealed[ix];
+    var ap = state.apply[ix];
     var st = statusOf(ix);
     var n2 = num < 10 ? ('0' + num) : String(num);
 
@@ -1691,47 +2451,53 @@
           : n2) +
       '</span>' +
       '<div class="qtop">' +
-        '<p class="qko">' + esc(q.korean) + '</p>' +
+        '<p class="qko' + (ap && ap.list.length ? ' foldable' : '') + '"' +
+        (ap && ap.list.length
+          ? (' data-kofold="' + ix + '" title="눌러서 응용 접기"') : '') +
+        '>' + esc(q.korean) + '</p>' +
         (st ? '<span class="tag ' + (st === ST_DONE ? 'ok' : 'rv') + '">' +
               esc(st) + '</span>' +
               '<button class="qsave undo" data-unmark="' + ix + '" ' +
               'title="표시를 지우고 안 한 상태로 되돌립니다">되돌리기</button>' : '') +
         (q.note ? '<button class="qsave" data-note="' + ix + '">' +
                   (state.noteOpen[ix] ? '메모 닫기' : '메모') + '</button>' : '') +
+        '<button class="qsave' + (q.pad ? ' has' : '') + '" data-pad="' + ix + '">' +
+        (state.padOpen[ix] ? '메모장 닫기' : '메모장') + '</button>' +
         '<button class="qsave hist" data-hist="' + ix + '">' +
         (state.histOpen[ix] ? '이력 닫기' : '이력') + '</button>' +
       '</div>' +
       (q.note && state.noteOpen[ix] ? '<p class="qnote">' + esc(q.note) + '</p>' : '') +
       (state.histOpen[ix] ? histHtml(q.korean) : '');
 
-    if (hint && hint.text) {
-      h += '<div class="hintbox"><span class="tag">힌트 ' + hint.level + '/3' +
-           (hint.ai ? '' : ' · 기본') + '</span>' + esc(hint.text) + '</div>';
-    }
-
-    h += '<textarea class="ans" data-ans="' + ix + '" rows="2" ' +
-         'placeholder="영어로 써보세요">' + esc(ans) + '</textarea>';
 
     if (open) {
       h += '<div class="rans">' +
         '<span class="rh"><b>적어둔 답</b>' +
         '<button class="btn-text" data-hide="' + ix + '">가리기</button></span>' +
-        (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</div>' +
-        '<div class="acts">' +
+        (q.answer ? esc(q.answer) : '시트 영어 칸이 비어 있어요') + '</div>';
+    }
+
+
+    h += padHtml(ix);
+    h += applyHtml(ix);
+
+    if (open) {
+      h += '<div class="acts">' +
         '<button class="btn-go sm" data-mark="' + ST_DONE + ':' + ix + '">암기 완료</button>' +
         '<button class="btn-mid" data-mark="' + ST_REVIEW + ':' + ix + '">복습 필요</button>' +
+        '<span class="grow"></span>' + playBtn('q:' + ix) +
         '</div>';
     } else {
       h += '<div class="acts">' +
-        '<button class="btn-text lead" data-hint="' + ix + '"' +
-        (state.busy ? ' disabled' : '') + '>' +
-        (hint ? (hint.level >= 3 ? '힌트 다시' : '힌트 더') : '힌트') + '</button>' +
-        (hint ? '<button class="btn-text" data-nohint="' + ix + '">힌트 닫기</button>' : '') +
         '<button class="btn-text" data-show="' + ix + '">답 보기</button>' +
-        '<span class="grow"></span>' +
-        '<button class="qsave' + (state.saved[ix] ? ' done' : '') +
-        '" data-save="' + ix + '">' +
-        (state.saved[ix] ? '저장됨' : '저장') + '</button>' +
+        playBtn('q:' + ix) +
+        '<button class="btn-text" data-apply="' + ix + '"' +
+        (ap && ap.busy ? ' disabled' : '') + '>' +
+        (ap && ap.busy ? '만드는 중…' : (ap && ap.list.length ? '응용 더' : '응용')) +
+        '</button>' +
+        (ap && ap.list.length
+          ? '<button class="btn-text" data-aclose="' + ix + '">응용 닫기</button>'
+          : '') +
         '</div>';
     }
     return h + '</li>';
@@ -1750,6 +2516,712 @@
     return state.queue.filter(function (ix) { return !!statusOf(ix); });
   }
 
+  /* ---------- 소리로 듣기 ---------- */
+  /*
+   * 브라우저에 들어 있는 읽어주기 기능을 씁니다. 서버에 안 다녀옵니다.
+   * 한글을 먼저 읽고, 잠깐 쉬었다가 영어를 읽습니다.
+   */
+  var GAP_MID = 500;    // 한글과 영어 사이
+  var GAP_SET = 1000;   // 한 묶음이 끝나고 다음 묶음까지
+
+  var say = {
+    on: !!(window.speechSynthesis && window.SpeechSynthesisUtterance),
+    voices: [],
+    now: '',        // 지금 읽고 있는 자리 (없으면 빈 값)
+    stop: false
+  };
+
+  function loadVoices() {
+    if (!say.on) return;
+    try { say.voices = window.speechSynthesis.getVoices() || []; } catch (e) {}
+  }
+  if (say.on) {
+    loadVoices();
+    try { window.speechSynthesis.onvoiceschanged = loadVoices; } catch (e) {}
+  }
+
+  /*
+   * 기기에 깔린 목소리는 품질 차이가 큽니다.
+   * 사람 목소리에 가까운 것(Google · Natural · Neural · 온라인)을 먼저 고릅니다.
+   * 회원님이 직접 고른 게 있으면 그걸 씁니다.
+   */
+  var VOICE_STORE = 'study.voice';
+
+  function voicePrefs() {
+    try { return JSON.parse(localStorage.getItem(VOICE_STORE) || '{}') || {}; }
+    catch (e) { return {}; }
+  }
+  /** 남녀 목소리가 따로 있는 기기인지 (대개 컴퓨터) */
+  function hasTwoVoices() {
+    var list = voicesFor('en-US');
+    var m = false, f = false;
+    for (var i = 0; i < list.length; i++) {
+      var g = genderOf(list[i]);
+      if (g === 'm') m = true;
+      if (g === 'f') f = true;
+    }
+    return m && f;
+  }
+
+  /*
+   * 거듭 읽을 때 소리를 바꿀지.
+   *   남녀 목소리가 따로 있는 기기 → 목소리를 번갈아 (높낮이는 그대로)
+   *   하나뿐인 기기(폰)            → 한 목소리로, 높낮이만 달리
+   */
+  function altOn() {
+    var p = voicePrefs();
+    return (typeof p.alt === 'boolean') ? p.alt : true;
+  }
+  function setAlt(on) {
+    var p = voicePrefs();
+    p.alt = !!on;
+    try { localStorage.setItem(VOICE_STORE, JSON.stringify(p)); } catch (e) {}
+  }
+
+  function setVoicePref(lang, name) {
+    var p = voicePrefs();
+    if (name) p[lang.slice(0, 2)] = name; else delete p[lang.slice(0, 2)];
+    try { localStorage.setItem(VOICE_STORE, JSON.stringify(p)); } catch (e) {}
+  }
+
+  /** 사람 같을수록, 그리고 찾는 말씨에 가까울수록 높은 점수 */
+  function voiceScore(v, lang) {
+    var nm = String(v.name || '').toLowerCase();
+    var vl = String(v.lang || '').replace('_', '-');
+    var sc = 0;
+
+    // 말씨가 딱 맞는 것(en-US, ko-KR)을 가장 먼저 봅니다.
+    if (lang && vl === lang) sc += 10;
+    else if (lang && baseLang(vl) === baseLang(lang)) {
+      // 영어면 미국식을 먼저, 영국·호주·인도식은 뒤로
+      if (/-(GB|AU|IN|IE|ZA|NZ|NG|PH|SG|HK)$/i.test(vl)) sc -= 5;
+    }
+    // Natural·Neural 이 가장 사람 같습니다. 듣기에 제일 편합니다.
+    if (nm.indexOf('natural') !== -1 || nm.indexOf('neural') !== -1) sc += 9;
+    if (nm.indexOf('premium') !== -1 || nm.indexOf('enhanced') !== -1) sc += 6;
+    if (nm.indexOf('siri') !== -1) sc += 5;
+    if (nm.indexOf('google') !== -1) sc += 4;
+    if (nm.indexOf('online') !== -1 || nm.indexOf('온라인') !== -1) sc += 3;
+    if (nm.indexOf('desktop') !== -1) sc -= 4;      // 윈도우 기본값, 많이 딱딱합니다
+    if (nm.indexOf('espeak') !== -1 || nm.indexOf('compact') !== -1) sc -= 6;
+    if (v.localService === false) sc += 1;           // 서버에서 만드는 쪽이 대개 낫습니다
+    return sc;
+  }
+
+  /** 'ko-KR' 에서 말 이름만 (kok-IN 같은 다른 말에 안 걸리게) */
+  function baseLang(v) {
+    return String(v || '').replace(/_/g, '-').split('-')[0].toLowerCase();
+  }
+
+  /** 그 말로 쓸 수 있는 목소리들, 좋은 것부터 */
+  function voicesFor(lang) {
+    if (!say.voices.length) loadVoices();
+    var want = baseLang(lang);
+    var out = [];
+    for (var i = 0; i < say.voices.length; i++) {
+      if (baseLang(say.voices[i].lang) === want) out.push(say.voices[i]);
+    }
+    out.sort(function (a, b) { return voiceScore(b, lang) - voiceScore(a, lang); });
+    return out;
+  }
+
+  function pickVoice(lang) {
+    var list = voicesFor(lang);
+    if (!list.length) return null;
+    var want = voicePrefs()[lang.slice(0, 2)];
+    if (want) {
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].name === want) return list[i];
+      }
+    }
+    return list[0];
+  }
+
+  /*
+   * 폰에서 읽어주기가 막히는 까닭이 몇 가지 있습니다.
+   *  - 아이폰은 '손으로 누른 그 순간' 한 번 소리를 내야 그 뒤로 허락해 줍니다.
+   *  - cancel() 바로 뒤에 speak() 하면 삼켜지는 일이 있습니다.
+   *  - 안드로이드 크롬은 15초쯤 지나면 혼자 멈춥니다.
+   * 아래 세 가지로 그걸 피해 갑니다.
+   */
+  var sayReady = false;     // 아이폰 자물쇠를 푼 적이 있는지
+  var sayAlive = null;      // 안드로이드용 깨우기
+
+  /** 손으로 누른 그 순간에 불러야 합니다. */
+  function unlockSay() {
+    if (!say.on || sayReady) return;
+    try {
+      var u = new window.SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
+      sayReady = true;
+    } catch (e) {}
+  }
+
+  /** 안드로이드 크롬이 중간에 멈추는 걸 막습니다. */
+  function keepSaying(on) {
+    if (sayAlive) { clearInterval(sayAlive); sayAlive = null; }
+    if (!on) return;
+    sayAlive = setInterval(function () {
+      try {
+        var s = window.speechSynthesis;
+        if (!s.speaking) { clearInterval(sayAlive); sayAlive = null; return; }
+        s.pause();
+        s.resume();
+      } catch (e) {}
+    }, 9000);
+  }
+
+  /*
+   * 남자 목소리 / 여자 목소리 가려내기.
+   * 기기마다 이름이 다 달라서, 흔한 이름들을 적어두고 맞춰봅니다.
+   */
+  var V_MALE = ' injoon inJoon guy david ryan mark christopher eric brian andrew ' +
+    'roger steffan thomas george daniel alex fred aaron tom james john male 남성 남자 ';
+  var V_FEMALE = ' sunhi heami yuna aria zira jenny michelle ana sara emma ava ' +
+    'samantha karen moira tessa nicky serena allison female 여성 여자 ';
+
+  /** 'm' 남자 · 'f' 여자 · '' 모르겠음 */
+  function genderOf(v) {
+    var nm = ' ' + String(v && v.name || '').toLowerCase() + ' ';
+    var words = nm.split(/[^a-z가-힣]+/);
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      if (!w) continue;
+      if (V_MALE.toLowerCase().indexOf(' ' + w + ' ') !== -1) return 'm';
+      if (V_FEMALE.toLowerCase().indexOf(' ' + w + ' ') !== -1) return 'f';
+    }
+    return '';
+  }
+
+  /**
+   * 원하는 성별로 말할 채비를 합니다. { voice, pitch }
+   * 폰에는 목소리가 한 가지뿐인 때가 많습니다.
+   * 그럴 땐 높낮이를 바꿔서 남자·여자처럼 들리게 만듭니다.
+   */
+  /*
+   * 목소리가 하나뿐인 기기(대개 폰)에서는 회차마다 높낮이와 빠르기를
+   * 조금씩 달리해서 같은 소리가 되풀이되지 않게 합니다.
+   * 차이를 크게 두면 기계음이 나므로 좁은 폭 안에서만 움직입니다.
+   */
+  /*
+   * 거듭 읽을 때 쓰는 높낮이·빠르기.
+   * 높낮이는 목소리가 하나뿐인 기기(폰)에서만 씁니다.
+   * 컴퓨터는 목소리 자체가 바뀌므로 빠르기만 가져다 씁니다.
+   */
+  var ALT_CYCLE = [
+    { pitch: 1.00, rate: 0.95 },
+    { pitch: 0.84, rate: 0.87 },
+    { pitch: 1.14, rate: 0.99 },
+    { pitch: 0.90, rate: 0.84 },
+    { pitch: 1.08, rate: 0.92 }
+  ];
+
+  /** k 는 몇 번째로 읽는지 (0부터) */
+  function speakAs(lang, want, k, asking) {
+    var list = voicesFor(lang);
+    var best = list.length ? list[0] : pickVoice(lang);
+    var c = ALT_CYCLE[(Number(k) || 0) % ALT_CYCLE.length];
+
+    // 묻는 문장을 낮게 깔면 끝이 안 올라간 것처럼 들립니다.
+    if (asking) c = { pitch: Math.max(1.02, c.pitch), rate: c.rate };
+
+    // 꺼두셨으면 늘 같은 소리로 읽습니다.
+    if (!altOn()) return { voice: best, pitch: 1, rate: EN_RATE };
+
+    // 남녀 목소리가 따로 있는 기기(컴퓨터)는 목소리를 번갈아 씁니다.
+    // 목소리가 이미 다르니 높낮이는 안 건드리고 빠르기만 달리합니다.
+    if (hasTwoVoices()) {
+      for (var i = 0; i < list.length; i++) {
+        if (genderOf(list[i]) === want) {
+          return { voice: list[i], pitch: 1, rate: c.rate };
+        }
+      }
+    }
+
+    // 하나뿐인 기기(폰)는 그 목소리 그대로, 높낮이와 빠르기만 달리합니다.
+    return { voice: best, pitch: c.pitch, rate: c.rate };
+  }
+
+  /** 예전 이름 (목소리 하나만 필요할 때) */
+  function voiceByGender(lang, want) { return speakAs(lang, want).voice; }
+
+  function sayVoice(text, lang, v, rate, pitch, done) {
+    var t = String(text || '').trim();
+    if (!t) { done(); return; }
+
+    var u = new window.SpeechSynthesisUtterance(t);
+    u.lang = lang;
+    u.rate = rate || 1;
+    if (pitch) u.pitch = pitch;
+    if (v) u.voice = v;
+
+    var over = false;
+    function once() {
+      if (over) return;
+      over = true;
+      keepSaying(false);
+      done();
+    }
+    u.onend = once;
+    u.onerror = once;
+
+    try {
+      window.speechSynthesis.speak(u);
+      keepSaying(true);
+    } catch (e) { once(); }
+
+    setTimeout(function () {
+      try {
+        var s = window.speechSynthesis;
+        if (!over && !s.speaking && !s.pending) once();
+      } catch (e) {}
+    }, 1200);
+  }
+
+  /*
+   * 물음표가 없으면 읽어주기가 평서문처럼 쭉 내려 읽습니다.
+   * 그래서 '묻는 꼴'인 문장에만 읽기 직전에 물음표를 붙입니다.
+   * 한글과 영어는 따로따로 봅니다 —
+   * 한글이 의문문이어도 영어가 평서문이면 영어는 그대로 둡니다.
+   * (시트 글자는 안 건드립니다. 읽을 때만 붙입니다)
+   */
+
+  // 영어: do/are/can/what 처럼 묻는 말로 시작하면
+  var EN_ASK = /^(do|does|did|are|is|was|were|am|can|could|will|would|shall|should|have|has|had|may|might|who|what|when|where|why|how|which|whose|whom)\b/i;
+
+  // 영어: "…, right?" "…, haven't you?" 처럼 뒤에 붙여 묻는 꼴
+  var EN_TAG = /,\s*(right|correct|ok|okay|huh|eh|yeah|no)\s*[.!]*$/i;
+  var EN_TAG2 = /,\s*(is|are|was|were|am|do|does|did|have|has|had|can|could|will|would|should|shall|may|might)\s*n[o']?t?\s+(i|you|he|she|it|we|they|there)\s*[.!]*$/i;
+  var EN_TAG3 = /,\s*(is|are|was|were|am|do|does|did|have|has|had|can|could|will|would)\s+(i|you|he|she|it|we|they|there)\s*[.!]*$/i;
+
+  // 한글: 분명히 묻는 끝맺음만 (…했는데 처럼 평서문에도 쓰는 건 뺐습니다)
+  var KO_ASK = /(까요|나요|가요|을까|ㄹ까|신가요|실까요|할까|인가요|대요|니까)[\s.!…]*$/;
+
+  function hasMark(t) {
+    return /\?["'’”)\]\s]*$/.test(String(t || '').trim());
+  }
+
+  function addMark(t) {
+    var v = String(t || '').trim();
+    if (!v || hasMark(v)) return v;
+    return v.replace(/[.!…]+$/, '') + '?';
+  }
+
+  function isAskEn(t) {
+    var v = String(t || '').trim();
+    return EN_ASK.test(v) || EN_TAG.test(v) || EN_TAG2.test(v) || EN_TAG3.test(v);
+  }
+
+  /** 한글·영어를 각각 제 꼴대로 보고 물음표를 붙입니다. */
+  function askPair(ko, en) {
+    var k = String(ko || '').trim();
+    var e = String(en || '').trim();
+
+    if (!hasMark(k) && KO_ASK.test(k)) k = addMark(k);
+    if (!hasMark(e) && isAskEn(e)) e = addMark(e);
+
+    return { ko: k, en: e };
+  }
+
+  function koSet() { return { voice: pickVoice('ko-KR'), pitch: 1 }; }
+  function koVoice() { return koSet().voice; }
+  function koPitch() { return 1; }
+  var KO_RATE = 1;
+  var EN_RATE = 0.9;
+  var GAP_REP = 1100;   // 영어를 거듭 읽을 때 사이
+
+  function sayOne(text, lang, rate, done) {
+    var low = (lang.slice(0, 2) === 'ko');
+    sayVoice(text, lang, low ? koVoice() : pickVoice(lang), rate,
+             low ? koPitch() : 1, done);
+  }
+  function sayStop() {
+    if (!say.on) return;
+    say.stop = true;
+    keepSaying(false);
+    try {
+      var s = window.speechSynthesis;
+      if (s.speaking || s.pending) s.cancel();
+    } catch (e) {}
+    say.now = '';
+  }
+
+  /**
+   * 한글 → (쉬고) → 영어 순서로 읽습니다.
+   * key 는 어느 버튼이 눌렸는지 표시해 두는 이름입니다.
+   */
+  /** 화면과 복습 창을 함께 다시 그립니다. */
+  function redraw() {
+    render();
+    if (rv.open && !auto.on) renderReview();
+  }
+
+  /**
+   * what — 'both' 한글 다음 영어 · 'ko' 한글만 · 'en' 영어만
+   */
+  function sayPair(key, ko, en, after, what) {
+    if (!say.on) return;
+    unlockSay();                                            // 폰 자물쇠 풀기
+    if (say.now === key) { sayStop(); redraw(); return; }   // 다시 누르면 멈춤
+
+    sayStop();
+    say.stop = false;
+    say.now = key;
+    redraw();
+
+    var pair = askPair(ko, en);
+    ko = pair.ko;
+    en = pair.en;
+    var mode = what || 'both';
+
+    function finish() {
+      if (say.now === key) say.now = '';
+      redraw();
+      if (after) after();
+    }
+    function alive() { return !say.stop && say.now === key; }
+
+    function sayEn() {
+      if (!alive()) { finish(); return; }
+      sayOne(en, 'en-US', EN_RATE, finish);
+    }
+
+    // cancel() 직후에 바로 말하면 삼켜지는 기기가 있어서 한 박자 쉽니다.
+    setTimeout(function () {
+      if (!alive()) { finish(); return; }
+      if (mode === 'en') { sayEn(); return; }
+
+      sayOne(ko, 'ko-KR', KO_RATE, function () {
+        if (!alive()) { finish(); return; }
+        if (mode === 'ko') { finish(); return; }
+        setTimeout(sayEn, GAP_MID);
+      });
+    }, 120);
+  }
+
+  /** data-play 에 적힌 이름을 보고 무엇을 읽을지 정합니다. */
+  /*
+   * 듣기 단추 셋을 한 줄로 내놓습니다.
+   *   전체 = 한글 다음 영어 · 영어 = 영어만 · 한글 = 한글만
+   * 누르면 바로 읽습니다. 읽는 중인 것은 ■ 로 바뀝니다.
+   */
+  function playBtn(key) {
+    if (!say.on) return '';
+    function one(mode, label, tip) {
+      var id = mode + '|' + key;
+      var on = (say.now === id);
+      return '<button class="btn-text play' + (on ? ' on' : '') + '" ' +
+        'data-play="' + id + '" title="' + (on ? '멈추기' : tip) + '">' +
+        (on ? '■ 멈춤' : label) + '</button>';
+    }
+    return '<span class="plays">' +
+      one('both', '▶ 전체', '한글 다음 영어') +
+      one('en', '영어', '영어만') +
+      one('ko', '한글', '한글만') +
+      '</span>';
+  }
+
+  /** id 는 '갈래|자리' 꼴입니다. 예: both|q:3 */
+  function playFrom(id) {
+    unlockSay();
+    var cut = String(id || '').indexOf('|');
+    var what = (cut > 0) ? id.slice(0, cut) : 'both';
+    var key = (cut > 0) ? id.slice(cut + 1) : id;
+    var p = key.split(':');
+
+    if (p[0] === 'q') {
+      var q = state.items[p[1]];
+      if (q) sayPair(id, q.korean, q.answer, null, what);
+      return;
+    }
+    if (p[0] === 'a') {
+      var ap = state.apply[p[1]];
+      var one = ap && ap.list[p[2]];
+      if (one) sayPair(id, one.ko, one.en, null, what);
+      return;
+    }
+    if (p[0] === 'rv') {
+      var cur = rvCurrent();
+      if (!cur) return;
+      var va = (rv.mode === 'apply') ? rv.vari[rv.pos] : null;
+      if (va && !va.busy && !va.err) sayPair(id, va.ko, va.en, null, what);
+      else sayPair(id, cur.korean, cur.answer, null, what);
+    }
+  }
+
+  /* ---------- 문장별 메모장 ---------- */
+  function padHtml(ix) {
+    if (!state.padOpen[ix]) return '';
+    var q = state.items[ix];
+    var dirty = state.padDirty[ix];
+    return '<div class="padbox">' +
+      '<div class="phead">' +
+        '<span class="tag">메모장</span>' +
+        '<span class="grow"></span>' +
+        '<span class="state' + (dirty ? ' dirty' : '') + '">' +
+        (dirty === 'saving' ? '저장하는 중…'
+          : (dirty ? '저장 안 됨' : (state.padSaved[ix] ? '저장했어요' : ''))) +
+        '</span>' +
+        '<button class="btn-text" data-padsave="' + ix + '">저장</button>' +
+      '</div>' +
+      '<textarea class="ptext" data-ptext="' + ix + '" rows="3" ' +
+      'placeholder="이 문장에 대해 적어두고 싶은 것">' + esc(q.pad || '') + '</textarea>' +
+      '</div>';
+  }
+
+  function padSaveNow(ix) {
+    var q = state.items[ix];
+    if (!q || !q.row) return;
+    var box = $('stage').querySelector('[data-ptext="' + ix + '"]');
+    var text = box ? box.value : (q.pad || '');
+
+    state.padDirty[ix] = 'saving';
+    render();
+    call('savePad', [q.row, text], function () {
+      q.pad = text;
+      delete state.padDirty[ix];
+      state.padSaved[ix] = true;
+      render();
+    }, function (e) {
+      state.padDirty[ix] = true;
+      render();
+      msg(errText(e), 'err');
+    });
+  }
+
+  /* ---------- 응용 (메모를 길잡이로 새 문장 만들기) ---------- */
+  /*
+   * '응용 더' 를 누르면 아래로 한 장씩 쌓입니다.
+   * 마음에 드는 것만 네모를 치고 저장하면 시트 '응용' 장에 남습니다.
+   */
+  function applyHtml(ix) {
+    var ap = state.apply[ix];
+    if (!ap) return '';
+    if (!ap.list.length) {
+      return ap.busy ? ('<div class="applybox quiet">' + waitText(ap) + '</div>') : '';
+    }
+
+    var h = '<div class="applybox">';
+
+    for (var j = 0; j < ap.list.length; j++) {
+      var cur = ap.list[j];
+      h += '<div class="aitem' + (j ? ' more' : '') + '">' +
+        (cur.saved
+          ? '<span class="akeep ghost"></span>'
+          : ('<label class="pick akeep" title="저장할 문장 고르기">' +
+             '<input type="checkbox" data-akeep="' + ix + ':' + j + '"' +
+             (cur.keep ? ' checked' : '') + '><span class="box"></span></label>')) +
+        '<div class="abody">' +
+        '<div class="ahead">' +
+          '<span class="tag">응용 ' + (j + 1) + '</span>' +
+          (cur.point ? '<span class="apoint">' + esc(cur.point) + '</span>' : '') +
+          (cur.saved
+            ? ('<span class="asaved" title="전에 쌓아둔 것입니다">쌓아둔 것' +
+               (cur.on ? ' · ' + esc(cur.on) : '') + '</span>')
+            : '') +
+        '</div>' +
+        '<p class="ako">' + esc(cur.ko) + '</p>';
+
+      if (cur.shown) {
+        h += '<div class="rans">' +
+          (cur.en ? esc(cur.en) : '영어 문장을 못 받았어요') + '</div>' +
+          '<div class="acts">' +
+          '<button class="btn-text" data-ahide="' + ix + ':' + j + '">가리기</button>' +
+          playBtn('a:' + ix + ':' + j) +
+          '</div>';
+      } else {
+        h += '<div class="acts">' +
+          '<button class="btn-text" data-ashow="' + ix + ':' + j + '">답 보기</button>' +
+          playBtn('a:' + ix + ':' + j) +
+          '</div>';
+      }
+      h += '</div></div>';
+    }
+
+    if (ap.busy) h += '<div class="aitem more quiet">' + waitText(ap) + '</div>';
+
+    var keeps = keepCount(ix);
+    if (keeps) {
+      h += '<div class="afoot">' +
+        '<button class="btn-text lead" data-asave="' + ix + '"' +
+        (ap.saving ? ' disabled' : '') + '>' +
+        (ap.saving ? '저장하는 중…' : ('고른 ' + keeps + '개 저장')) + '</button>' +
+        '</div>';
+    }
+
+    return h + '</div>';
+  }
+
+  /** 기다린 시간을 알려줍니다. 오래 걸리면 까닭도 덧붙입니다. */
+  function waitText(ap) {
+    var sec = ap.since ? Math.round((Date.now() - ap.since) / 1000) : 0;
+    var t = '응용 문장을 만드는 중… ' + sec + '초';
+    if (sec >= 15) t += ' (AI 가 붐비면 1분 넘게 걸리기도 합니다)';
+    return t;
+  }
+
+  /** 기다리는 동안 숫자가 올라가게 */
+  var waitTick = null;
+  function waitWatch() {
+    var any = false;
+    for (var k in state.apply) {
+      if (state.apply.hasOwnProperty(k) && state.apply[k].busy) any = true;
+    }
+    if (any && !waitTick) {
+      waitTick = setInterval(function () {
+        var on = false;
+        for (var k2 in state.apply) {
+          if (state.apply.hasOwnProperty(k2) && state.apply[k2].busy) on = true;
+        }
+        if (!on) { clearInterval(waitTick); waitTick = null; return; }
+        if (state.tab === 'quiz') renderQuiz();
+      }, 1000);
+    }
+  }
+
+  function keepCount(ix) {
+    var ap = state.apply[ix];
+    if (!ap) return 0;
+    var n = 0;
+    for (var j = 0; j < ap.list.length; j++) {
+      if (ap.list[j].keep && !ap.list[j].saved) n++;
+    }
+    return n;
+  }
+
+  /** 쌓아둔 것 중 아직 안 꺼낸 게 있으면 그걸 줍니다. (서버에 안 다녀옵니다) */
+  function nextStored(ix) {
+    var q = state.items[ix];
+    var had = (q && state.vars[q.korean]) || [];
+    var ap = state.apply[ix];
+    var out = ap ? ap.list.map(function (x) { return x.ko; }) : [];
+    for (var i = 0; i < had.length; i++) {
+      if (out.indexOf(had[i].ko) === -1) return had[i];
+    }
+    return null;
+  }
+
+  /** 응용 문제를 하나 더 아래에 붙입니다. */
+  function askApply(ix) {
+    var q = state.items[ix];
+    if (!q) return;
+    var ap = state.apply[ix];
+    if (!ap) ap = state.apply[ix] = { busy: false, saving: false, list: [] };
+    if (ap.busy) return;
+
+    if (!ap.pool) ap.pool = [];
+
+    // 받아둔 묶음에 남은 게 있으면 기다릴 것 없이 바로 꺼냅니다.
+    if (ap.pool.length) {
+      showOne(ix, ap.pool.shift());
+      return;
+    }
+
+    // 시트에 쌓아둔 게 있으면 그것도 기다림 없이.
+    var got = nextStored(ix);
+    if (got) {
+      showOne(ix, { ko: got.ko, en: got.en, point: got.point,
+                    saved: true, on: got.on || '' });
+      return;
+    }
+
+    ap.busy = true;
+    ap.since = Date.now();
+    render();
+    waitWatch();
+
+    var seen = ap.list.map(function (x) { return x.ko; });
+    call('getVariation', [q.korean, q.answer, q.note, seen, 3], function (res) {
+      ap.busy = false;
+      if (!res || !res.ok) {
+        if (!ap.list.length) delete state.apply[ix];
+        render();
+        msg((res && res.message) || '응용 문장을 못 만들었어요.', 'err');
+        return;
+      }
+      var got2 = res.list && res.list.length ? res.list.slice()
+        : [{ ko: res.ko, en: res.en, point: res.point, saved: !!res.saved, on: res.on }];
+      ap.pool = got2.slice(1);          // 나머지는 다음에 씁니다
+      showOne(ix, got2[0]);
+    }, function (e) {
+      ap.busy = false;
+      if (!ap.list.length) delete state.apply[ix];
+      render();
+      msg(errText(e), 'err');
+    });
+  }
+
+  /** 받은 응용 하나를 화면에 붙입니다. */
+  function showOne(ix, v) {
+    var ap = state.apply[ix];
+    if (!ap || !v) return;
+    ap.list.push({ ko: v.ko, en: v.en, point: v.point,
+                   saved: !!v.saved, on: v.on || '',
+                   shown: false, keep: false });
+    msg('');
+    render();
+  }
+
+  /*
+   * 다음 응용을 뒤에서 미리 받아둡니다.
+   * '응용 더' 를 누를 때 기다리지 않게 하려는 것입니다. 화면은 안 건드립니다.
+   */
+  function preApply(ix) {
+    var q = state.items[ix];
+    var ap = state.apply[ix];
+    if (!q || !ap || ap.pre) return;
+    if (ap.pool && ap.pool.length) return;
+    if (nextStored(ix)) return;
+
+    ap.pre = true;
+    var seen = ap.list.map(function (x) { return x.ko; });
+    call('getVariation', [q.korean, q.answer, q.note, seen, 3], function (res) {
+      ap.pre = false;
+      if (res && res.ok && res.list && res.list.length) {
+        ap.pool = (ap.pool || []).concat(res.list);
+      }
+    }, function () { ap.pre = false; });
+  }
+
+
+  /** 네모 친 것들을 시트 '응용' 장에 쌓습니다. */
+  function applySave(ix) {
+    var q = state.items[ix];
+    var ap = state.apply[ix];
+    if (!q || !ap || ap.saving) return;
+
+    var send = [], mine = [];
+    for (var j = 0; j < ap.list.length; j++) {
+      var c = ap.list[j];
+      if (!c.keep || c.saved) continue;
+      send.push({ ko: c.ko, en: c.en, point: c.point });
+      mine.push(j);
+    }
+    if (!send.length) return;
+
+    ap.saving = true;
+    render();
+
+    call('saveVars', [q.korean, send], function (res) {
+      ap.saving = false;
+      var on = (res && res.on) || '';
+      var box = (state.vars[q.korean] = state.vars[q.korean] || []);
+      mine.forEach(function (j) {
+        ap.list[j].saved = true;
+        ap.list[j].keep = false;
+        ap.list[j].on = on;
+        box.push({ of: q.korean, ko: ap.list[j].ko, en: ap.list[j].en,
+                   point: ap.list[j].point, on: on });
+      });
+      render();
+      msg(send.length + '개를 이 문장의 응용으로 쌓았어요.', 'ok');
+    }, function (e) {
+      ap.saving = false;
+      render();
+      msg(errText(e), 'err');
+    });
+  }
   function pageMarked() {
     var p = pageIdx();
     if (!p.length) return false;
@@ -1807,7 +3279,6 @@
     var rest = total - from - p.length;
     var marks = markedOnPage();
     var picks = pickedOnPage();
-    var unsaved = unsavedOnPage();
 
     h += '<div class="page-acts">' +
       (rest > 0
@@ -1817,11 +3288,8 @@
       (picks.length
         ? ('<button class="btn-mid" id="undo-picked">고른 ' + picks.length +
            '개 되돌리기</button>')
-        : unsaved.length
-        ? ('<button class="btn-mid" id="save-page">쓴 ' + unsaved.length +
-           '개 저장</button>')
         : (pageMarked() ? ''
-           : '<span class="note">답을 쓰고 저장하거나, 답을 펼쳐 점검하세요</span>')) +
+           : '<span class="note">입으로 말해보고 답을 펼쳐 점검하세요</span>')) +
       '<span class="grow"></span>' +
       (marks.length
         ? ('<button class="btn-text" id="pick-all">' +
@@ -1846,7 +3314,6 @@
       render();
     });
     wire('undo-picked', function () { undoMany(pickedOnPage()); });
-    wire('save-page', function () { saveThese(unsavedOnPage(), this); });
     wire('pick-all', function () {
       var all = markedOnPage();
       var on = pickedOnPage().length !== all.length;
@@ -1884,8 +3351,8 @@
 
   function renderFoot() {
     $('ai-state').innerHTML = state.hasKey
-      ? '<span class="ai-on">AI 힌트 켜짐</span>'
-      : 'AI 힌트 꺼짐 — 시트에 적어둔 답으로 힌트를 만듭니다';
+      ? '<span class="ai-on">AI 켜짐</span>'
+      : 'AI 꺼짐 — 응용 문장을 만들려면 settings 장에 Gemini API 키가 필요합니다';
   }
 
 
@@ -1921,7 +3388,7 @@
   function markOne(ix, status) {
     var it = state.items[ix];
     if (!it) return;
-    var mine = state.answers[ix] || '';
+    var mine = null;   // 쓰는 칸이 없으니 시트의 내 답은 그대로 둡니다
 
     // 화면은 바로 바꾸고, 저장은 뒤에서 합니다.
     if (state.marked[ix]) {
@@ -1932,9 +3399,7 @@
       state.marked[ix] = { status: status };
       if (status === ST_DONE) state.tally.done++; else state.tally.review++;
       delete state.revealed[ix];
-      delete state.hints[ix];
-      delete state.saved[ix];
-      state.answers[ix] = '';
+
     } else {
       delete state.marked[ix];
       state.focusIx = ix;
@@ -1943,46 +3408,12 @@
     render();
 
     call('markItem', [it.row, it.korean, mine, status], function (res) {
-      it.checkedOn = (res && res.checkedOn) || '';
-      if (status) { it.mine = mine; delete state.history[it.korean]; }
+      if (status) delete state.history[it.korean];
     }, function (e) {
       msg(errText(e), 'err');
     });
   }
 
-  /** 아직 안 넣어둔, 뭔가 써놓은 문장들 */
-  function unsavedOnPage() {
-    return pageIdx().filter(function (ix) {
-      return (state.answers[ix] || '').trim() && !state.saved[ix];
-    });
-  }
-
-  /** 써둔 답을 시트에 넣어둡니다. 점검(암기 완료 / 복습 필요)은 나중에. */
-  function saveThese(list, btn) {
-    var send = [], done = [];
-    (list || []).forEach(function (ix) {
-      var it = state.items[ix];
-      if (!it || !it.row) return;
-      var mine = state.answers[ix] || '';
-      if (!mine.trim()) return;
-      it.mine = mine;
-      state.saved[ix] = true;
-      done.push(ix);
-      delete state.history[it.korean];
-      send.push({ row: it.row, korean: it.korean, mine: mine });
-    });
-    if (!send.length) { msg('쓴 답이 없어요.', 'err'); return; }
-
-    if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
-    call('saveAnswers', [send], function () {
-      render();
-      msg(send.length + '개를 넣어뒀어요. 점검은 나중에 하셔도 됩니다.', 'ok');
-    }, function (e) {
-      done.forEach(function (ix) { delete state.saved[ix]; });
-      render();
-      msg(errText(e), 'err');
-    });
-  }
 
   /** 고른 문장들의 표시를 한 번에 지웁니다. */
   function undoMany(list) {
@@ -1997,44 +3428,13 @@
         delete state.marked[ix];
       }
       it.status = '';
-      it.checkedOn = '';
       delete state.checked[ix];
-      // 시트에 넣어둔 답은 그대로 두고 다시 띄워줍니다.
-      if (it.mine) { state.answers[ix] = it.mine; state.saved[ix] = true; }
+
       send.push({ row: it.row, korean: it.korean, mine: '', status: '' });
     });
     render();
     msg(send.length + '문장을 되돌렸어요.', 'ok');
     call('markMany', [send], function () {}, function (e) {
-      msg(errText(e), 'err');
-    });
-  }
-
-  function doHint(ix) {
-    var q = state.items[ix];
-    if (!q) return;
-    var lv = state.hints[ix] ? Math.min(3, state.hints[ix].level + 1) : 1;
-
-    // 시트에 답이 있으면 서버에 안 물어보고 바로 만듭니다.
-    var local = localHint(q.answer, lv);
-    if (local) {
-      state.hints[ix] = { text: local, level: lv, ai: false };
-      render();
-      return;
-    }
-
-    state.busy = true;
-    state.hints[ix] = { text: '생각하는 중…', level: lv, ai: state.hasKey };
-    render();
-
-    call('getHint', [q.korean, q.answer, state.answers[ix] || '', lv], function (res) {
-      state.busy = false;
-      state.hints[ix] = { text: (res && res.text) || '', level: lv, ai: !!(res && res.ai) };
-      render();
-    }, function (e) {
-      state.busy = false;
-      delete state.hints[ix];
-      render();
       msg(errText(e), 'err');
     });
   }
@@ -2048,6 +3448,7 @@
   }
 
   function nextPage() {
+    sayStop();
     state.page++;
     msg('');
     render();
@@ -2481,21 +3882,35 @@
     pasteAt(+t.getAttribute('data-r'), +t.getAttribute('data-c'), text);
   });
 
-  /* ---------- 카드 안 버튼·입력 (위임으로 한 번만) ---------- */
+  /* ---------- 카드 안 버튼·메모장 (위임으로 한 번만) ---------- */
   $('stage').addEventListener('input', function (e) {
-    var ix = e.target.getAttribute && e.target.getAttribute('data-ans');
+    var ix = e.target.getAttribute && e.target.getAttribute('data-ptext');
     if (ix === null || ix === undefined) return;
-    state.answers[ix] = e.target.value;
-    state.dirtyAnswers = true;
-    if (state.saved[ix]) {
-      delete state.saved[ix];
-      var card = e.target.closest('li.q');
-      var sb = card && card.querySelector('[data-save]');
-      if (sb) { sb.textContent = '저장'; sb.className = 'qsave'; }
+    if (state.padDirty[ix] === true) return;      // 이미 표시해 뒀습니다
+    state.padDirty[ix] = true;
+    delete state.padSaved[ix];
+    var st = e.target.closest('.padbox').querySelector('.state');
+    if (st) { st.textContent = '저장 안 됨'; st.className = 'state dirty'; }
+  });
+
+  $('stage').addEventListener('keydown', function (e) {
+    var ix = e.target.getAttribute && e.target.getAttribute('data-ptext');
+    if (ix === null || ix === undefined) return;
+    if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'Enter')) {
+      e.preventDefault();
+      padSaveNow(ix);
     }
   });
 
   $('stage').addEventListener('change', function (e) {
+    var ak = e.target.getAttribute && e.target.getAttribute('data-akeep');
+    if (ak !== null && ak !== undefined) {
+      var p = ak.split(':');
+      var ap = state.apply[p[0]];
+      if (ap && ap.list[p[1]]) ap.list[p[1]].keep = e.target.checked;
+      render();
+      return;
+    }
     var ix = e.target.getAttribute && e.target.getAttribute('data-pick');
     if (ix === null || ix === undefined) return;
     if (e.target.checked) state.checked[ix] = true;
@@ -2505,10 +3920,29 @@
 
   $('stage').addEventListener('click', function (e) {
     if (!e.target.closest) return;
+
+    // 원문 문장을 누르면 펼쳐둔 응용을 접습니다.
+    var fold = e.target.closest('[data-kofold]');
+    if (fold && !e.target.closest('button')) {
+      delete state.apply[fold.getAttribute('data-kofold')];
+      render();
+      return;
+    }
+
     var b = e.target.closest('button');
     if (!b) return;
     var ix = b.getAttribute('data-hist');
     if (ix !== null) { toggleHist(ix); return; }
+    ix = b.getAttribute('data-pad');
+    if (ix !== null) {
+      if (state.padOpen[ix]) delete state.padOpen[ix];
+      else { state.padOpen[ix] = true; state.focusIx = null; }
+      delete state.padSaved[ix];
+      render();
+      return;
+    }
+    ix = b.getAttribute('data-padsave');
+    if (ix !== null) { padSaveNow(ix); return; }
     ix = b.getAttribute('data-note');
     if (ix !== null) {
       if (state.noteOpen[ix]) delete state.noteOpen[ix];
@@ -2516,16 +3950,37 @@
       render();
       return;
     }
-    ix = b.getAttribute('data-hint');
-    if (ix !== null) { doHint(ix); return; }
-    ix = b.getAttribute('data-save');
-    if (ix !== null) { saveThese([ix], b); return; }
-    ix = b.getAttribute('data-nohint');
-    if (ix !== null) { delete state.hints[ix]; state.focusIx = ix; render(); return; }
+
+    var pk = b.getAttribute('data-play');
+    if (pk !== null) {
+      if (say.now === pk) { sayStop(); redraw(); return; }   // 듣는 중이면 멈춤
+      playFrom(pk);
+      return;
+    }
+    ix = b.getAttribute('data-apply');
+    if (ix !== null) { askApply(ix); return; }
+    var pair = b.getAttribute('data-ashow') || b.getAttribute('data-ahide');
+    if (pair !== null) {
+      var pp = pair.split(':');
+      var ap0 = state.apply[pp[0]];
+      if (ap0 && ap0.list[pp[1]]) {
+        ap0.list[pp[1]].shown = (b.getAttribute('data-ashow') !== null);
+        render();
+      }
+      return;
+    }
+    ix = b.getAttribute('data-asave');
+    if (ix !== null) { applySave(ix); return; }
+    ix = b.getAttribute('data-aclose');
+    if (ix !== null) { delete state.apply[ix]; render(); return; }
     ix = b.getAttribute('data-show');
     if (ix !== null) { state.revealed[ix] = true; render(); return; }
     ix = b.getAttribute('data-hide');
-    if (ix !== null) { delete state.revealed[ix]; state.focusIx = ix; render(); return; }
+    if (ix !== null) {
+      delete state.revealed[ix];
+      render();
+      return;
+    }
     ix = b.getAttribute('data-unmark');
     if (ix !== null) { markOne(ix, ''); return; }
     var mk = b.getAttribute('data-mark');
@@ -2563,6 +4018,9 @@
   });
   $('month-rev').addEventListener('click', function () {
     openReview(monthKeyOf(state.y, state.m), '월간');
+  });
+  $('all-rev').addEventListener('click', function () {
+    openReview(todayKey(), '전체');
   });
   $('next').addEventListener('click', function () {
     state.m++; if (state.m > 11) { state.m = 0; state.y++; }
@@ -2606,6 +4064,11 @@
         state.diary[e.date] = { text: e.text, note: e.note, fix: e.fix };
       });
       state.notes = (data && data.notes) || [];
+      state.vars = {};
+      ((data && data.vars) || []).forEach(function (v) {
+        (state.vars[v.of] = state.vars[v.of] || []).push(v);
+      });
+
       state.hasKey = !!(data && data.hasKey);
       build();
       state.diaryFor = null;
