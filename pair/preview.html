@@ -331,7 +331,7 @@
   <section id="scCheck" hidden>
     <div id="ckMsg"></div>
 
-    <div class="card">
+    <div class="card" id="ckCardMine">
       <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
         <h2 id="ckHead" style="margin:0">오늘 인증</h2>
         <button class="btn-sm btn-ghost" id="btnWho">이름 바꾸기</button>
@@ -343,7 +343,7 @@
       <div class="hint" id="ckHint">평일에 인증하지 않으면 보증금에서 500원이 차감됩니다.</div>
     </div>
 
-    <div class="card">
+    <div class="card" id="ckCardToday">
       <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
         <h2 id="ckDayHead" style="margin:0">오늘</h2>
         <button class="btn-sm btn-ghost" id="btnCkReload">새로고침</button>
@@ -352,9 +352,19 @@
     </div>
 
     <div class="card">
-      <h2 id="ckMoneyHead">이번 달 보증금</h2>
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 id="ckMoneyHead" style="margin:0">보증금 정산</h2>
+        <div class="navs">
+          <button id="btnMonPrev" aria-label="이전 달">‹</button>
+          <button id="btnMonNext" aria-label="다음 달">›</button>
+        </div>
+      </div>
       <div id="ckMoney"></div>
       <div class="hint" id="ckMoneyHint"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn-sm" id="btnCopySettle">정산 문구 복사</button>
+        <span class="note" id="copyInfo" style="align-self:center"></span>
+      </div>
     </div>
   </section>
 
@@ -707,6 +717,7 @@ function loadBoard(){
 }
 
 function openCheck(){
+  state.boardYm = '';
   show('scCheck');
   $('ckMsg').innerHTML = '';
   $('ckList').innerHTML = '<p class="note">불러오는 중…</p>';
@@ -737,65 +748,154 @@ function openWho(){
   $('mdWho').hidden = false;
 }
 
-function renderCheck(){
-  var b = state.board;
-  if(!b) return;
+/** 보려는 달이 이번 달인지 */
+function isThisMonth(ym){
+  var d = new Date();
+  return ym === d.getFullYear() + '-' + pad2(d.getMonth()+1);
+}
 
-  var byDay = {}, mineToday = '';
+/** 달을 앞뒤로 넘긴다 */
+function stepMonth(ym, delta){
+  var y = +ym.slice(0,4), m = +ym.slice(5,7) + delta;
+  while(m < 1){ m += 12; y--; }
+  while(m > 12){ m -= 12; y++; }
+  return y + '-' + pad2(m);
+}
+
+/** 그 달의 사람별 미인증 일수와 환급액을 센다 */
+function settle(b){
+  var byDay = {};
   (b.rows || []).forEach(function(r){
     if(!byDay[r.d]) byDay[r.d] = {};
     byDay[r.d][r.who] = r.t;
-    if(r.d === b.today && r.who === state.me) mineToday = r.t;
   });
-
-  $('ckHead').textContent = state.me ? (state.me + ' 님의 오늘 인증') : '오늘 인증';
-  $('inpCheck').value = mineToday;
-  $('btnDoCheck').textContent = mineToday ? '수정' : '인증';
-  $('ckHint').textContent = mineToday
-    ? '오늘 인증을 마쳤습니다. 내용을 고치고 다시 누르면 바뀝니다.'
-    : '평일에 인증하지 않으면 보증금에서 ' + won(b.fine) + '이 차감됩니다.';
-
-  var names = b.names || [];
-  var done = byDay[b.today] || {};
-  var cnt = 0;
-  names.forEach(function(n){ if(done[n]) cnt++; });
-  $('ckDayHead').textContent = dateLabel(b.today) + '  ' + cnt + ' / ' + names.length;
-
-  var list = $('ckList'); list.innerHTML = '';
-  names.forEach(function(n){
-    var ok = !!done[n];
-    var row = el('div','ckrow' + (ok ? '' : ' off') + (n === state.me ? ' me' : ''));
-    row.appendChild(el('span','mark', ok ? '✅' : '⬜'));
-    row.appendChild(el('span','nm', n));
-    row.appendChild(el('span','tx', ok ? done[n] : ''));
-    list.appendChild(row);
-  });
-  if(!names.length) list.innerHTML = '<p class="note">회원이 없습니다.</p>';
-
-  var days = pastWeekdays(b.ym, b.today);
-  var pot = 0, money = $('ckMoney'); money.innerHTML = '';
-  names.forEach(function(n){
+  var days = pastWeekdays(b.ym, isThisMonth(b.ym) ? b.today : '9999-12-31');
+  var pot = 0;
+  var people = (b.names || []).map(function(n){
     var miss = 0;
     days.forEach(function(d){ if(!(byDay[d] && byDay[d][n])) miss++; });
     var cut = Math.min(miss * b.fine, b.deposit);
     pot += cut;
+    return { name: n, miss: miss, cut: cut, back: b.deposit - cut };
+  });
+  return { days: days, byDay: byDay, people: people, pot: pot };
+}
+
+/** 단톡방에 그대로 붙일 수 있는 문구 */
+function settleText(b){
+  var r = settle(b);
+  var wide = 0;
+  r.people.forEach(function(x){ if(x.name.length > wide) wide = x.name.length; });
+  var lines = [];
+  lines.push('[ ' + (+b.ym.slice(5,7)) + '월 각할모 정산 ]');
+  lines.push('');
+  lines.push('평일 ' + r.days.length + '일 · 미인증 1회 ' + won(b.fine));
+  lines.push('');
+  r.people.forEach(function(x){
+    var nm = x.name;
+    while(nm.length < wide) nm += ' ';
+    lines.push(nm + '  미인증 ' + x.miss + '일 · 환급 ' + won(x.back));
+  });
+  lines.push('');
+  lines.push('공금 적립  ' + won(r.pot));
+  return lines.join(String.fromCharCode(10));
+}
+
+function copySettle(){
+  var b = state.board;
+  if(!b) return;
+  var txt = settleText(b);
+  var done = function(){
+    $('copyInfo').textContent = '복사했습니다';
+    setTimeout(function(){ $('copyInfo').textContent = ''; }, 2500);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, function(){ fallbackCopy(txt, done); });
+  } else {
+    fallbackCopy(txt, done);
+  }
+}
+
+function fallbackCopy(txt, done){
+  var ta = document.createElement('textarea');
+  ta.value = txt;
+  ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); }
+  catch(e){ alert(txt); }
+  document.body.removeChild(ta);
+}
+
+function goMonth(delta){
+  var b = state.board;
+  state.boardYm = stepMonth((b && b.ym) || '', delta);
+  $('ckMoney').innerHTML = '<p class="note">불러오는 중…</p>';
+  loadBoard().then(renderCheck, function(e){ alert(e.message); });
+}
+
+function renderCheck(){
+  var b = state.board;
+  if(!b) return;
+  var cur = isThisMonth(b.ym);
+  var r = settle(b);
+
+  // 지난 달을 볼 때는 오늘 인증란이 의미가 없다
+  $('ckCardMine').hidden = !cur;
+  $('ckCardToday').hidden = !cur;
+
+  if(cur){
+    var mineToday = (r.byDay[b.today] || {})[state.me] || '';
+    $('ckHead').textContent = state.me ? (state.me + ' 님의 오늘 인증') : '오늘 인증';
+    $('inpCheck').value = mineToday;
+    $('btnDoCheck').textContent = mineToday ? '수정' : '인증';
+    $('ckHint').textContent = mineToday
+      ? '오늘 인증을 마쳤습니다. 내용을 고치고 다시 누르면 바뀝니다.'
+      : '평일에 인증하지 않으면 보증금에서 ' + won(b.fine) + '이 차감됩니다.';
+
+    var names = b.names || [];
+    var done = r.byDay[b.today] || {};
+    var cnt = 0;
+    names.forEach(function(n){ if(done[n]) cnt++; });
+    $('ckDayHead').textContent = dateLabel(b.today) + '  ' + cnt + ' / ' + names.length;
+
+    var list = $('ckList'); list.innerHTML = '';
+    names.forEach(function(n){
+      var ok = !!done[n];
+      var row = el('div','ckrow' + (ok ? '' : ' off') + (n === state.me ? ' me' : ''));
+      row.appendChild(el('span','mark', ok ? '✅' : '⬜'));
+      row.appendChild(el('span','nm', n));
+      row.appendChild(el('span','tx', ok ? done[n] : ''));
+      list.appendChild(row);
+    });
+    if(!names.length) list.innerHTML = '<p class="note">회원이 없습니다.</p>';
+  }
+
+  // 정산
+  $('ckMoneyHead').textContent = (+b.ym.slice(5,7)) + '월 보증금 정산';
+  $('btnMonNext').disabled = cur;
+
+  var money = $('ckMoney'); money.innerHTML = '';
+  r.people.forEach(function(x){
     var row = el('div','mnrow');
-    row.appendChild(el('b', null, n));
+    row.appendChild(el('b', null, x.name));
     var right = el('span');
-    right.appendChild(el('span','won', won(b.deposit - cut)));
-    if(miss) right.appendChild(el('span','cut', '미인증 ' + miss + '일'));
+    right.appendChild(el('span','won', won(x.back)));
+    if(x.miss) right.appendChild(el('span','cut', '미인증 ' + x.miss + '일'));
     row.appendChild(right);
     money.appendChild(row);
   });
+  if(!r.people.length) money.innerHTML = '<p class="note">회원이 없습니다.</p>';
+
   var potRow = el('div','mnrow pot');
   potRow.appendChild(el('b', null, '공금 (회식비)'));
-  potRow.appendChild(el('span','won', won(pot)));
+  potRow.appendChild(el('span','won', won(r.pot)));
   money.appendChild(potRow);
 
-  $('ckMoneyHead').textContent = (+b.ym.slice(5,7)) + '월 보증금';
-  $('ckMoneyHint').textContent = days.length
-    ? '이번 달 지난 평일 ' + days.length + '일 기준입니다. 오늘은 아직 세지 않습니다.'
-    : '이번 달은 아직 지난 평일이 없습니다.';
+  $('ckMoneyHint').textContent = cur
+    ? (r.days.length
+        ? '이번 달 지난 평일 ' + r.days.length + '일 기준입니다. 오늘은 아직 세지 않습니다.'
+        : '이번 달은 아직 지난 평일이 없습니다.')
+    : '평일 ' + r.days.length + '일 기준 최종 정산입니다.';
 }
 
 function submitCheck(){
@@ -1101,6 +1201,9 @@ $('btnWhoClose').onclick = function(){ $('mdWho').hidden = true; };
 $('mdWho').onclick       = function(ev){ if(ev.target === this) this.hidden = true; };
 $('btnDoCheck').onclick  = function(){ submitCheck(); };
 $('btnCkReload').onclick = function(){ openCheck(); };
+$('btnMonPrev').onclick  = function(){ goMonth(-1); };
+$('btnMonNext').onclick  = function(){ goMonth(1); };
+$('btnCopySettle').onclick = function(){ copySettle(); };
 $('inpCheck').onkeydown  = function(e){ if(e.key === 'Enter') submitCheck(); };
 
 $('btnGuide').onclick      = function(){ $('mdGuide').hidden = false; };
