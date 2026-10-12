@@ -163,6 +163,14 @@
   /* 인증 화면 */
   .ckme{display:flex;gap:8px;align-items:center;margin-bottom:10px}
   .ckme input{flex:1}
+  .phrow{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .phpick{display:inline-flex;align-items:center;cursor:pointer;border:1px solid var(--line-2);
+    background:var(--surface);border-radius:8px;padding:6px 11px;font-size:13px;font-weight:500}
+  .phpick:hover{background:var(--surface-2)}
+  #photoWrap{display:inline-flex;gap:8px;align-items:center}
+  #photoThumb{width:40px;height:40px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+  .ckrow .ph{flex:none;width:34px;height:34px;object-fit:cover;border-radius:7px;
+    border:1px solid var(--line);cursor:zoom-in}
   .ckrow{display:flex;gap:10px;align-items:baseline;padding:10px 0;
     border-top:1px solid var(--line)}
   .ckrow:first-of-type{border-top:none}
@@ -382,6 +390,15 @@
         <input id="inpCheck" type="text" maxlength="100" placeholder="오늘 한 일을 한 줄로">
         <button class="btn-primary" id="btnDoCheck">인증</button>
       </div>
+      <div class="phrow">
+        <label class="btn-sm phpick" for="inpPhoto">사진 첨부</label>
+        <input id="inpPhoto" type="file" accept="image/*" capture="environment" hidden>
+        <span class="note" id="photoInfo"></span>
+        <span id="photoWrap" hidden>
+          <img id="photoThumb" alt="첨부한 사진">
+          <button class="btn-sm btn-ghost" id="btnDropPhoto">빼기</button>
+        </span>
+      </div>
       <div class="hint" id="ckHint">주간 목표를 정해주세요.</div>
       <div class="goalrow" id="goalWrap" hidden>
         <span>내 목표</span>
@@ -506,6 +523,11 @@
 
 </div>
 
+<div class="modal" id="mdPhoto" hidden>
+  <img id="bigPhoto" alt="인증 사진"
+       style="max-width:100%;max-height:84vh;border-radius:14px;display:block">
+</div>
+
 <div class="modal" id="mdWho" hidden>
   <div class="card">
     <div class="ghead">
@@ -559,7 +581,7 @@ var state = {
   locked:false,                             // 서버에 비밀번호가 걸려 있는지
   loaded:false,                             // 서버 응답을 받았는지
   admin:false,                              // 이 기기가 관리자 화면을 볼 수 있는지
-  me:'', board:null, cycle:'', pick:''       // 인증: 나는 누구인지, 보고 있는 회차
+  me:'', board:null, cycle:'', pick:'', photo:''   // 인증: 나는 누구인지, 회차, 붙일 사진
 };
 
 function $(id){ return document.getElementById(id); }
@@ -781,10 +803,11 @@ function cycleLabel(start){
 
 /** 지금 보고 있는 회차의 성적을 사람별로 셈한다 */
 function settle(b){
-  var byDay = {};
+  var byDay = {}, picOf = {};
   (b.rows || []).forEach(function(r){
     if(!byDay[r.d]) byDay[r.d] = {};
     byDay[r.d][r.who] = r.t;
+    if(r.p){ if(!picOf[r.d]) picOf[r.d] = {}; picOf[r.d][r.who] = r.p; }
   });
 
   var weeks = cycleWeeks(b.start);
@@ -809,7 +832,7 @@ function settle(b){
              miss:miss, did:did, cut:cut, back:dep - cut };
   });
 
-  return { weeks:weeks, closed:closed, byDay:byDay, people:people, pot:pot };
+  return { weeks:weeks, closed:closed, byDay:byDay, picOf:picOf, people:people, pot:pot };
 }
 
 function settleText(b){
@@ -931,6 +954,13 @@ function renderCheck(){
       row.appendChild(el('span','mark', ok ? '✅' : '⬜'));
       row.appendChild(el('span','nm', n));
       row.appendChild(el('span','tx', ok ? done[n] : ''));
+      var pic = ok && r.picOf[b.today] && r.picOf[b.today][n];
+      if(pic){
+        var im = el('img','ph');
+        im.src = pic; im.alt = n + ' 인증 사진';
+        im.onclick = function(){ openPhoto(pic); };
+        row.appendChild(im);
+      }
       list.appendChild(row);
     });
     if(!names.length) list.innerHTML = '<p class="note">회원이 없습니다.</p>';
@@ -974,11 +1004,11 @@ function submitCheck(){
   var btn = $('btnDoCheck');
   btn.disabled = true; btn.textContent = '보내는 중…';
   callApi({ action:'checkin', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
-            who: state.me, text: t }).then(function(j){
+            who: state.me, text: t, photo: state.photo || '' }).then(function(j){
     if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
     return loadBoard();
   }).then(function(){
-    btn.disabled = false; renderCheck();
+    btn.disabled = false; dropPhoto(); renderCheck();
   }, function(e){
     btn.disabled = false; btn.textContent = '인증';
     alert(e.message);
@@ -1015,6 +1045,59 @@ function showGate(msg){
 /** 코드를 통과한 뒤. 처음이면 이름·목표·보증금부터 받는다. */
 function afterGate(){
   if(state.me) enterApp(); else openJoin();
+}
+
+/* ───────── 사진 ─────────
+   폰 사진은 그대로 보내면 너무 크다. 긴 변 1000px 로 줄여 JPEG 로 바꾼다. */
+var PHOTO_MAX = 1000, PHOTO_Q = 0.72;
+
+function shrinkPhoto(file, done, fail){
+  var reader = new FileReader();
+  reader.onerror = function(){ fail(new Error('사진을 읽지 못했습니다.')); };
+  reader.onload = function(){
+    var img = new Image();
+    img.onerror = function(){ fail(new Error('사진을 열지 못했습니다.')); };
+    img.onload = function(){
+      var w = img.width, h = img.height;
+      var s = Math.min(1, PHOTO_MAX / Math.max(w, h));
+      var cw = Math.round(w * s), ch = Math.round(h * s);
+      var cv = document.createElement('canvas');
+      cv.width = cw; cv.height = ch;
+      cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
+      try { done(cv.toDataURL('image/jpeg', PHOTO_Q)); }
+      catch(e){ fail(new Error('사진을 바꾸지 못했습니다.')); }
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function pickPhoto(){
+  var f = $('inpPhoto').files && $('inpPhoto').files[0];
+  if(!f) return;
+  $('photoInfo').textContent = '사진 줄이는 중…';
+  shrinkPhoto(f, function(dataUrl){
+    state.photo = dataUrl;
+    $('photoThumb').src = dataUrl;
+    $('photoWrap').hidden = false;
+    var kb = Math.round(dataUrl.length * 0.75 / 1024);
+    $('photoInfo').textContent = kb + 'KB 로 줄였습니다';
+  }, function(e){
+    state.photo = '';
+    $('photoInfo').textContent = e.message;
+  });
+}
+
+function dropPhoto(){
+  state.photo = '';
+  $('inpPhoto').value = '';
+  $('photoWrap').hidden = true;
+  $('photoInfo').textContent = '';
+}
+
+function openPhoto(url){
+  $('bigPhoto').src = url;
+  $('mdPhoto').hidden = false;
 }
 
 /* ───────── 첫 입장 설정 ───────── */
@@ -1061,7 +1144,7 @@ function submitJoin(){
     if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
     state.me = state.pick; LS.set(K_ME, state.me);
     btn.textContent = '시작하기';
-    openCheck();
+    enterApp();          // 설정이 끝나면 원래대로 달력부터
   }, function(e){
     btn.disabled = false; btn.textContent = '시작하기';
     $('joinMsg').textContent = e.message;
@@ -1316,6 +1399,9 @@ $('btnPrev').onclick = function(){ step(-1); };
 $('btnNext').onclick = function(){ step(1); };
 $('btnQuit').onclick = function(){ renderMembers(); show('scMembers'); };
 
+$('inpPhoto').onchange     = function(){ pickPhoto(); };
+$('btnDropPhoto').onclick  = function(){ dropPhoto(); };
+$('mdPhoto').onclick       = function(){ this.hidden = true; };
 $('btnJoin').onclick       = function(){ submitJoin(); };
 $('joinGoal').onchange     = function(){ renderJoin(); };
 $('joinDeposit').onchange  = function(){ renderJoin(); };
@@ -1337,6 +1423,7 @@ $('btnGuideClose').onclick = function(){ $('mdGuide').hidden = true; };
 // 바깥 어두운 곳을 눌러도 닫힌다
 $('mdGuide').onclick = function(ev){ if(ev.target === this) this.hidden = true; };
 document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && !$('mdPhoto').hidden){ $('mdPhoto').hidden = true; return; }
   if(e.key === 'Escape' && !$('mdWho').hidden){ $('mdWho').hidden = true; return; }
   if(e.key === 'Escape' && !$('mdGuide').hidden){ $('mdGuide').hidden = true; return; }
   if($('scQuiz').hidden) return;
