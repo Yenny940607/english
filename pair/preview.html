@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>각할모 미리보기</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    --bg:#FAFAFA;
+    --surface:#FFFFFF;
+    --surface-2:#F3F3F5;
+    --text:#15161A;
+    --text-2:#55575F;
+    --muted:#8A8C95;
+    --line:#EBEBEF;
+    --line-2:#DEDEE4;
+    --btn-bg:#15161A;
+    --btn-fg:#FFFFFF;
+    --btn-fg-dim:rgba(255,255,255,.68);
+    --accent:#3B63F6;
+    --accent-soft:#EDF1FE;
+    --danger:#E5484D;
+    --sat:#3B63F6;
+    --sun:#E5484D;
+    --r-sm:9px; --r:12px; --r-lg:16px;
+    --shadow-sm:0 1px 2px rgba(16,17,20,.04);
+    --shadow:0 4px 16px rgba(16,17,20,.06), 0 1px 3px rgba(16,17,20,.04);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0C0D10;
+      --surface:#15171C;
+      --surface-2:#1E2027;
+      --text:#F0F1F3;
+      --text-2:#A6A8B2;
+      --muted:#787B85;
+      --line:#23252C;
+      --line-2:#2D3039;
+      --btn-bg:#F0F1F3;
+      --btn-fg:#15161A;
+      --btn-fg-dim:rgba(21,22,26,.6);
+      --accent:#8AA0FF;
+      --accent-soft:#1A1F38;
+      --danger:#FF6369;
+      --sat:#8AA0FF;
+      --sun:#FF6369;
+      --shadow-sm:none;
+      --shadow:0 4px 20px rgba(0,0,0,.4);
+    }
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  [hidden]{display:none !important}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,
+      system-ui,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+    font-size:15px; line-height:1.6; letter-spacing:-.011em;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:600px; margin:0 auto; padding:0 18px 64px}
+
+  header{position:sticky; top:0; z-index:30; background:var(--bg);
+    border-bottom:1px solid var(--line); padding-block:11px; margin-bottom:24px}
+  header .inner{max-width:600px;margin:0 auto;padding:0 18px;display:flex;align-items:center;gap:8px}
+  .hspace{flex:1}
+  .logo{display:flex;align-items:center;gap:9px;border:none;background:transparent;
+    padding:5px 8px;margin-left:-8px;border-radius:10px;flex:none;color:var(--text)}
+  .logo:hover{background:var(--surface-2)}
+  .logo .lmark{display:inline-flex;align-items:center;justify-content:center;
+    width:28px;height:28px;border-radius:9px;background:var(--btn-bg);color:var(--btn-fg);flex:none}
+  .logo .lwm{font-size:17px;font-weight:700;letter-spacing:-.025em;white-space:nowrap}
+  /* 좁은 화면에서도 이름은 계속 보이게 하고, 대신 글자와 여백을 줄인다 */
+  @media (max-width:420px){
+    .logo .lwm{font-size:14.5px}
+    .logo{gap:7px;padding:5px 6px;margin-left:-6px}
+    header .inner{gap:4px;padding:0 14px}
+  }
+
+  button{font-family:inherit;font-size:14.5px;font-weight:500;cursor:pointer;
+    border-radius:var(--r-sm);border:1px solid var(--line-2);
+    background:var(--surface);color:var(--text);padding:9px 14px;
+    transition:background .13s ease, border-color .13s ease, opacity .13s ease}
+  button:hover{background:var(--surface-2)}
+  button:disabled{opacity:.4;cursor:default}
+  button:disabled:hover{background:var(--surface)}
+  .btn-primary{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-fg);font-weight:600}
+  .btn-primary:hover{background:var(--btn-bg);opacity:.86}
+  .btn-primary:disabled:hover{background:var(--btn-bg)}
+  .btn-accent{background:var(--accent-soft);border-color:transparent;
+    color:var(--accent);font-weight:600}
+  .btn-accent:hover{background:var(--accent-soft);opacity:.82}
+  .btn-ghost{background:transparent;border-color:transparent;color:var(--text-2)}
+  .btn-ghost:hover{background:var(--surface-2)}
+  .btn-sm{padding:6px 11px;font-size:13px;border-radius:8px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+
+  input,textarea{font-family:inherit;font-size:15px;padding:11px 13px;border-radius:10px;
+    border:1px solid var(--line-2);background:var(--surface);color:var(--text);width:100%;
+    transition:border-color .13s, box-shadow .13s}
+  input:focus,textarea:focus{outline:none;border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft)}
+  textarea{resize:vertical;min-height:70px;line-height:1.55}
+  label.fl{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;font-weight:600}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:20px;margin-bottom:12px;box-shadow:var(--shadow-sm)}
+  .card h2{font-size:11.5px;margin:0 0 15px;font-weight:700;color:var(--muted);letter-spacing:.05em}
+  .note{font-size:13px;color:var(--text-2);line-height:1.65}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.6}
+  .err{background:var(--surface);border:1px solid var(--danger);color:var(--danger);
+    padding:13px 15px;border-radius:var(--r);font-size:13.5px;margin-bottom:12px;
+    white-space:pre-wrap;line-height:1.6}
+  .ok-msg{background:var(--accent-soft);border:1px solid transparent;color:var(--accent);
+    padding:11px 15px;border-radius:var(--r);font-size:13.5px;margin-bottom:12px;font-weight:500}
+
+  /* 비밀번호 */
+  .gate{max-width:330px;margin:10vh auto 0;text-align:center;padding:28px 24px}
+  .gate-t{font-size:18px;font-weight:700;letter-spacing:-.03em}
+  .gate-s{font-size:13px;color:var(--muted);margin:7px 0 22px;line-height:1.6}
+  .pass{text-align:center;font-size:24px;font-weight:700;letter-spacing:.55em;
+    text-indent:.55em;padding:14px 12px;font-variant-numeric:tabular-nums}
+  .gate-err{font-size:13px;color:var(--danger);min-height:20px;margin:11px 0 5px;font-weight:500}
+
+  .pwnow{font-size:32px;font-weight:800;letter-spacing:.2em;text-indent:.2em;
+    font-variant-numeric:tabular-nums;line-height:1.2;margin:0 0 4px}
+  .pwnow.off{font-size:19px;letter-spacing:-.02em;text-indent:0;color:var(--muted)}
+  .pwrow{display:flex;gap:8px;align-items:stretch}
+  .pwrow input{flex:1;text-align:center;font-size:22px;font-weight:700;
+    letter-spacing:.3em;text-indent:.3em;font-variant-numeric:tabular-nums}
+  .pwrow button{flex:none;padding-inline:22px}
+  .saved{color:var(--ok);font-weight:600}
+
+  /* 달력 */
+  .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .calhead b{font-size:18px;font-weight:700;letter-spacing:-.03em}
+  .calhead .navs{display:flex;gap:4px}
+  .calhead .navs button{width:32px;height:32px;padding:0;font-size:16px;line-height:1;
+    color:var(--text-2);border-color:transparent;background:transparent}
+  .calhead .navs button:hover{background:var(--surface-2)}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .cal .dow{text-align:center;font-size:11px;font-weight:600;color:var(--muted);
+    padding:0 0 10px;letter-spacing:.03em}
+  .cal .dow:first-child{color:var(--sun)}
+  .cal .dow:last-child{color:var(--sat)}
+  .day{aspect-ratio:1;min-width:0;padding:0;border:none;background:transparent;
+    border-radius:12px;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;font-size:15px;font-weight:500;color:var(--text-2)}
+  .day:hover{background:var(--surface-2)}
+  .day.blank{visibility:hidden}
+  .day.none{color:var(--muted);opacity:.4;cursor:default}
+  .day.none:hover{background:transparent}
+  .day.has{background:var(--accent-soft);color:var(--text);font-weight:700}
+  .day.has:hover{background:var(--accent-soft);opacity:.82}
+  .day.today{box-shadow:inset 0 0 0 1.5px var(--line-2)}
+  .day.has.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
+
+  /* 이름 카드 */
+  /* 인증 화면 */
+  .ckme{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .ckme input{flex:1}
+  .ckrow{display:flex;gap:10px;align-items:baseline;padding:10px 0;
+    border-top:1px solid var(--line)}
+  .ckrow:first-of-type{border-top:none}
+  .ckrow .mark{flex:none;width:19px;font-size:13px}
+  .ckrow .nm{flex:none;min-width:86px;font-weight:600;font-size:14px;letter-spacing:-.02em}
+  .ckrow .tx{flex:1;font-size:14px;color:var(--text-2);line-height:1.5}
+  .ckrow.off .nm{color:var(--muted);font-weight:500}
+  .ckrow.me{background:var(--accent-soft);margin:0 -14px;padding:10px 14px;border-radius:9px}
+  .ckrow.me + .ckrow{border-top:none}
+  .mnrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+  .mnrow:first-of-type{border-top:none}
+  .mnrow b{font-weight:600;letter-spacing:-.02em}
+  .mnrow .won{font-variant-numeric:tabular-nums;font-weight:600}
+  .mnrow .cut{font-size:12.5px;color:var(--muted);font-weight:500;margin-left:6px}
+  .mnrow.pot{border-top:1px solid var(--line-2);margin-top:4px;padding-top:12px}
+  .mnrow.pot .won{color:var(--accent)}
+  .whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+
+  /* 진행 방법 팝업 */
+  .modal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;
+    justify-content:center;padding:18px;background:rgba(18,18,22,.45)}
+  .modal > .card{width:100%;max-width:430px;max-height:84vh;overflow:auto;margin:0}
+  .ghead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .ghead h3{margin:0;font-size:16px;letter-spacing:-.022em}
+  .ghead h3 em{font-style:normal;font-size:12.5px;font-weight:500;
+    color:var(--muted);letter-spacing:0;margin-left:5px}
+  .guide .step{margin-top:15px}
+  .guide .step:first-of-type{margin-top:0}
+  .guide .step b{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    font-size:13.5px;margin-bottom:3px;letter-spacing:-.02em}
+  .guide .step b em{font-style:normal;font-weight:500;font-size:12.5px;
+    color:var(--muted);letter-spacing:0;flex:none}
+  .guide .step p{margin:0;font-size:13.5px;line-height:1.6;color:var(--text-2)}
+  .guide .tip{margin-top:17px;padding-top:13px;border-top:1px solid var(--line);
+    font-size:13.5px;line-height:1.6;color:var(--text);font-weight:600;letter-spacing:-.015em}
+
+  .mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+  .mcard{padding:15px 10px;border-radius:var(--r);font-size:16px;font-weight:600;
+    line-height:1.35;letter-spacing:-.02em;border:1px solid var(--line-2);text-align:center}
+  .mcard span{display:block;font-size:12px;color:var(--muted);font-weight:500;
+    margin-top:4px;letter-spacing:0}
+  .mcard i.tick{display:block;width:17px;height:17px;margin:0 auto 8px;border-radius:6px;
+    border:1.5px solid var(--line-2);font-style:normal;font-size:10px;line-height:14px;
+    color:transparent;transition:.13s}
+  .mcard.shared{background:var(--accent-soft);border-color:transparent}
+  .mcard.shared span{color:var(--accent)}
+  .mcard.shared i.tick{border-color:#B9C8FB}
+  .mcard.shared[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .mcard.shared[aria-pressed="true"] span{color:rgba(255,255,255,.82)}
+  .mcard.shared[aria-pressed="true"] i.tick{background:#fff;border-color:#fff;color:var(--accent)}
+  .mcard[aria-pressed="true"]{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-fg)}
+  .mcard[aria-pressed="true"]:hover{background:var(--btn-bg);opacity:.88}
+  .mcard[aria-pressed="true"] span{color:var(--btn-fg-dim)}
+  .mcard[aria-pressed="true"] i.tick{background:var(--btn-fg);border-color:var(--btn-fg);color:var(--btn-bg)}
+
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{padding:7px 14px;border-radius:999px;border:1px solid var(--line-2);
+    background:var(--surface);font-size:13.5px;font-weight:500;color:var(--text-2);cursor:pointer}
+  .chip[aria-pressed="true"]{background:var(--btn-bg);border-color:var(--btn-bg);
+    color:var(--btn-fg);font-weight:600}
+  .chip[aria-pressed="true"]:hover{background:var(--btn-bg);opacity:.88}
+  .toggle{display:flex;align-items:center;gap:11px;padding:9px 0;cursor:pointer;
+    font-size:14px;color:var(--text-2)}
+  .toggle input{margin:0;width:18px;height:18px;accent-color:var(--accent);flex:none}
+
+  /* 퀴즈 */
+  .quiz-top{display:flex;align-items:center;gap:12px;margin-bottom:16px;
+    font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:500}
+  .progress{flex:1;height:3px;background:var(--line);border-radius:99px;overflow:hidden}
+  .progress i{display:block;height:100%;background:var(--accent);border-radius:99px;
+    transition:width .3s cubic-bezier(.4,0,.2,1)}
+  .stage{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:32px 26px;min-height:270px;display:flex;flex-direction:column;
+    justify-content:center;margin-bottom:12px;box-shadow:var(--shadow)}
+  .owner{font-size:12px;color:var(--muted);margin-bottom:16px;font-weight:600;letter-spacing:.01em}
+  .ko{font-size:clamp(21px,5vw,27px);font-weight:700;line-height:1.5;
+    letter-spacing:-.035em;word-break:keep-all}
+  .en{margin-top:24px;padding-top:22px;border-top:1px solid var(--line);
+    font-size:clamp(16px,3.9vw,19px);line-height:1.6;color:var(--accent);
+    font-weight:500;letter-spacing:-.012em;word-break:break-word}
+  .nav2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .nav2 button{padding:13px 6px;font-size:14.5px;font-weight:600;color:var(--text-2)}
+
+  table.tpl{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px;
+    border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  table.tpl th,table.tpl td{border-bottom:1px solid var(--line);
+    border-right:1px solid var(--line);padding:8px 10px;text-align:left;color:var(--text-2)}
+  table.tpl tr:last-child th,table.tpl tr:last-child td{border-bottom:none}
+  table.tpl th:last-child,table.tpl td:last-child{border-right:none}
+  table.tpl th{background:var(--surface-2);font-weight:600;color:var(--text)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;
+    background:var(--surface-2);padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+
+<div id="mockbar" style="background:#15161A;color:#fff;font-size:12.5px;
+  padding:9px 16px;display:flex;gap:10px;align-items:center;justify-content:center;
+  flex-wrap:wrap;text-align:center">
+  <b>미리보기</b>
+  <span style="opacity:.72">실제 시트에 저장되지 않습니다. 적은 내용은 이 브라우저에만 남습니다.</span>
+  <button id="btnMockReset" style="background:transparent;border:1px solid rgba(255,255,255,.3);
+    color:#fff;font-size:12px;padding:4px 10px;border-radius:7px">처음으로 되돌리기</button>
+</div>
+
+<header>
+  <div class="inner">
+    <button class="logo" id="btnLogo" title="처음 화면으로">
+      <span class="lmark" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-3.6-.7L3 21l1.9-4.9A8.2 8.2 0 0 1 4 11.5 8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/></svg></span>
+      <span class="lwm">In My Own Words</span>
+    </button>
+    <span class="hspace"></span>
+    <button class="btn-sm" id="btnCheck">인증</button>
+    <button class="btn-sm btn-accent" id="btnGuide">진행 방법</button>
+    <button class="btn-sm btn-ghost" id="btnBack" hidden>‹ 뒤로</button>
+    <button class="btn-sm btn-ghost" id="btnSetup">설정</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ── 설정 ── -->
+  <section id="scSetup" hidden>
+    <div class="card">
+      <h2>모임 비밀번호</h2>
+      <div class="pwnow" id="pwNow">—</div>
+      <p class="note">회원들이 사이트에 들어올 때 입력하는 번호입니다.
+        아래에서 숫자를 고치고 저장하면, 회원 전원이 다음에 들어올 때
+        새 번호를 입력하게 됩니다.</p>
+
+      <div class="pwrow" style="margin-top:16px">
+        <input id="inpPw" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000">
+        <button class="btn-primary" id="btnSavePw">저장</button>
+      </div>
+      <div class="hint" id="pwMsg"></div>
+
+      <div id="adminWrap" style="margin-top:18px">
+        <label class="fl">관리자 비밀번호</label>
+        <input id="inpAdmin" type="password" autocomplete="off" placeholder="모임장만 아는 비밀번호">
+        <div class="hint">저장할 때 한 번만 확인합니다. 이후엔 이 기기에서 다시 묻지 않습니다.</div>
+      </div>
+
+      <div class="row" style="margin-top:18px">
+        <button class="btn-ghost btn-sm" id="btnCancelSetup">닫기</button>
+        <button class="btn-ghost btn-sm" id="btnUnlock">잠금 해제</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>문장 올리는 법</h2>
+      <p class="note">구글 드라이브 폴더 <code>In my own words</code> 안에 회원별 스프레드시트
+        파일을 하나씩 둡니다. <b>파일 이름이 곧 회원 이름</b>이 되며, 각 파일은 해당 회원에게만
+        개별 공유합니다.</p>
+      <table class="tpl">
+        <tr><th>스터디 일자</th><th>한글</th><th>영어</th></tr>
+        <tr><td>2026. 9. 10</td><td>오늘 뭐 먹고 싶은데?</td><td>What do you want to eat today?</td></tr>
+        <tr><td>2026. 9. 10</td><td>나 사실 배불러서 먹고 싶은거 없어</td><td>Actually, I'm already full.</td></tr>
+      </table>
+      <div class="hint">입력한 일자를 기준으로 달력에 표시되며, 해당 날짜에 문장을 올린 회원만
+        이름 카드가 나타납니다. 문장은 파일의 첫 번째 탭에만 입력합니다.</div>
+    </div>
+  </section>
+
+  <!-- ── 인증 ── -->
+  <section id="scCheck" hidden>
+    <div id="ckMsg"></div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 id="ckHead" style="margin:0">오늘 인증</h2>
+        <button class="btn-sm btn-ghost" id="btnWho">이름 바꾸기</button>
+      </div>
+      <div class="ckme">
+        <input id="inpCheck" type="text" maxlength="100" placeholder="오늘 한 일을 한 줄로">
+        <button class="btn-primary" id="btnDoCheck">인증</button>
+      </div>
+      <div class="hint" id="ckHint">평일에 인증하지 않으면 보증금에서 500원이 차감됩니다.</div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 id="ckDayHead" style="margin:0">오늘</h2>
+        <button class="btn-sm btn-ghost" id="btnCkReload">새로고침</button>
+      </div>
+      <div id="ckList"></div>
+    </div>
+
+    <div class="card">
+      <h2 id="ckMoneyHead">이번 달 보증금</h2>
+      <div id="ckMoney"></div>
+      <div class="hint" id="ckMoneyHint"></div>
+    </div>
+  </section>
+
+  <!-- ── 비밀번호 ── -->
+  <section id="scGate" hidden>
+    <div class="card gate">
+      <div class="gate-t">모임원 확인</div>
+      <div class="gate-s">비밀번호 4자리를 입력하세요</div>
+      <input id="inpPass" class="pass" inputmode="numeric" pattern="[0-9]*"
+             maxlength="4" autocomplete="off" placeholder="••••">
+      <div class="gate-err" id="gateMsg"></div>
+      <button class="btn-primary" id="btnGate" style="width:100%;padding:14px;font-size:15px">들어가기</button>
+    </div>
+  </section>
+
+  <!-- ── 달력 ── -->
+  <section id="scCal" hidden>
+    <div id="calMsg"></div>
+    <div class="card">
+      <div class="calhead">
+        <b id="calLabel">—</b>
+        <div class="navs">
+          <button id="btnPrevM" aria-label="이전 달">‹</button>
+          <button id="btnNextM" aria-label="다음 달">›</button>
+        </div>
+      </div>
+      <div class="cal" id="calGrid"></div>
+    </div>
+    <div class="row">
+      <button class="btn-sm" id="btnSheet" hidden>공용문장 열기</button>
+      <button class="btn-sm btn-ghost" id="btnReload">시트 새로고침</button>
+      <span class="note" id="syncInfo" style="align-self:center"></span>
+    </div>
+  </section>
+
+  <!-- ── 이름 카드 ── -->
+  <section id="scMembers" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 id="mHead" style="margin:0">—</h2>
+        <button class="btn-sm btn-ghost" id="btnAll">전체 선택</button>
+      </div>
+      <div class="mcards" id="mCards"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn-sm" id="btnDlSel">예문 다운받기</button>
+      </div>
+      <div class="hint">여러 명을 선택하면 해당 회원들의 문장이 <b>섞여서</b> 출제됩니다.<br>
+        <b>예문 다운받기</b>를 누르면 선택한 회원의 <b>전체 문장</b>을 파일로 저장할 수 있습니다.</div>
+    </div>
+    <div class="card">
+      <h2>문항 수</h2>
+      <div class="chips" id="countChips"></div>
+      <label class="toggle"><input type="checkbox" id="chkShuffle" checked> 카드 섞기</label>
+      <label class="toggle"><input type="checkbox" id="chkBlind"> 이름 가리기 (즉석 영작용)</label>
+    </div>
+    <button class="btn-primary" id="btnStart" style="width:100%;padding:15px;font-size:16px">시작</button>
+  </section>
+
+  <!-- ── 퀴즈 ── -->
+  <section id="scQuiz" hidden>
+    <div class="quiz-top">
+      <span id="qCount">1 / 10</span>
+      <div class="progress"><i id="qBar"></i></div>
+      <button class="btn-sm btn-ghost" id="btnQuit">끝내기</button>
+    </div>
+    <div class="stage">
+      <div class="owner" id="qOwner"></div>
+      <div class="ko" id="qKo"></div>
+      <div class="en" id="qEn" hidden></div>
+    </div>
+    <button class="btn-primary" id="btnReveal" style="width:100%;padding:15px;font-size:16px">정답 확인</button>
+    <div class="nav2">
+      <button id="btnPrev">‹ 이전</button>
+      <button id="btnNext">다음 ›</button>
+    </div>
+  </section>
+
+</div>
+
+<div class="modal" id="mdWho" hidden>
+  <div class="card">
+    <div class="ghead">
+      <h3>본인 이름을 고르세요</h3>
+      <button class="btn-sm btn-ghost" id="btnWhoClose">닫기</button>
+    </div>
+    <div class="whogrid" id="whoList"></div>
+    <div class="hint">한 번 고르면 이 기기에 기억됩니다. [이름 바꾸기]로 언제든 바꿀 수 있습니다.</div>
+  </div>
+</div>
+
+<div class="modal" id="mdGuide" hidden>
+  <div class="card guide">
+    <div class="ghead">
+      <h3>진행 방법 <em>총 60분</em></h3>
+      <button class="btn-sm btn-ghost" id="btnGuideClose">닫기</button>
+    </div>
+    <div class="step">
+      <b>1단계 · 복습 <em>20분</em></b>
+      <p>파트너의 카드를 선택해 한글 예문 제시, 파트너는 영어로 바꿔 말해보기.<br>
+        (각자 문장 복습형태) 서로 번갈아 가며 진행함.</p>
+    </div>
+    <div class="step">
+      <b>2단계 · 즉석 영작 <em>20분</em></b>
+      <p>같은 방식으로 본인의 카드를 선택해 진행.<br>
+        (파트너에게는 처음 보는 문장 · 즉석 영작)</p>
+    </div>
+    <div class="step">
+      <b>3단계 · 무작위 <em>20분</em></b>
+      <p>다른 회원의 카드를 선택해 추가 영작 연습.</p>
+    </div>
+    <div class="tip">각자 공부한 내용과 새로 알게 된 표현에 대해
+      서로 공유하는 시간도 가져보세요~!</div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var LS = {
+  get:function(k,d){ try{var v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
+  set:function(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+};
+var K_CACHE='em.cache', K_PASS='em.pass', K_ADMIN='em.admin', K_OKM='em.okmonth', K_ME='em.me';
+var ADMIN_HINT = '8292';   // ?admin 으로 들어올 때 중계기에 대는 관리자 비번
+
+var state = {
+  sheetId:'', members:[], decks:{}, byDate:{}, syncedAt:0,
+  calY:0, calM:0, selDate:null, selNames:[], selMember:null, limit:20, session:null,
+  locked:false,                             // 서버에 비밀번호가 걸려 있는지
+  loaded:false,                             // 서버 응답을 받았는지
+  admin:false,                              // 이 기기가 관리자 화면을 볼 수 있는지
+  me:'', board:null, boardYm:''             // 인증: 나는 누구인지, 이번 달 기록
+};
+
+function $(id){ return document.getElementById(id); }
+function el(t,c,x){ var e=document.createElement(t); if(c)e.className=c; if(x!=null)e.textContent=x; return e; }
+function pad2(n){ return (n<10?'0':'')+n; }
+// 비밀번호는 매달 1일에 바뀐다. 같은 달이면 다시 묻지 않는다.
+function monthKey(){ var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth()+1); }
+
+var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz','scCheck'];
+function show(s){
+  SCREENS.forEach(function(x){ $(x).hidden = (x!==s); });
+  $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate' || s==='scQuiz');
+  // 진행 방법은 모임을 진행하는 두 화면에서만 띄운다
+  $('btnGuide').hidden = !(s==='scCal' || s==='scMembers');
+  $('btnCheck').hidden = !(s==='scCal');
+  // 관리자가 아니면 설정 버튼 자체가 없다 (회원에게는 이 화면이 존재하지 않는다)
+  $('btnSetup').hidden = (s==='scGate') || !state.admin;
+  window.scrollTo(0,0);
+}
+
+/* ───────── 날짜 ───────── */
+function ymd(y,m,d){ return y+'-'+pad2(m)+'-'+pad2(d); }
+var DOW = ['일','월','화','수','목','금','토'];
+function dateLabel(key){
+  var p = key.split('-');
+  var d = new Date(+p[0], +p[1]-1, +p[2]);
+  return (+p[1]) + '월 ' + (+p[2]) + '일 (' + DOW[d.getDay()] + ')';
+}
+
+/* ───────── 데이터: Apps Script 중계기 ─────────
+   시트를 직접 읽지 않고 모임장 권한으로 도는 스크립트에 물어본다.
+   덕분에 시트를 공개하지 않아도 되고, 비밀번호 검사도 서버에서 한다. */
+// 모임장이 공용 문장을 적는 시트 (관리자에게만 버튼이 보인다)
+var SHARED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Q2r0wqk32PQZ4U93RollVu8nhvid1FSNVqSn5shhYiQ/edit';
+var API = '';   // 미리보기에서는 통신하지 않는다
+
+/* ══════════ 미리보기 전용 가짜 중계기 ══════════
+   실제 구글 시트에 연결하지 않는다. 적은 인증은 이 브라우저에만 남는다.
+   [처음으로 되돌리기] 를 누르면 전부 지워진다. */
+var MOCK_NAMES = ['김다인', '모임_공용문장', '박준석', '윤예은', '치치_김연수'];
+var MOCK_KEY = 'em.mock.rows';
+
+function mockToday(){
+  var d = new Date();
+  return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+}
+function mockYm(){ return mockToday().slice(0,7); }
+
+/** 이번 달 지난 평일에 사람마다 적당히 인증해 둔 척한다 */
+function mockSeed(){
+  var saved = LS.get(MOCK_KEY, null);
+  if(saved) return saved;
+  var rows = [];
+  var days = pastWeekdays(mockYm(), mockToday());
+  var what = ['영어 20문장 암기', '러닝 5km', '책 30쪽', '문법 강의 1강', '영어 일기 1편',
+              '회화 섀도잉 15분', '단어 50개'];
+  days.forEach(function(d, i){
+    MOCK_NAMES.forEach(function(n, k){
+      if(n === '모임_공용문장') return;            // 공용은 사람이 아니다
+      if((i + k) % 5 === 0) return;               // 가끔 빼먹은 것처럼
+      rows.push({ d: d, who: n, t: what[(i + k) % what.length] });
+    });
+  });
+  LS.set(MOCK_KEY, rows);
+  return rows;
+}
+
+var MOCK_DECKS = (function(){
+  var t = mockToday(), ym = t.slice(0,7);
+  function day(n){ return ym + '-' + pad2(n); }
+  return {
+    '김다인': [
+      { d: day(10), k: '이거 다 먹어도 돼?',        e: 'Can I finish this?' },
+      { d: day(10), k: '나 지금 나가는 중이야',      e: 'I am heading out now.' },
+      { d: day(12), k: '그건 생각 못 했네',          e: 'I did not think of that.' }
+    ],
+    '치치_김연수': [
+      { d: day(10), k: '오히려 이게 나한테는 더 좋아', e: 'Actually, this is better for me.' },
+      { d: day(12), k: '조금만 기다려 줄래?',        e: 'Can you give me a second?' }
+    ],
+    '모임_공용문장': [
+      { d: day(10), k: '오늘 뭐 먹고 싶은데?',       e: 'What do you want to eat today?' },
+      { d: day(10), k: '어디다 둔 거야?',            e: 'Where did you put it?' },
+      { d: day(12), k: '나 늦을 것 같아',            e: 'I think I am going to be late.' }
+    ]
+  };
+})();
+
+function callApi(body){
+  body = body || {};
+  var act = String(body.action || 'data');
+  return new Promise(function(resolve){
+    setTimeout(function(){                        // 실제처럼 살짝 뜸을 들인다
+      if(act === 'board'){
+        resolve({ ok:true, ym: mockYm(), names: MOCK_NAMES.filter(function(n){
+                    return !isShared(n); }),
+                  rows: mockSeed(), today: mockToday(), fine: 500, deposit: 10000 });
+      } else if(act === 'checkin'){
+        var rows = mockSeed(), hit = false;
+        rows.forEach(function(r){
+          if(r.d === mockToday() && r.who === body.who){ r.t = body.text; hit = true; }
+        });
+        if(!hit) rows.push({ d: mockToday(), who: body.who, t: body.text });
+        LS.set(MOCK_KEY, rows);
+        resolve({ ok:true, d: mockToday(), updated: hit });
+      } else if(act === 'setpw'){
+        resolve({ ok:true, admin:true });
+      } else {
+        resolve({ ok:true, locked:false, admin:true, decks: MOCK_DECKS });
+      }
+    }, 180);
+  });
+}
+
+
+/** 성공하면 true, 비밀번호가 필요하면 false */
+function loadAll(pw, fresh){
+  $('syncInfo').textContent = '불러오는 중…';
+  var adminTry = LS.get(K_ADMIN,'') || (pw || '');   // 잠금 화면에 관리자 비번을 넣어도 통과
+  return callApi({ action:'data', pw: pw || '', admin: adminTry, fresh: fresh ? 1 : 0 }).then(function(j){
+    if(!j.ok && j.locked){ state.locked = true; state.loaded = true; LS.set(K_OKM, ''); return false; }
+    if(!j.ok) throw new Error(j.error || '데이터를 불러오지 못했습니다.');
+
+    state.locked = !!j.locked;
+    state.loaded = true;
+    if(j.admin) LS.set(K_ADMIN, adminTry);   // 관리자로 통과한 기기는 기억한다
+    LS.set(K_OKM, monthKey());          // 이 달은 통과한 걸로 기록
+    var names = Object.keys(j.decks || {}), decks = {};
+    names.forEach(function(n){
+      decks[n] = (j.decks[n] || []).map(function(r){
+        return { id: n + '::' + r.k, owner: n, date: r.d, ko: r.k, en: r.e || '' };
+      }).filter(function(c){ return c.ko && c.date; });
+    });
+    state.members = names; state.decks = decks;
+    rebuildIndex();
+    state.syncedAt = Date.now();
+    LS.set(K_CACHE, { members:names, decks:decks, at:state.syncedAt });
+    return true;
+  });
+}
+
+/* ── 한 회원의 문장을 표 파일로 내려받기 ──
+   엑셀·구글 스프레드시트에서 바로 열린다. */
+/* 한 회원의 문장을 표 파일(CSV)로 내려받는다. 엑셀·구글 스프레드시트에서 바로 열린다. */
+var CSV_LF = String.fromCharCode(10);
+var CSV_CR = String.fromCharCode(13);
+var CSV_BOM = String.fromCharCode(65279);   // 이게 있어야 엑셀에서 한글이 안 깨진다
+
+function csvCell(v){
+  v = String(v == null ? "" : v);
+  var needs = v.indexOf(String.fromCharCode(34)) !== -1 || v.indexOf(",") !== -1 ||
+              v.indexOf(CSV_LF) !== -1 || v.indexOf(CSV_CR) !== -1;
+  if(!needs) return v;
+  var q = String.fromCharCode(34);
+  return q + v.split(q).join(q + q) + q;
+}
+
+/** 여러 명을 한꺼번에 받으면 이름 열이 앞에 붙는다 */
+function downloadMember(names){
+  if(typeof names === "string") names = [names];
+  names = (names || []).filter(function(n){ return (state.decks[n] || []).length; });
+  if(!names.length){ alert("내려받을 문장이 없습니다."); return; }
+
+  var many = names.length > 1;
+  var rows = [];
+  names.forEach(function(n){
+    (state.decks[n] || []).forEach(function(c){ rows.push({ who:n, c:c }); });
+  });
+  rows.sort(function(a,b){
+    if(a.c.date !== b.c.date) return a.c.date < b.c.date ? -1 : 1;
+    return a.who < b.who ? -1 : a.who > b.who ? 1 : 0;
+  });
+
+  var lines = [many ? "이름,스터디 일자,한글,영어" : "스터디 일자,한글,영어"];
+  rows.forEach(function(r){
+    var cols = [csvCell(r.c.date), csvCell(r.c.ko), csvCell(r.c.en)];
+    if(many) cols.unshift(csvCell(r.who));
+    lines.push(cols.join(","));
+  });
+
+  var base = many ? (names[0] + " 외 " + (names.length - 1) + "명") : names[0];
+  var text = CSV_BOM + lines.join(CSV_CR + CSV_LF);
+  var url = URL.createObjectURL(new Blob([text], { type:"text/csv;charset=utf-8" }));
+  var a = document.createElement("a");
+  a.href = url; a.download = base + "_문장.csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+
+/* ═════════ 인증 ═════════
+   평일에 한 줄씩 적는다. 안 적으면 보증금에서 깎이고 그 돈은 공금이 된다. */
+
+/** 그 달의 평일 중 이미 지난 날들. 오늘은 아직 기회가 있으므로 세지 않는다. */
+function pastWeekdays(ym, today){
+  var y = +ym.slice(0,4), m = +ym.slice(5,7), out = [];
+  var d = new Date(y, m-1, 1);
+  while(d.getMonth() === m-1){
+    var dow = d.getDay();
+    var k = y + '-' + pad2(m) + '-' + pad2(d.getDate());
+    if(dow !== 0 && dow !== 6 && k < today) out.push(k);
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+function won(n){ return n.toLocaleString('ko-KR') + '원'; }
+
+function loadBoard(){
+  return callApi({ action:'board', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
+                   ym: state.boardYm || '' }).then(function(j){
+    if(!j.ok) throw new Error(j.locked
+      ? '비밀번호가 바뀌었습니다. 새로고침 후 다시 들어와 주세요.'
+      : (j.error || '인증 기록을 불러오지 못했습니다.'));
+    state.board = j;
+    return j;
+  });
+}
+
+function openCheck(){
+  show('scCheck');
+  $('ckMsg').innerHTML = '';
+  $('ckList').innerHTML = '<p class="note">불러오는 중…</p>';
+  loadBoard().then(function(j){
+    if(!state.me || (j.names || []).indexOf(state.me) === -1) openWho();
+    renderCheck();
+  }, function(e){
+    $('ckList').innerHTML = '';
+    var box = el('div','card');
+    box.style.color = 'var(--danger)';
+    box.textContent = e.message;
+    $('ckMsg').appendChild(box);
+  });
+}
+
+function openWho(){
+  var names = (state.board && state.board.names) || [];
+  var box = $('whoList'); box.innerHTML = '';
+  names.forEach(function(n){
+    var b = el('button','mcard' + (n === state.me ? ' shared' : ''), n);
+    b.onclick = function(){
+      state.me = n; LS.set(K_ME, n);
+      $('mdWho').hidden = true; renderCheck();
+    };
+    box.appendChild(b);
+  });
+  if(!names.length) box.innerHTML = '<p class="note">회원 명단을 불러오지 못했습니다.</p>';
+  $('mdWho').hidden = false;
+}
+
+function renderCheck(){
+  var b = state.board;
+  if(!b) return;
+
+  var byDay = {}, mineToday = '';
+  (b.rows || []).forEach(function(r){
+    if(!byDay[r.d]) byDay[r.d] = {};
+    byDay[r.d][r.who] = r.t;
+    if(r.d === b.today && r.who === state.me) mineToday = r.t;
+  });
+
+  $('ckHead').textContent = state.me ? (state.me + ' 님의 오늘 인증') : '오늘 인증';
+  $('inpCheck').value = mineToday;
+  $('btnDoCheck').textContent = mineToday ? '수정' : '인증';
+  $('ckHint').textContent = mineToday
+    ? '오늘 인증을 마쳤습니다. 내용을 고치고 다시 누르면 바뀝니다.'
+    : '평일에 인증하지 않으면 보증금에서 ' + won(b.fine) + '이 차감됩니다.';
+
+  var names = b.names || [];
+  var done = byDay[b.today] || {};
+  var cnt = 0;
+  names.forEach(function(n){ if(done[n]) cnt++; });
+  $('ckDayHead').textContent = dateLabel(b.today) + '  ' + cnt + ' / ' + names.length;
+
+  var list = $('ckList'); list.innerHTML = '';
+  names.forEach(function(n){
+    var ok = !!done[n];
+    var row = el('div','ckrow' + (ok ? '' : ' off') + (n === state.me ? ' me' : ''));
+    row.appendChild(el('span','mark', ok ? '✅' : '⬜'));
+    row.appendChild(el('span','nm', n));
+    row.appendChild(el('span','tx', ok ? done[n] : ''));
+    list.appendChild(row);
+  });
+  if(!names.length) list.innerHTML = '<p class="note">회원이 없습니다.</p>';
+
+  var days = pastWeekdays(b.ym, b.today);
+  var pot = 0, money = $('ckMoney'); money.innerHTML = '';
+  names.forEach(function(n){
+    var miss = 0;
+    days.forEach(function(d){ if(!(byDay[d] && byDay[d][n])) miss++; });
+    var cut = Math.min(miss * b.fine, b.deposit);
+    pot += cut;
+    var row = el('div','mnrow');
+    row.appendChild(el('b', null, n));
+    var right = el('span');
+    right.appendChild(el('span','won', won(b.deposit - cut)));
+    if(miss) right.appendChild(el('span','cut', '미인증 ' + miss + '일'));
+    row.appendChild(right);
+    money.appendChild(row);
+  });
+  var potRow = el('div','mnrow pot');
+  potRow.appendChild(el('b', null, '공금 (회식비)'));
+  potRow.appendChild(el('span','won', won(pot)));
+  money.appendChild(potRow);
+
+  $('ckMoneyHead').textContent = (+b.ym.slice(5,7)) + '월 보증금';
+  $('ckMoneyHint').textContent = days.length
+    ? '이번 달 지난 평일 ' + days.length + '일 기준입니다. 오늘은 아직 세지 않습니다.'
+    : '이번 달은 아직 지난 평일이 없습니다.';
+}
+
+function submitCheck(){
+  if(!state.me){ openWho(); return; }
+  var t = $('inpCheck').value.trim();
+  if(!t){ $('inpCheck').focus(); return; }
+  var btn = $('btnDoCheck');
+  btn.disabled = true; btn.textContent = '보내는 중…';
+  callApi({ action:'checkin', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
+            who: state.me, text: t }).then(function(j){
+    if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
+    return loadBoard();
+  }).then(function(){
+    btn.disabled = false; renderCheck();
+  }, function(e){
+    btn.disabled = false; btn.textContent = '인증';
+    alert(e.message);
+  });
+}
+
+function rebuildIndex(){
+  var byDate = {};
+  state.members.forEach(function(n){
+    (state.decks[n]||[]).forEach(function(c){
+      if(!byDate[c.date]) byDate[c.date] = {};
+      if(!byDate[c.date][c.owner]) byDate[c.date][c.owner] = [];
+      byDate[c.date][c.owner].push(c);
+    });
+  });
+  state.byDate = byDate;
+}
+function loadCache(){
+  var c = LS.get(K_CACHE, null);
+  if(c && c.members && c.decks){
+    state.members = c.members; state.decks = c.decks; state.syncedAt = c.at || 0;
+    rebuildIndex(); return true;
+  }
+  return false;
+}
+
+/* ───────── 비밀번호 ───────── */
+function showGate(msg){
+  $('gateMsg').textContent = msg || '';
+  if(msg !== '확인 중…') $('inpPass').value = '';
+  show('scGate');
+  setTimeout(function(){ try{ $('inpPass').focus(); }catch(e){} }, 60);
+}
+function enterApp(){
+  var lm = latestMonth(); state.calY = lm[0]; state.calM = lm[1];
+  renderCal(); show('scCal');
+}
+
+/* ───────── 달력 ───────── */
+function latestMonth(){
+  var keys = Object.keys(state.byDate).sort();
+  if(keys.length){ var p = keys[keys.length-1].split('-'); return [+p[0], +p[1]-1]; }
+  var n = new Date(); return [n.getFullYear(), n.getMonth()];
+}
+function renderCal(){
+  $('calLabel').textContent = state.calY + '년 ' + (state.calM+1) + '월';
+  var g = $('calGrid'); g.innerHTML = '';
+  DOW.forEach(function(d){ g.appendChild(el('div','dow',d)); });
+
+  var first = new Date(state.calY, state.calM, 1).getDay();
+  var days  = new Date(state.calY, state.calM+1, 0).getDate();
+  var today = ymd(new Date().getFullYear(), new Date().getMonth()+1, new Date().getDate());
+
+  for(var i=0;i<first;i++) g.appendChild(el('button','day blank',''));
+
+  for(var d=1; d<=days; d++){
+    var key = ymd(state.calY, state.calM+1, d);
+    var who = state.byDate[key];
+    var n = who ? Object.keys(who).length : 0;
+    var dow = new Date(state.calY, state.calM, d).getDay();
+    var b = el('button','day ' + (n ? 'has' : 'none') + (dow===0?' sun':dow===6?' sat':''));
+    b.appendChild(el('b', null, String(d)));
+    if(key === today) b.classList.add('today');
+    if(n){
+      (function(k){ b.onclick = function(){
+        state.selDate = k;
+        state.selNames = [];          // 날짜를 새로 누르면 지난 선택은 지운다
+        renderMembers(); show('scMembers');
+      }; })(key);
+    } else { b.disabled = true; }
+    g.appendChild(b);
+  }
+  $('btnSheet').hidden = !state.admin;        // 관리자에게만
+  $('syncInfo').textContent = state.syncedAt
+    ? new Date(state.syncedAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) + ' 기준'
+    : '';
+}
+
+/* ───────── 이름 카드 (여러 명 선택 가능) ───────── */
+// 모임 공용 문장 파일인지 (회원 개인 문장과 구분)
+function isShared(n){
+  return /공용|공통/.test(n) || String(n).indexOf('모임') === 0;
+}
+function dayNames(){
+  var who = state.byDate[state.selDate] || {};
+  var names = state.members.filter(function(n){ return who[n] && who[n].length; });
+  // 모임 공용 문장은 늘 맨 앞에. 나머지는 시트에서 읽은 순서 그대로 둔다.
+  return names.filter(isShared).concat(names.filter(function(n){ return !isShared(n); }));
+}
+function selectedCards(){
+  var who = state.byDate[state.selDate] || {}, out = [];
+  state.selNames.forEach(function(n){ out = out.concat(who[n] || []); });
+  return out;
+}
+function renderMembers(){
+  var key = state.selDate, who = state.byDate[key] || {};
+  $('mHead').textContent = dateLabel(key);
+
+  var names = dayNames();
+  // 이 날에 없는 사람은 선택 해제. 한 명뿐이면 자동 선택.
+  state.selNames = state.selNames.filter(function(n){ return names.indexOf(n) !== -1; });
+  if(!state.selNames.length && names.length === 1) state.selNames = [names[0]];
+
+  var box = $('mCards'); box.innerHTML = '';
+  names.forEach(function(n){
+    var on = state.selNames.indexOf(n) !== -1;
+    // 모임장이 올리는 공용 문장은 회원 카드와 구분해 연한 색으로
+    var b = el('button','mcard' + (isShared(n) ? ' shared' : ''));
+    b.setAttribute('aria-pressed', String(on));
+    b.appendChild(el('i','tick', on ? '✓' : ''));
+    b.appendChild(document.createTextNode(n));
+    b.appendChild(el('span', null, who[n].length + '문장'));
+    b.onclick = function(){
+      var i = state.selNames.indexOf(n);
+      if(i === -1) state.selNames.push(n); else state.selNames.splice(i,1);
+      renderMembers();
+    };
+    box.appendChild(b);
+  });
+
+  $('btnAll').textContent =
+    (names.length && state.selNames.length === names.length) ? '전체 해제' : '전체 선택';
+
+  var dlBtn = $('btnDlSel');
+  dlBtn.disabled = !state.selNames.length;
+  dlBtn.textContent = state.selNames.length > 1
+    ? '예문 다운받기 (' + state.selNames.length + '명)'
+    : '예문 다운받기';
+
+  var cbox = $('countChips'); cbox.innerHTML = '';
+  [10,20,50,0].forEach(function(v){
+    var b = el('button','chip', v===0 ? '전체' : v+'개');
+    b.setAttribute('aria-pressed', String(state.limit===v));
+    b.onclick = function(){ state.limit = v; renderMembers(); };
+    cbox.appendChild(b);
+  });
+
+  var total = selectedCards().length;
+  var willUse = (state.limit && total > state.limit) ? state.limit : total;
+  $('btnStart').disabled = !total;
+  $('btnStart').textContent = total
+    ? '시작 (' + willUse + '문장' + (state.selNames.length > 1 ? ' · ' + state.selNames.length + '명 믹스' : '') + ')'
+    : '사람을 선택하세요';
+}
+
+/* ───────── 퀴즈 ───────── */
+function startQuiz(){
+  var cards = selectedCards().slice();
+  if(!cards.length) return;
+  var many = state.selNames.length > 1;
+  state.selMember = many ? (state.selNames.length + '명 믹스') : state.selNames[0];
+  // 여러 명을 고르면 무조건 섞는다
+  if(many || $('chkShuffle').checked){
+    for(var i=cards.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=cards[i]; cards[i]=cards[j]; cards[j]=t; }
+  }
+  if(state.limit && cards.length > state.limit) cards = cards.slice(0, state.limit);
+  state.session = { cards:cards, i:0 };
+  show('scQuiz'); renderCard();
+}
+function renderCard(){
+  var s = state.session, c = s.cards[s.i];
+  $('qCount').textContent = (s.i+1) + ' / ' + s.cards.length;
+  $('qBar').style.width = ((s.i+1) / s.cards.length * 100) + '%';
+  $('qOwner').textContent = ($('chkBlind').checked ? '' : c.owner + ' · ') + dateLabel(state.selDate);
+  $('qKo').textContent = c.ko;
+  $('qEn').textContent = c.en || '(영어가 비어 있습니다)';
+  setReveal(false);
+  $('btnPrev').disabled = (s.i === 0);
+  $('btnNext').disabled = (s.i >= s.cards.length - 1);
+}
+function setReveal(on){
+  $('qEn').hidden = !on;
+  $('btnReveal').textContent = on ? '정답 가리기' : '정답 확인';
+}
+function step(d){
+  var s = state.session, n = s.i + d;
+  if(!s || n < 0 || n >= s.cards.length) return;
+  s.i = n; renderCard();
+}
+
+/* ───────── 이벤트 ───────── */
+$('btnBack').onclick = function(){ renderCal(); show('scCal'); };
+$('btnLogo').onclick = function(){
+  if(!state.members.length || !$('scGate').hidden) return;
+  renderCal(); show('scCal');
+};
+function renderAdmin(){
+  var pw = LS.get(K_PASS, '');
+  var label = !state.loaded ? '확인 중…'
+            : state.locked ? (pw || '(이 기기엔 저장 안 됨)')
+            : '잠금 없음';
+  $('pwNow').textContent = label;
+  $('pwNow').className = 'pwnow' + (state.loaded && state.locked && pw ? '' : ' off');
+  $('inpPw').value = state.locked ? pw : '';
+  $('inpAdmin').value = '';
+  $('adminWrap').hidden = !!LS.get(K_ADMIN, '');   // 이미 확인했으면 안 묻는다
+  $('btnUnlock').hidden = !state.locked;
+  $('pwMsg').textContent = '';
+}
+$('btnSetup').onclick = function(){ renderAdmin(); show('scSetup'); };
+$('btnCancelSetup').onclick = function(){ renderCal(); show('scCal'); };
+
+function savePw(np){
+  var admin = LS.get(K_ADMIN, '') || $('inpAdmin').value.trim();
+  if(!admin){ $('pwMsg').textContent = '관리자 비밀번호를 입력하세요.'; return; }
+
+  $('btnSavePw').disabled = true;
+  $('pwMsg').className = 'hint';
+  $('pwMsg').textContent = '저장 중…';
+
+  callApi({ action:'setpw', admin: admin, newpw: np }).then(function(j){
+    if(!j.ok){
+      $('pwMsg').textContent = (j.error === 'BAD_ADMIN')
+        ? '관리자 비밀번호가 맞지 않습니다.' : '저장하지 못했습니다: ' + (j.error || '');
+      return;
+    }
+    LS.set(K_ADMIN, admin);            // 확인됐으니 이 기기에선 다시 안 묻는다
+    LS.set(K_PASS, np);                // 바꾼 기기는 새 번호를 그대로 기억한다
+    LS.set(K_OKM, np ? monthKey() : '');
+    state.locked = !!j.locked;
+    renderAdmin();
+    $('pwMsg').className = 'hint saved';
+    $('pwMsg').textContent = np ? '저장됐습니다. 이제 비밀번호는 ' + np + ' 입니다.'
+                                : '잠금을 해제했습니다. 누구나 들어올 수 있습니다.';
+  }).catch(function(e){
+    $('pwMsg').textContent = e.message;
+  }).then(function(){ $('btnSavePw').disabled = false; });
+}
+$('btnSavePw').onclick = function(){
+  var np = $('inpPw').value.trim();
+  if(!/^\d{4}$/.test(np)){ $('pwMsg').className='hint'; $('pwMsg').textContent = '숫자 네 자리로 입력하세요.'; return; }
+  savePw(np);
+};
+$('btnUnlock').onclick = function(){
+  if(!confirm('잠금을 해제하면 비밀번호 없이 누구나 들어올 수 있습니다. 계속할까요?')) return;
+  savePw('');
+};
+$('inpPw').onkeydown = function(e){ if(e.key === 'Enter') $('btnSavePw').onclick(); };
+$('inpAdmin').onkeydown = function(e){ if(e.key === 'Enter') $('btnSavePw').onclick(); };
+
+$('btnReload').onclick = function(){
+  $('btnReload').disabled = true; $('calMsg').innerHTML='';
+  loadAll(LS.get(K_PASS,''), true).then(function(ok){   // 새로고침은 캐시를 건너뛴다
+    if(!ok){ showGate(); return; }
+    renderCal();
+    $('calMsg').innerHTML = '<div class="ok-msg">시트를 새로 불러왔습니다.</div>';
+    setTimeout(function(){ $('calMsg').innerHTML=''; }, 2500);
+  }).catch(function(e){
+    $('calMsg').innerHTML = '<div class="err">'+e.message+'</div>';
+  }).then(function(){ $('btnReload').disabled=false; });
+};
+$('btnPrevM').onclick = function(){ state.calM--; if(state.calM<0){state.calM=11;state.calY--;} renderCal(); };
+$('btnNextM').onclick = function(){ state.calM++; if(state.calM>11){state.calM=0;state.calY++;} renderCal(); };
+$('btnGate').onclick = function(){
+  var v = ($('inpPass').value || '').trim();
+  if(!/^\d{4}$/.test(v)){ $('gateMsg').textContent = '네 자리 숫자를 입력하세요.'; return; }
+  $('btnGate').disabled = true; $('gateMsg').textContent = '확인 중…';
+  loadAll(v).then(function(ok){
+    if(ok){ LS.set(K_PASS, v); enterApp(); return; }
+    $('gateMsg').textContent = '비밀번호가 맞지 않습니다.';
+    $('inpPass').value = ''; $('inpPass').focus();
+  }).catch(function(e){
+    $('gateMsg').textContent = e.message;
+  }).then(function(){ $('btnGate').disabled = false; });
+};
+$('inpPass').onkeydown = function(e){ if(e.key === 'Enter') $('btnGate').onclick(); };
+$('btnSheet').onclick = function(){ window.open(SHARED_SHEET_URL, '_blank', 'noopener'); };
+$('btnDlSel').onclick = function(){ downloadMember(state.selNames.slice()); };
+$('btnAll').onclick = function(){
+  var names = dayNames();
+  state.selNames = (state.selNames.length === names.length) ? [] : names.slice();
+  renderMembers();
+};
+$('btnStart').onclick = startQuiz;
+$('btnReveal').onclick = function(){ setReveal($('qEn').hidden); };
+$('btnPrev').onclick = function(){ step(-1); };
+$('btnNext').onclick = function(){ step(1); };
+$('btnQuit').onclick = function(){ renderMembers(); show('scMembers'); };
+
+$('btnMockReset').onclick = function(){
+  ['em.mock.rows','em.me','em.cache','em.okmonth'].forEach(function(k){
+    try{ localStorage.removeItem(k); }catch(e){}
+  });
+  location.reload();
+};
+$('btnCheck').onclick    = function(){ openCheck(); };
+$('btnWho').onclick      = function(){ openWho(); };
+$('btnWhoClose').onclick = function(){ $('mdWho').hidden = true; };
+$('mdWho').onclick       = function(ev){ if(ev.target === this) this.hidden = true; };
+$('btnDoCheck').onclick  = function(){ submitCheck(); };
+$('btnCkReload').onclick = function(){ openCheck(); };
+$('inpCheck').onkeydown  = function(e){ if(e.key === 'Enter') submitCheck(); };
+
+$('btnGuide').onclick      = function(){ $('mdGuide').hidden = false; };
+$('btnGuideClose').onclick = function(){ $('mdGuide').hidden = true; };
+// 바깥 어두운 곳을 눌러도 닫힌다
+$('mdGuide').onclick = function(ev){ if(ev.target === this) this.hidden = true; };
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && !$('mdWho').hidden){ $('mdWho').hidden = true; return; }
+  if(e.key === 'Escape' && !$('mdGuide').hidden){ $('mdGuide').hidden = true; return; }
+  if($('scQuiz').hidden) return;
+  if(e.key===' '||e.key==='Enter'){ e.preventDefault(); setReveal($('qEn').hidden); }
+  else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
+  else if(e.key==='ArrowRight'){ e.preventDefault(); step(1); }
+});
+
+/* ───────── 시작 ───────── */
+(function init(){
+  // 관리자 진입: 주소에 ?admin 이 붙어 있을 때만.
+  // 기기에 기억해두면 회원용 주소로 들어가도 설정이 보여 헷갈린다.
+  var q = new URLSearchParams(location.search);
+  state.admin = q.has('admin');
+  // ?admin 이 붙어 있으면 관리자로 본다. 그 기기는 회원 비번과 무관하게 통과한다.
+  if(state.admin) LS.set(K_ADMIN, q.get('admin') || ADMIN_HINT);
+
+  state.me = LS.get(K_ME, '');
+  var saved = LS.get(K_PASS, '');
+  var cached = loadCache();
+  var isAdminDevice = !!LS.get(K_ADMIN, '');        // 관리자는 비번을 묻지 않는다
+  var sameMonth = isAdminDevice || (cached && LS.get(K_OKM, '') === monthKey());
+
+  if(sameMonth && cached){
+    enterApp();                                // 이미 통과한 기기면 기다리지 않는다
+  } else {
+    showGate('확인 중…');                      // 달이 바뀌었으면 다시 확인한다
+    $('inpPass').value = saved;
+  }
+
+  loadAll(saved).then(function(ok){
+    if(!ok){ showGate(saved ? '비밀번호가 바뀌었습니다. 다시 입력해 주세요.' : ''); return; }
+    if(!sameMonth || !cached) enterApp();
+    else if(!$('scCal').hidden) renderCal();   // 뒤에서 받아온 최신 내용 반영
+    if(!$('scSetup').hidden) renderAdmin();
+  }).catch(function(e){
+    if(!sameMonth || !cached) showGate(e.message); // 이미 들어와 있으면 통신 실패는 무시
+  });
+})();
+
+})();
+</script>
+</body>
+</html>
