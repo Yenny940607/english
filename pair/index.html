@@ -188,6 +188,10 @@
   .goalrow select{font-family:inherit;font-size:13.5px;padding:6px 9px;border-radius:9px;
     border:1px solid var(--line-2);background:var(--surface);color:var(--text)}
   .mnrow > span:first-child{display:flex;flex-direction:column;gap:2px}
+  .joinrow{display:flex;gap:10px;align-items:center;margin-top:12px}
+  .joinrow > span{flex:none;min-width:66px;font-weight:600;font-size:13.5px;letter-spacing:-.02em}
+  .joinrow select{flex:1;font-family:inherit;font-size:14px;padding:10px 12px;border-radius:10px;
+    border:1px solid var(--line-2);background:var(--surface);color:var(--text)}
   .whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 
   /* 진행 방법 팝업 */
@@ -323,6 +327,45 @@
       </table>
       <div class="hint">입력한 일자를 기준으로 달력에 표시되며, 해당 날짜에 문장을 올린 회원만
         이름 카드가 나타납니다. 문장은 파일의 첫 번째 탭에만 입력합니다.</div>
+    </div>
+  </section>
+
+  <!-- ── 첫 입장 설정 ── -->
+  <section id="scJoin" hidden>
+    <div class="card">
+      <h2>처음 오셨네요</h2>
+      <p class="note">본인 이름을 고르고, 모임장에게 말씀하신 대로
+        주간 목표와 보증금을 정해주세요.
+        <b>한 번 정하면 이번 2주 회차 동안은 바꿀 수 없습니다.</b></p>
+
+      <div class="whogrid" id="joinNames" style="margin-top:16px"></div>
+
+      <div class="joinrow">
+        <span>주간 목표</span>
+        <select id="joinGoal">
+          <option value="1">주 1회</option>
+          <option value="2">주 2회</option>
+          <option value="3" selected>주 3회</option>
+          <option value="4">주 4회</option>
+          <option value="5">주 5회</option>
+          <option value="6">주 6회</option>
+          <option value="7">매일</option>
+        </select>
+      </div>
+      <div class="joinrow">
+        <span>보증금</span>
+        <select id="joinDeposit">
+          <option value="10000" selected>1만원</option>
+          <option value="20000">2만원</option>
+          <option value="30000">3만원</option>
+          <option value="50000">5만원</option>
+        </select>
+      </div>
+
+      <div class="hint" id="joinNote"></div>
+      <button class="btn-primary" id="btnJoin"
+              style="width:100%;padding:14px;font-size:15px;margin-top:16px">시작하기</button>
+      <div class="hint" id="joinMsg"></div>
     </div>
   </section>
 
@@ -516,7 +559,7 @@ var state = {
   locked:false,                             // 서버에 비밀번호가 걸려 있는지
   loaded:false,                             // 서버 응답을 받았는지
   admin:false,                              // 이 기기가 관리자 화면을 볼 수 있는지
-  me:'', board:null, cycle:''               // 인증: 나는 누구인지, 보고 있는 회차
+  me:'', board:null, cycle:'', pick:''       // 인증: 나는 누구인지, 보고 있는 회차
 };
 
 function $(id){ return document.getElementById(id); }
@@ -525,15 +568,15 @@ function pad2(n){ return (n<10?'0':'')+n; }
 // 입장 코드는 2주마다 바뀐다. 같은 회차 안에서는 다시 묻지 않는다.
 function cycleKey(){ return cycleStart(todayStr()); }
 
-var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz','scCheck'];
+var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz','scCheck','scJoin'];
 function show(s){
   SCREENS.forEach(function(x){ $(x).hidden = (x!==s); });
-  $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate' || s==='scQuiz');
+  $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate' || s==='scQuiz' || s==='scJoin');
   // 진행 방법은 모임을 진행하는 두 화면에서만 띄운다
   $('btnGuide').hidden = !(s==='scCal' || s==='scMembers');
   $('btnCheck').hidden = !(s==='scCal');
   // 관리자가 아니면 설정 버튼 자체가 없다 (회원에게는 이 화면이 존재하지 않는다)
-  $('btnSetup').hidden = (s==='scGate') || !state.admin;
+  $('btnSetup').hidden = (s==='scGate') || (s==='scJoin') || !state.admin;
   window.scrollTo(0,0);
 }
 
@@ -969,10 +1012,63 @@ function showGate(msg){
   show('scGate');
   setTimeout(function(){ try{ $('inpPass').focus(); }catch(e){} }, 60);
 }
-/** 코드를 통과한 뒤. 아직 이름을 안 정했으면 인증 화면으로 보낸다. */
+/** 코드를 통과한 뒤. 처음이면 이름·목표·보증금부터 받는다. */
 function afterGate(){
-  if(state.me) enterApp(); else openCheck();
+  if(state.me) enterApp(); else openJoin();
 }
+
+/* ───────── 첫 입장 설정 ───────── */
+
+function openJoin(){
+  state.pick = '';
+  show('scJoin');
+  $('joinNames').innerHTML = '<p class="note">회원 명단을 불러오는 중…</p>';
+  $('joinMsg').textContent = '';
+  loadBoard().then(function(){
+    renderJoin();
+  }, function(e){
+    $('joinNames').innerHTML = '';
+    $('joinMsg').textContent = e.message;
+  });
+}
+
+function renderJoin(){
+  var names = (state.board && state.board.names) || [];
+  var box = $('joinNames'); box.innerHTML = '';
+  names.forEach(function(n){
+    var b = el('button','mcard' + (n === state.pick ? ' shared' : ''), n);
+    b.setAttribute('aria-pressed', String(n === state.pick));
+    b.onclick = function(){ state.pick = n; renderJoin(); };
+    box.appendChild(b);
+  });
+  if(!names.length) box.innerHTML = '<p class="note">회원이 없습니다. 모임장에게 문의해 주세요.</p>';
+
+  var goal = +$('joinGoal').value, dep = +$('joinDeposit').value;
+  var per = Math.round(dep / (goal * 2) / 10) * 10;
+  $('joinNote').textContent = '2주 ' + (goal * 2) + '회가 목표입니다. ' +
+    '한 번 빠질 때마다 ' + won(per) + '이 차감됩니다.';
+  $('btnJoin').disabled = !state.pick;
+}
+
+function submitJoin(){
+  if(!state.pick) return;
+  var btn = $('btnJoin');
+  btn.disabled = true; btn.textContent = '저장 중…';
+  $('joinMsg').textContent = '';
+  callApi({ action:'target', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
+            who: state.pick, goal: +$('joinGoal').value,
+            deposit: +$('joinDeposit').value }).then(function(j){
+    if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
+    state.me = state.pick; LS.set(K_ME, state.me);
+    btn.textContent = '시작하기';
+    openCheck();
+  }, function(e){
+    btn.disabled = false; btn.textContent = '시작하기';
+    $('joinMsg').textContent = e.message;
+  });
+}
+
+
 
 function enterApp(){
   var lm = latestMonth(); state.calY = lm[0]; state.calM = lm[1];
@@ -1220,6 +1316,9 @@ $('btnPrev').onclick = function(){ step(-1); };
 $('btnNext').onclick = function(){ step(1); };
 $('btnQuit').onclick = function(){ renderMembers(); show('scMembers'); };
 
+$('btnJoin').onclick       = function(){ submitJoin(); };
+$('joinGoal').onchange     = function(){ renderJoin(); };
+$('joinDeposit').onchange  = function(){ renderJoin(); };
 $('btnCheck').onclick    = function(){ openCheck(); };
 $('btnWho').onclick      = function(){ openWho(); };
 $('btnWhoClose').onclick = function(){ $('mdWho').hidden = true; };
