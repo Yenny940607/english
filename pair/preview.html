@@ -184,6 +184,7 @@
     margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px}
   .goalrow > span:first-child{font-weight:600;letter-spacing:-.02em}
   .goalrow{row-gap:8px}
+  .goalrow select:disabled{opacity:.55;cursor:default}
   .goalrow select{font-family:inherit;font-size:13.5px;padding:6px 9px;border-radius:9px;
     border:1px solid var(--line-2);background:var(--surface);color:var(--text)}
   .mnrow > span:first-child{display:flex;flex-direction:column;gap:2px}
@@ -578,7 +579,8 @@ function mockSettings(){
   var s = LS.get(MOCK_SET, null);
   if(s) return s;
   s = { targets:  { '김다인':3, '박준석':5, '윤예은':2, '치치_김연수':3 },
-        deposits: { '김다인':10000, '박준석':20000, '윤예은':10000, '치치_김연수':10000 } };
+        deposits: { '김다인':10000, '박준석':20000, '윤예은':10000, '치치_김연수':10000 },
+        setAt:    { '김다인':'', '박준석':'', '윤예은':'', '치치_김연수':'' } };
   LS.set(MOCK_SET, s);
   return s;
 }
@@ -631,6 +633,7 @@ function callApi(body){
       if(act === 'board'){
         var from = body.from, to = body.to;
         resolve({ ok:true, names: MOCK_NAMES, targets: set.targets, deposits: set.deposits,
+                  setAt: set.setAt || {}, cycle: cycleStart(mockToday()),
                   today: mockToday(),
                   rows: mockSeed().filter(function(r){ return r.d >= from && r.d <= to; }) });
       } else if(act === 'checkin'){
@@ -642,8 +645,16 @@ function callApi(body){
         LS.set(MOCK_ROWS, rows);
         resolve({ ok:true, d: mockToday(), updated: hit });
       } else if(act === 'target'){
+        var cur = cycleStart(mockToday());
+        if(!set.setAt) set.setAt = {};
+        if(set.setAt[body.who] === cur && String(body.admin || '') === ''){
+          resolve({ ok:false, locked_cycle:true,
+                    error:'이번 회차에는 바꿀 수 없습니다. 모임장에게 말씀해 주세요.' });
+          return;
+        }
         set.targets[body.who]  = body.goal;
         set.deposits[body.who] = body.deposit;
+        set.setAt[body.who]    = cur;
         LS.set(MOCK_SET, set);
         resolve({ ok:true });
       } else if(act === 'setpw'){
@@ -931,6 +942,7 @@ function saveGoal(){
   }, function(e){
     $('goalInfo').textContent = '';
     alert(e.message);
+    renderCheck();                    // 거절당했으면 화면을 원래대로 되돌린다
   });
 }
 
@@ -959,7 +971,14 @@ function renderCheck(){
     if(mine){
       $('selGoal').value = String(mine.goal);
       $('selDeposit').value = String(mine.dep);
-      $('goalNote').textContent = '2주 ' + mine.need + '회 · 한 번 빠지면 ' + won(mine.per);
+      // 이번 회차에 이미 정했으면 본인은 못 바꾼다. 모임장은 언제든 바꿀 수 있다.
+      var fixed = !state.admin && b.setAt && b.setAt[state.me] === (b.cycle || cycleStart(b.today));
+      $('selGoal').disabled = fixed;
+      $('selDeposit').disabled = fixed;
+      $('goalNote').textContent = fixed
+        ? '2주 ' + mine.need + '회 · 한 번 빠지면 ' + won(mine.per) +
+          ' — 이번 회차에는 바꿀 수 없습니다'
+        : '2주 ' + mine.need + '회 · 한 번 빠지면 ' + won(mine.per);
     }
 
     var names = b.names || [];

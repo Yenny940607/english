@@ -184,6 +184,7 @@
     margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px}
   .goalrow > span:first-child{font-weight:600;letter-spacing:-.02em}
   .goalrow{row-gap:8px}
+  .goalrow select:disabled{opacity:.55;cursor:default}
   .goalrow select{font-family:inherit;font-size:13.5px;padding:6px 9px;border-radius:9px;
     border:1px solid var(--line-2);background:var(--surface);color:var(--text)}
   .mnrow > span:first-child{display:flex;flex-direction:column;gap:2px}
@@ -835,6 +836,7 @@ function saveGoal(){
   }, function(e){
     $('goalInfo').textContent = '';
     alert(e.message);
+    renderCheck();                    // 거절당했으면 화면을 원래대로 되돌린다
   });
 }
 
@@ -863,7 +865,14 @@ function renderCheck(){
     if(mine){
       $('selGoal').value = String(mine.goal);
       $('selDeposit').value = String(mine.dep);
-      $('goalNote').textContent = '2주 ' + mine.need + '회 · 한 번 빠지면 ' + won(mine.per);
+      // 이번 회차에 이미 정했으면 본인은 못 바꾼다. 모임장은 언제든 바꿀 수 있다.
+      var fixed = !state.admin && b.setAt && b.setAt[state.me] === (b.cycle || cycleStart(b.today));
+      $('selGoal').disabled = fixed;
+      $('selDeposit').disabled = fixed;
+      $('goalNote').textContent = fixed
+        ? '2주 ' + mine.need + '회 · 한 번 빠지면 ' + won(mine.per) +
+          ' — 이번 회차에는 바꿀 수 없습니다'
+        : '2주 ' + mine.need + '회 · 한 번 빠지면 ' + won(mine.per);
     }
 
     var names = b.names || [];
