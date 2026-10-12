@@ -754,8 +754,9 @@ var GOAL_DEFAULT = 3;              // 목표를 안 정했으면 주 3회
 var DEPOSIT_MIN = 10000;           // 보증금은 최소 1만원
 
 function dateOf(s){ return new Date(+s.slice(0,4), +s.slice(5,7)-1, +s.slice(8,10)); }
-function ymd(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
-function addDays(s, n){ var d = dateOf(s); d.setDate(d.getDate() + n); return ymd(d); }
+// 이름이 겹치지 않게 ymdOf 로 둔다. 위쪽 ymd(y,m,d) 는 달력이 쓰는 것이다.
+function ymdOf(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+function addDays(s, n){ var d = dateOf(s); d.setDate(d.getDate() + n); return ymdOf(d); }
 
 /** 그 날짜가 속한 회차의 시작일(월요일) */
 function cycleStart(s){
@@ -763,7 +764,7 @@ function cycleStart(s){
   return addDays(CYCLE_ANCHOR, Math.floor(diff / 14) * 14);
 }
 
-function todayStr(){ return ymd(new Date()); }
+function todayStr(){ return ymdOf(new Date()); }
 
 /** 회차 안의 두 주. 각각 7일씩. */
 function cycleWeeks(start){
