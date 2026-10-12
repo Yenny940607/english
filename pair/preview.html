@@ -180,6 +180,13 @@
   .mnrow .cut{font-size:12.5px;color:var(--muted);font-weight:500;margin-left:6px}
   .mnrow.pot{border-top:1px solid var(--line-2);margin-top:4px;padding-top:12px}
   .mnrow.pot .won{color:var(--accent)}
+  .goalrow{display:flex;gap:9px;align-items:center;flex-wrap:wrap;
+    margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px}
+  .goalrow > span:first-child{font-weight:600;letter-spacing:-.02em}
+  .goalrow{row-gap:8px}
+  .goalrow select{font-family:inherit;font-size:13.5px;padding:6px 9px;border-radius:9px;
+    border:1px solid var(--line-2);background:var(--surface);color:var(--text)}
+  .mnrow > span:first-child{display:flex;flex-direction:column;gap:2px}
   .whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 
   /* 진행 방법 팝업 */
@@ -340,7 +347,27 @@
         <input id="inpCheck" type="text" maxlength="100" placeholder="오늘 한 일을 한 줄로">
         <button class="btn-primary" id="btnDoCheck">인증</button>
       </div>
-      <div class="hint" id="ckHint">평일에 인증하지 않으면 보증금에서 500원이 차감됩니다.</div>
+      <div class="hint" id="ckHint">주간 목표를 정해주세요.</div>
+      <div class="goalrow" id="goalWrap" hidden>
+        <span>내 목표</span>
+        <select id="selGoal">
+          <option value="1">주 1회</option>
+          <option value="2">주 2회</option>
+          <option value="3">주 3회</option>
+          <option value="4">주 4회</option>
+          <option value="5">주 5회</option>
+          <option value="6">주 6회</option>
+          <option value="7">매일</option>
+        </select>
+        <select id="selDeposit">
+          <option value="10000">보증금 1만원</option>
+          <option value="20000">보증금 2만원</option>
+          <option value="30000">보증금 3만원</option>
+          <option value="50000">보증금 5만원</option>
+        </select>
+        <span class="note" id="goalNote"></span>
+        <span class="note" id="goalInfo"></span>
+      </div>
     </div>
 
     <div class="card" id="ckCardToday">
@@ -497,7 +524,7 @@ var state = {
   locked:false,                             // 서버에 비밀번호가 걸려 있는지
   loaded:false,                             // 서버 응답을 받았는지
   admin:false,                              // 이 기기가 관리자 화면을 볼 수 있는지
-  me:'', board:null, boardYm:''             // 인증: 나는 누구인지, 이번 달 기록
+  me:'', board:null, cycle:''               // 인증: 나는 누구인지, 보고 있는 회차
 };
 
 function $(id){ return document.getElementById(id); }
@@ -535,33 +562,43 @@ var SHARED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Q2r0wqk32PQZ4U93
 var API = '';   // 미리보기에서는 통신하지 않는다
 
 /* ══════════ 미리보기 전용 가짜 중계기 ══════════
-   실제 구글 시트에 연결하지 않는다. 적은 인증은 이 브라우저에만 남는다.
+   실제 구글 시트에 연결하지 않는다. 적은 것은 이 브라우저에만 남는다.
    [처음으로 되돌리기] 를 누르면 전부 지워진다. */
-var MOCK_NAMES = ['김다인', '모임_공용문장', '박준석', '윤예은', '치치_김연수'];
-var MOCK_KEY = 'em.mock.rows';
+var MOCK_NAMES = ['김다인', '박준석', '윤예은', '치치_김연수'];
+var MOCK_ROWS = 'em.mock.rows', MOCK_SET = 'em.mock.set';
 
 function mockToday(){
   var d = new Date();
   return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
 }
-function mockYm(){ return mockToday().slice(0,7); }
 
-/** 이번 달 지난 평일에 사람마다 적당히 인증해 둔 척한다 */
+/** 사람마다 다르게 설정해 둔 척한다 */
+function mockSettings(){
+  var s = LS.get(MOCK_SET, null);
+  if(s) return s;
+  s = { targets:  { '김다인':3, '박준석':5, '윤예은':2, '치치_김연수':3 },
+        deposits: { '김다인':10000, '박준석':20000, '윤예은':10000, '치치_김연수':10000 } };
+  LS.set(MOCK_SET, s);
+  return s;
+}
+
+/** 지난 2주 동안 사람마다 적당히 인증해 둔 척한다 */
 function mockSeed(){
-  var saved = LS.get(MOCK_KEY, null);
+  var saved = LS.get(MOCK_ROWS, null);
   if(saved) return saved;
   var rows = [];
-  var days = pastWeekdays(mockYm(), mockToday());
-  var what = ['영어 20문장 암기', '러닝 5km', '책 30쪽', '문법 강의 1강', '영어 일기 1편',
-              '회화 섀도잉 15분', '단어 50개'];
-  days.forEach(function(d, i){
+  var start = addDays(cycleStart(mockToday()), -14);      // 지난 회차부터 채운다
+  var what = ['영어 20문장 암기', '러닝 5km', '책 30쪽', '문법 강의 1강',
+              '영어 일기 1편', '섀도잉 15분', '단어 50개'];
+  for(var i = 0; i < 28; i++){
+    var d = addDays(start, i);
+    if(d > mockToday()) break;
     MOCK_NAMES.forEach(function(n, k){
-      if(n === '모임_공용문장') return;            // 공용은 사람이 아니다
-      if((i + k) % 5 === 0) return;               // 가끔 빼먹은 것처럼
+      if((i + k) % 3 === 0) return;                        // 가끔 빼먹은 것처럼
       rows.push({ d: d, who: n, t: what[(i + k) % what.length] });
     });
-  });
-  LS.set(MOCK_KEY, rows);
+  }
+  LS.set(MOCK_ROWS, rows);
   return rows;
 }
 
@@ -570,18 +607,16 @@ var MOCK_DECKS = (function(){
   function day(n){ return ym + '-' + pad2(n); }
   return {
     '김다인': [
-      { d: day(10), k: '이거 다 먹어도 돼?',        e: 'Can I finish this?' },
-      { d: day(10), k: '나 지금 나가는 중이야',      e: 'I am heading out now.' },
-      { d: day(12), k: '그건 생각 못 했네',          e: 'I did not think of that.' }
+      { d: day(10), k: '이거 다 먹어도 돼?',          e: 'Can I finish this?' },
+      { d: day(12), k: '그건 생각 못 했네',            e: 'I did not think of that.' }
     ],
     '치치_김연수': [
       { d: day(10), k: '오히려 이게 나한테는 더 좋아', e: 'Actually, this is better for me.' },
-      { d: day(12), k: '조금만 기다려 줄래?',        e: 'Can you give me a second?' }
+      { d: day(12), k: '조금만 기다려 줄래?',          e: 'Can you give me a second?' }
     ],
     '모임_공용문장': [
-      { d: day(10), k: '오늘 뭐 먹고 싶은데?',       e: 'What do you want to eat today?' },
-      { d: day(10), k: '어디다 둔 거야?',            e: 'Where did you put it?' },
-      { d: day(12), k: '나 늦을 것 같아',            e: 'I think I am going to be late.' }
+      { d: day(10), k: '오늘 뭐 먹고 싶은데?',         e: 'What do you want to eat today?' },
+      { d: day(12), k: '나 늦을 것 같아',              e: 'I think I am going to be late.' }
     ]
   };
 })();
@@ -590,19 +625,26 @@ function callApi(body){
   body = body || {};
   var act = String(body.action || 'data');
   return new Promise(function(resolve){
-    setTimeout(function(){                        // 실제처럼 살짝 뜸을 들인다
+    setTimeout(function(){
+      var set = mockSettings();
       if(act === 'board'){
-        resolve({ ok:true, ym: mockYm(), names: MOCK_NAMES.filter(function(n){
-                    return !isShared(n); }),
-                  rows: mockSeed(), today: mockToday(), fine: 500, deposit: 10000 });
+        var from = body.from, to = body.to;
+        resolve({ ok:true, names: MOCK_NAMES, targets: set.targets, deposits: set.deposits,
+                  today: mockToday(),
+                  rows: mockSeed().filter(function(r){ return r.d >= from && r.d <= to; }) });
       } else if(act === 'checkin'){
         var rows = mockSeed(), hit = false;
         rows.forEach(function(r){
           if(r.d === mockToday() && r.who === body.who){ r.t = body.text; hit = true; }
         });
         if(!hit) rows.push({ d: mockToday(), who: body.who, t: body.text });
-        LS.set(MOCK_KEY, rows);
+        LS.set(MOCK_ROWS, rows);
         resolve({ ok:true, d: mockToday(), updated: hit });
+      } else if(act === 'target'){
+        set.targets[body.who]  = body.goal;
+        set.deposits[body.who] = body.deposit;
+        LS.set(MOCK_SET, set);
+        resolve({ ok:true });
       } else if(act === 'setpw'){
         resolve({ ok:true, admin:true });
       } else {
@@ -706,8 +748,10 @@ function pastWeekdays(ym, today){
 function won(n){ return n.toLocaleString('ko-KR') + '원'; }
 
 function loadBoard(){
+  var start = state.cycle || cycleStart(todayStr());
   return callApi({ action:'board', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
-                   ym: state.boardYm || '' }).then(function(j){
+                   from: start, to: addDays(start, 13) }).then(function(j){
+    j.start = start;
     if(!j.ok) throw new Error(j.locked
       ? '비밀번호가 바뀌었습니다. 새로고침 후 다시 들어와 주세요.'
       : (j.error || '인증 기록을 불러오지 못했습니다.'));
@@ -717,7 +761,7 @@ function loadBoard(){
 }
 
 function openCheck(){
-  state.boardYm = '';
+  state.cycle = '';
   show('scCheck');
   $('ckMsg').innerHTML = '';
   $('ckList').innerHTML = '<p class="note">불러오는 중…</p>';
@@ -748,53 +792,85 @@ function openWho(){
   $('mdWho').hidden = false;
 }
 
-/** 보려는 달이 이번 달인지 */
-function isThisMonth(ym){
-  var d = new Date();
-  return ym === d.getFullYear() + '-' + pad2(d.getMonth()+1);
+/* ───────── 2주 회차 ─────────
+   정산은 2주마다 끊는다. 아래 월요일을 기준으로 14일씩 나뉜다. */
+var CYCLE_ANCHOR = '2026-10-05';   // 기준 월요일
+var GOAL_DEFAULT = 3;              // 목표를 안 정했으면 주 3회
+var DEPOSIT_MIN = 10000;           // 보증금은 최소 1만원
+
+function dateOf(s){ return new Date(+s.slice(0,4), +s.slice(5,7)-1, +s.slice(8,10)); }
+function ymd(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+function addDays(s, n){ var d = dateOf(s); d.setDate(d.getDate() + n); return ymd(d); }
+
+/** 그 날짜가 속한 회차의 시작일(월요일) */
+function cycleStart(s){
+  var diff = Math.round((dateOf(s) - dateOf(CYCLE_ANCHOR)) / 86400000);
+  return addDays(CYCLE_ANCHOR, Math.floor(diff / 14) * 14);
 }
 
-/** 달을 앞뒤로 넘긴다 */
-function stepMonth(ym, delta){
-  var y = +ym.slice(0,4), m = +ym.slice(5,7) + delta;
-  while(m < 1){ m += 12; y--; }
-  while(m > 12){ m -= 12; y++; }
-  return y + '-' + pad2(m);
+function todayStr(){ return ymd(new Date()); }
+
+/** 회차 안의 두 주. 각각 7일씩. */
+function cycleWeeks(start){
+  var w1 = [], w2 = [];
+  for(var i = 0; i < 7; i++)  w1.push(addDays(start, i));
+  for(var j = 7; j < 14; j++) w2.push(addDays(start, j));
+  return [w1, w2];
 }
 
-/** 그 달의 사람별 미인증 일수와 환급액을 센다 */
+function cycleLabel(start){
+  var end = addDays(start, 13);
+  return (+start.slice(5,7)) + '월 ' + (+start.slice(8,10)) + '일 ~ ' +
+         (+end.slice(5,7))   + '월 ' + (+end.slice(8,10))   + '일';
+}
+
+/** 지금 보고 있는 회차의 성적을 사람별로 셈한다 */
 function settle(b){
   var byDay = {};
   (b.rows || []).forEach(function(r){
     if(!byDay[r.d]) byDay[r.d] = {};
     byDay[r.d][r.who] = r.t;
   });
-  var days = pastWeekdays(b.ym, isThisMonth(b.ym) ? b.today : '9999-12-31');
+
+  var weeks = cycleWeeks(b.start);
+  var closed = weeks.filter(function(w){ return w[6] < b.today; });   // 끝난 주만 센다
+
   var pot = 0;
   var people = (b.names || []).map(function(n){
-    var miss = 0;
-    days.forEach(function(d){ if(!(byDay[d] && byDay[d][n])) miss++; });
-    var cut = Math.min(miss * b.fine, b.deposit);
+    var goal = (b.targets  && b.targets[n])  || GOAL_DEFAULT;
+    var dep  = Math.max(DEPOSIT_MIN, (b.deposits && b.deposits[n]) || 0);
+    var need = goal * 2;                                 // 2주 동안 해야 할 횟수
+    var per  = Math.round(dep / need / 10) * 10;         // 한 번 빠질 때 깎이는 돈
+    var miss = 0, did = 0;
+    closed.forEach(function(w){
+      var k = 0;
+      w.forEach(function(d){ if(byDay[d] && byDay[d][n]) k++; });
+      did += k;
+      if(k < goal) miss += goal - k;                     // 한 주에 몰아쳐도 다른 주를 메우진 못한다
+    });
+    var cut = Math.min(miss * per, dep);
     pot += cut;
-    return { name: n, miss: miss, cut: cut, back: b.deposit - cut };
+    return { name:n, goal:goal, dep:dep, need:need, per:per,
+             miss:miss, did:did, cut:cut, back:dep - cut };
   });
-  return { days: days, byDay: byDay, people: people, pot: pot };
+
+  return { weeks:weeks, closed:closed, byDay:byDay, people:people, pot:pot };
 }
 
-/** 단톡방에 그대로 붙일 수 있는 문구 */
 function settleText(b){
   var r = settle(b);
   var wide = 0;
   r.people.forEach(function(x){ if(x.name.length > wide) wide = x.name.length; });
   var lines = [];
-  lines.push('[ ' + (+b.ym.slice(5,7)) + '월 각할모 정산 ]');
+  lines.push('[ 각할모 정산 · ' + cycleLabel(b.start) + ' ]');
   lines.push('');
-  lines.push('평일 ' + r.days.length + '일 · 미인증 1회 ' + won(b.fine));
+  lines.push('끝난 주 ' + r.closed.length + ' / 2주');
   lines.push('');
   r.people.forEach(function(x){
     var nm = x.name;
     while(nm.length < wide) nm += ' ';
-    lines.push(nm + '  미인증 ' + x.miss + '일 · 환급 ' + won(x.back));
+    lines.push(nm + '  주' + x.goal + '회 · 미인증 ' + x.miss + '회 · 환급 ' +
+               won(x.back) + ' / ' + won(x.dep));
   });
   lines.push('');
   lines.push('공금 적립  ' + won(r.pot));
@@ -826,20 +902,39 @@ function fallbackCopy(txt, done){
   document.body.removeChild(ta);
 }
 
-function goMonth(delta){
+function goCycle(delta){
   var b = state.board;
-  state.boardYm = stepMonth((b && b.ym) || '', delta);
+  state.cycle = addDays((b && b.start) || cycleStart(todayStr()), delta * 14);
   $('ckMoney').innerHTML = '<p class="note">불러오는 중…</p>';
   loadBoard().then(renderCheck, function(e){ alert(e.message); });
+}
+
+/** 내 주간 목표와 보증금을 저장한다 */
+function saveGoal(){
+  if(!state.me) return;
+  $('goalInfo').textContent = '저장 중…';
+  callApi({ action:'target', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
+            who: state.me, goal: +$('selGoal').value,
+            deposit: +$('selDeposit').value }).then(function(j){
+    if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
+    return loadBoard();
+  }).then(function(){
+    $('goalInfo').textContent = '';
+    renderCheck();
+  }, function(e){
+    $('goalInfo').textContent = '';
+    alert(e.message);
+  });
 }
 
 function renderCheck(){
   var b = state.board;
   if(!b) return;
-  var cur = isThisMonth(b.ym);
+  var cur = (b.start === cycleStart(b.today));
   var r = settle(b);
+  var mine = null;
+  r.people.forEach(function(x){ if(x.name === state.me) mine = x; });
 
-  // 지난 달을 볼 때는 오늘 인증란이 의미가 없다
   $('ckCardMine').hidden = !cur;
   $('ckCardToday').hidden = !cur;
 
@@ -850,7 +945,15 @@ function renderCheck(){
     $('btnDoCheck').textContent = mineToday ? '수정' : '인증';
     $('ckHint').textContent = mineToday
       ? '오늘 인증을 마쳤습니다. 내용을 고치고 다시 누르면 바뀝니다.'
-      : '평일에 인증하지 않으면 보증금에서 ' + won(b.fine) + '이 차감됩니다.';
+      : (mine ? '주 ' + mine.goal + '회가 목표입니다. 한 번 빠질 때마다 ' + won(mine.per) + '이 차감됩니다.'
+              : '본인 이름을 먼저 골라주세요.');
+
+    $('goalWrap').hidden = !mine;
+    if(mine){
+      $('selGoal').value = String(mine.goal);
+      $('selDeposit').value = String(mine.dep);
+      $('goalNote').textContent = '2주 ' + mine.need + '회 · 한 번 빠지면 ' + won(mine.per);
+    }
 
     var names = b.names || [];
     var done = r.byDay[b.today] || {};
@@ -870,17 +973,20 @@ function renderCheck(){
     if(!names.length) list.innerHTML = '<p class="note">회원이 없습니다.</p>';
   }
 
-  // 정산
-  $('ckMoneyHead').textContent = (+b.ym.slice(5,7)) + '월 보증금 정산';
+  $('ckMoneyHead').textContent = cycleLabel(b.start);
   $('btnMonNext').disabled = cur;
 
   var money = $('ckMoney'); money.innerHTML = '';
   r.people.forEach(function(x){
     var row = el('div','mnrow');
-    row.appendChild(el('b', null, x.name));
+    var left = el('span');
+    left.appendChild(el('b', null, x.name));
+    left.appendChild(el('span','cut', '주' + x.goal + '회 · 보증금 ' + won(x.dep) +
+                                      ' · 1회 ' + won(x.per)));
+    row.appendChild(left);
     var right = el('span');
     right.appendChild(el('span','won', won(x.back)));
-    if(x.miss) right.appendChild(el('span','cut', '미인증 ' + x.miss + '일'));
+    if(x.miss) right.appendChild(el('span','cut', '미인증 ' + x.miss + '회'));
     row.appendChild(right);
     money.appendChild(row);
   });
@@ -892,10 +998,10 @@ function renderCheck(){
   money.appendChild(potRow);
 
   $('ckMoneyHint').textContent = cur
-    ? (r.days.length
-        ? '이번 달 지난 평일 ' + r.days.length + '일 기준입니다. 오늘은 아직 세지 않습니다.'
-        : '이번 달은 아직 지난 평일이 없습니다.')
-    : '평일 ' + r.days.length + '일 기준 최종 정산입니다.';
+    ? (r.closed.length
+        ? '첫 주가 끝났습니다. 이번 주는 아직 세지 않습니다.'
+        : '이번 회차는 아직 끝난 주가 없습니다. 2주가 끝나면 정산됩니다.')
+    : '2주 전체 기준 최종 정산입니다.';
 }
 
 function submitCheck(){
@@ -1201,9 +1307,11 @@ $('btnWhoClose').onclick = function(){ $('mdWho').hidden = true; };
 $('mdWho').onclick       = function(ev){ if(ev.target === this) this.hidden = true; };
 $('btnDoCheck').onclick  = function(){ submitCheck(); };
 $('btnCkReload').onclick = function(){ openCheck(); };
-$('btnMonPrev').onclick  = function(){ goMonth(-1); };
-$('btnMonNext').onclick  = function(){ goMonth(1); };
+$('btnMonPrev').onclick  = function(){ goCycle(-1); };
+$('btnMonNext').onclick  = function(){ goCycle(1); };
 $('btnCopySettle').onclick = function(){ copySettle(); };
+$('selGoal').onchange      = function(){ saveGoal(); };
+$('selDeposit').onchange   = function(){ saveGoal(); };
 $('inpCheck').onkeydown  = function(e){ if(e.key === 'Enter') submitCheck(); };
 
 $('btnGuide').onclick      = function(){ $('mdGuide').hidden = false; };
