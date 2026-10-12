@@ -160,6 +160,28 @@
   .day.has.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
 
   /* 이름 카드 */
+  /* 인증 화면 */
+  .ckme{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .ckme input{flex:1}
+  .ckrow{display:flex;gap:10px;align-items:baseline;padding:10px 0;
+    border-top:1px solid var(--line)}
+  .ckrow:first-of-type{border-top:none}
+  .ckrow .mark{flex:none;width:19px;font-size:13px}
+  .ckrow .nm{flex:none;min-width:86px;font-weight:600;font-size:14px;letter-spacing:-.02em}
+  .ckrow .tx{flex:1;font-size:14px;color:var(--text-2);line-height:1.5}
+  .ckrow.off .nm{color:var(--muted);font-weight:500}
+  .ckrow.me{background:var(--accent-soft);margin:0 -14px;padding:10px 14px;border-radius:9px}
+  .ckrow.me + .ckrow{border-top:none}
+  .mnrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+  .mnrow:first-of-type{border-top:none}
+  .mnrow b{font-weight:600;letter-spacing:-.02em}
+  .mnrow .won{font-variant-numeric:tabular-nums;font-weight:600}
+  .mnrow .cut{font-size:12.5px;color:var(--muted);font-weight:500;margin-left:6px}
+  .mnrow.pot{border-top:1px solid var(--line-2);margin-top:4px;padding-top:12px}
+  .mnrow.pot .won{color:var(--accent)}
+  .whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+
   /* 진행 방법 팝업 */
   .modal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;
     justify-content:center;padding:18px;background:rgba(18,18,22,.45)}
@@ -245,6 +267,7 @@
       <span class="lwm">In My Own Words</span>
     </button>
     <span class="hspace"></span>
+    <button class="btn-sm" id="btnCheck">인증</button>
     <button class="btn-sm btn-accent" id="btnGuide">진행 방법</button>
     <button class="btn-sm btn-ghost" id="btnBack" hidden>‹ 뒤로</button>
     <button class="btn-sm btn-ghost" id="btnSetup">설정</button>
@@ -292,6 +315,37 @@
       </table>
       <div class="hint">입력한 일자를 기준으로 달력에 표시되며, 해당 날짜에 문장을 올린 회원만
         이름 카드가 나타납니다. 문장은 파일의 첫 번째 탭에만 입력합니다.</div>
+    </div>
+  </section>
+
+  <!-- ── 인증 ── -->
+  <section id="scCheck" hidden>
+    <div id="ckMsg"></div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 id="ckHead" style="margin:0">오늘 인증</h2>
+        <button class="btn-sm btn-ghost" id="btnWho">이름 바꾸기</button>
+      </div>
+      <div class="ckme">
+        <input id="inpCheck" type="text" maxlength="100" placeholder="오늘 한 일을 한 줄로">
+        <button class="btn-primary" id="btnDoCheck">인증</button>
+      </div>
+      <div class="hint" id="ckHint">평일에 인증하지 않으면 보증금에서 500원이 차감됩니다.</div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 id="ckDayHead" style="margin:0">오늘</h2>
+        <button class="btn-sm btn-ghost" id="btnCkReload">새로고침</button>
+      </div>
+      <div id="ckList"></div>
+    </div>
+
+    <div class="card">
+      <h2 id="ckMoneyHead">이번 달 보증금</h2>
+      <div id="ckMoney"></div>
+      <div class="hint" id="ckMoneyHint"></div>
     </div>
   </section>
 
@@ -371,6 +425,17 @@
 
 </div>
 
+<div class="modal" id="mdWho" hidden>
+  <div class="card">
+    <div class="ghead">
+      <h3>본인 이름을 고르세요</h3>
+      <button class="btn-sm btn-ghost" id="btnWhoClose">닫기</button>
+    </div>
+    <div class="whogrid" id="whoList"></div>
+    <div class="hint">한 번 고르면 이 기기에 기억됩니다. [이름 바꾸기]로 언제든 바꿀 수 있습니다.</div>
+  </div>
+</div>
+
 <div class="modal" id="mdGuide" hidden>
   <div class="card guide">
     <div class="ghead">
@@ -404,7 +469,7 @@ var LS = {
   get:function(k,d){ try{var v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
   set:function(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
 };
-var K_CACHE='em.cache', K_PASS='em.pass', K_ADMIN='em.admin', K_OKM='em.okmonth';
+var K_CACHE='em.cache', K_PASS='em.pass', K_ADMIN='em.admin', K_OKM='em.okmonth', K_ME='em.me';
 var ADMIN_HINT = '8292';   // ?admin 으로 들어올 때 중계기에 대는 관리자 비번
 
 var state = {
@@ -412,7 +477,8 @@ var state = {
   calY:0, calM:0, selDate:null, selNames:[], selMember:null, limit:20, session:null,
   locked:false,                             // 서버에 비밀번호가 걸려 있는지
   loaded:false,                             // 서버 응답을 받았는지
-  admin:false                               // 이 기기가 관리자 화면을 볼 수 있는지
+  admin:false,                              // 이 기기가 관리자 화면을 볼 수 있는지
+  me:'', board:null, boardYm:''             // 인증: 나는 누구인지, 이번 달 기록
 };
 
 function $(id){ return document.getElementById(id); }
@@ -421,12 +487,13 @@ function pad2(n){ return (n<10?'0':'')+n; }
 // 비밀번호는 매달 1일에 바뀐다. 같은 달이면 다시 묻지 않는다.
 function monthKey(){ var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth()+1); }
 
-var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz'];
+var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz','scCheck'];
 function show(s){
   SCREENS.forEach(function(x){ $(x).hidden = (x!==s); });
   $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate' || s==='scQuiz');
   // 진행 방법은 모임을 진행하는 두 화면에서만 띄운다
   $('btnGuide').hidden = !(s==='scCal' || s==='scMembers');
+  $('btnCheck').hidden = !(s==='scCal');
   // 관리자가 아니면 설정 버튼 자체가 없다 (회원에게는 이 화면이 존재하지 않는다)
   $('btnSetup').hidden = (s==='scGate') || !state.admin;
   window.scrollTo(0,0);
@@ -534,6 +601,145 @@ function downloadMember(names){
   a.href = url; a.download = base + "_문장.csv";
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+
+/* ═════════ 인증 ═════════
+   평일에 한 줄씩 적는다. 안 적으면 보증금에서 깎이고 그 돈은 공금이 된다. */
+
+/** 그 달의 평일 중 이미 지난 날들. 오늘은 아직 기회가 있으므로 세지 않는다. */
+function pastWeekdays(ym, today){
+  var y = +ym.slice(0,4), m = +ym.slice(5,7), out = [];
+  var d = new Date(y, m-1, 1);
+  while(d.getMonth() === m-1){
+    var dow = d.getDay();
+    var k = y + '-' + pad2(m) + '-' + pad2(d.getDate());
+    if(dow !== 0 && dow !== 6 && k < today) out.push(k);
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+function won(n){ return n.toLocaleString('ko-KR') + '원'; }
+
+function loadBoard(){
+  return callApi({ action:'board', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
+                   ym: state.boardYm || '' }).then(function(j){
+    if(!j.ok) throw new Error(j.locked
+      ? '비밀번호가 바뀌었습니다. 새로고침 후 다시 들어와 주세요.'
+      : (j.error || '인증 기록을 불러오지 못했습니다.'));
+    state.board = j;
+    return j;
+  });
+}
+
+function openCheck(){
+  show('scCheck');
+  $('ckMsg').innerHTML = '';
+  $('ckList').innerHTML = '<p class="note">불러오는 중…</p>';
+  loadBoard().then(function(j){
+    if(!state.me || (j.names || []).indexOf(state.me) === -1) openWho();
+    renderCheck();
+  }, function(e){
+    $('ckList').innerHTML = '';
+    var box = el('div','card');
+    box.style.color = 'var(--danger)';
+    box.textContent = e.message;
+    $('ckMsg').appendChild(box);
+  });
+}
+
+function openWho(){
+  var names = (state.board && state.board.names) || [];
+  var box = $('whoList'); box.innerHTML = '';
+  names.forEach(function(n){
+    var b = el('button','mcard' + (n === state.me ? ' shared' : ''), n);
+    b.onclick = function(){
+      state.me = n; LS.set(K_ME, n);
+      $('mdWho').hidden = true; renderCheck();
+    };
+    box.appendChild(b);
+  });
+  if(!names.length) box.innerHTML = '<p class="note">회원 명단을 불러오지 못했습니다.</p>';
+  $('mdWho').hidden = false;
+}
+
+function renderCheck(){
+  var b = state.board;
+  if(!b) return;
+
+  var byDay = {}, mineToday = '';
+  (b.rows || []).forEach(function(r){
+    if(!byDay[r.d]) byDay[r.d] = {};
+    byDay[r.d][r.who] = r.t;
+    if(r.d === b.today && r.who === state.me) mineToday = r.t;
+  });
+
+  $('ckHead').textContent = state.me ? (state.me + ' 님의 오늘 인증') : '오늘 인증';
+  $('inpCheck').value = mineToday;
+  $('btnDoCheck').textContent = mineToday ? '수정' : '인증';
+  $('ckHint').textContent = mineToday
+    ? '오늘 인증을 마쳤습니다. 내용을 고치고 다시 누르면 바뀝니다.'
+    : '평일에 인증하지 않으면 보증금에서 ' + won(b.fine) + '이 차감됩니다.';
+
+  var names = b.names || [];
+  var done = byDay[b.today] || {};
+  var cnt = 0;
+  names.forEach(function(n){ if(done[n]) cnt++; });
+  $('ckDayHead').textContent = dateLabel(b.today) + '  ' + cnt + ' / ' + names.length;
+
+  var list = $('ckList'); list.innerHTML = '';
+  names.forEach(function(n){
+    var ok = !!done[n];
+    var row = el('div','ckrow' + (ok ? '' : ' off') + (n === state.me ? ' me' : ''));
+    row.appendChild(el('span','mark', ok ? '✅' : '⬜'));
+    row.appendChild(el('span','nm', n));
+    row.appendChild(el('span','tx', ok ? done[n] : ''));
+    list.appendChild(row);
+  });
+  if(!names.length) list.innerHTML = '<p class="note">회원이 없습니다.</p>';
+
+  var days = pastWeekdays(b.ym, b.today);
+  var pot = 0, money = $('ckMoney'); money.innerHTML = '';
+  names.forEach(function(n){
+    var miss = 0;
+    days.forEach(function(d){ if(!(byDay[d] && byDay[d][n])) miss++; });
+    var cut = Math.min(miss * b.fine, b.deposit);
+    pot += cut;
+    var row = el('div','mnrow');
+    row.appendChild(el('b', null, n));
+    var right = el('span');
+    right.appendChild(el('span','won', won(b.deposit - cut)));
+    if(miss) right.appendChild(el('span','cut', '미인증 ' + miss + '일'));
+    row.appendChild(right);
+    money.appendChild(row);
+  });
+  var potRow = el('div','mnrow pot');
+  potRow.appendChild(el('b', null, '공금 (회식비)'));
+  potRow.appendChild(el('span','won', won(pot)));
+  money.appendChild(potRow);
+
+  $('ckMoneyHead').textContent = (+b.ym.slice(5,7)) + '월 보증금';
+  $('ckMoneyHint').textContent = days.length
+    ? '이번 달 지난 평일 ' + days.length + '일 기준입니다. 오늘은 아직 세지 않습니다.'
+    : '이번 달은 아직 지난 평일이 없습니다.';
+}
+
+function submitCheck(){
+  if(!state.me){ openWho(); return; }
+  var t = $('inpCheck').value.trim();
+  if(!t){ $('inpCheck').focus(); return; }
+  var btn = $('btnDoCheck');
+  btn.disabled = true; btn.textContent = '보내는 중…';
+  callApi({ action:'checkin', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
+            who: state.me, text: t }).then(function(j){
+    if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
+    return loadBoard();
+  }).then(function(){
+    btn.disabled = false; renderCheck();
+  }, function(e){
+    btn.disabled = false; btn.textContent = '인증';
+    alert(e.message);
+  });
 }
 
 function rebuildIndex(){
@@ -809,11 +1015,20 @@ $('btnPrev').onclick = function(){ step(-1); };
 $('btnNext').onclick = function(){ step(1); };
 $('btnQuit').onclick = function(){ renderMembers(); show('scMembers'); };
 
+$('btnCheck').onclick    = function(){ openCheck(); };
+$('btnWho').onclick      = function(){ openWho(); };
+$('btnWhoClose').onclick = function(){ $('mdWho').hidden = true; };
+$('mdWho').onclick       = function(ev){ if(ev.target === this) this.hidden = true; };
+$('btnDoCheck').onclick  = function(){ submitCheck(); };
+$('btnCkReload').onclick = function(){ openCheck(); };
+$('inpCheck').onkeydown  = function(e){ if(e.key === 'Enter') submitCheck(); };
+
 $('btnGuide').onclick      = function(){ $('mdGuide').hidden = false; };
 $('btnGuideClose').onclick = function(){ $('mdGuide').hidden = true; };
 // 바깥 어두운 곳을 눌러도 닫힌다
 $('mdGuide').onclick = function(ev){ if(ev.target === this) this.hidden = true; };
 document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && !$('mdWho').hidden){ $('mdWho').hidden = true; return; }
   if(e.key === 'Escape' && !$('mdGuide').hidden){ $('mdGuide').hidden = true; return; }
   if($('scQuiz').hidden) return;
   if(e.key===' '||e.key==='Enter'){ e.preventDefault(); setReveal($('qEn').hidden); }
@@ -830,6 +1045,7 @@ document.addEventListener('keydown', function(e){
   // ?admin 이 붙어 있으면 관리자로 본다. 그 기기는 회원 비번과 무관하게 통과한다.
   if(state.admin) LS.set(K_ADMIN, q.get('admin') || ADMIN_HINT);
 
+  state.me = LS.get(K_ME, '');
   var saved = LS.get(K_PASS, '');
   var cached = loadCache();
   var isAdminDevice = !!LS.get(K_ADMIN, '');        // 관리자는 비번을 묻지 않는다
