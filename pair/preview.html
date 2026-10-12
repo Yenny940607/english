@@ -272,7 +272,9 @@
   padding:9px 16px;display:flex;gap:10px;align-items:center;justify-content:center;
   flex-wrap:wrap;text-align:center">
   <b>미리보기</b>
-  <span style="opacity:.72">실제 시트에 저장되지 않습니다. 입장 코드는 <b>1234</b> 입니다.</span>
+  <span style="opacity:.72">실제 시트에 저장되지 않습니다. 입장 코드는 <b>8292</b> 입니다.</span>
+  <button id="btnMockOut" style="background:transparent;border:1px solid rgba(255,255,255,.3);
+    color:#fff;font-size:12px;padding:4px 10px;border-radius:7px">로그아웃</button>
   <button id="btnMockReset" style="background:transparent;border:1px solid rgba(255,255,255,.3);
     color:#fff;font-size:12px;padding:4px 10px;border-radius:7px">처음으로 되돌리기</button>
 </div>
@@ -567,7 +569,7 @@ var API = '';   // 미리보기에서는 통신하지 않는다
    [처음으로 되돌리기] 를 누르면 전부 지워진다. */
 var MOCK_NAMES = ['김다인', '박준석', '윤예은', '치치_김연수'];
 var MOCK_ROWS = 'em.mock.rows', MOCK_SET = 'em.mock.set';
-var MOCK_PW = '1234';   // 미리보기 입장 코드
+var MOCK_PW = '8292';   // 미리보기 입장 코드
 
 function mockToday(){
   var d = new Date();
@@ -1326,8 +1328,17 @@ $('btnPrev').onclick = function(){ step(-1); };
 $('btnNext').onclick = function(){ step(1); };
 $('btnQuit').onclick = function(){ renderMembers(); show('scMembers'); };
 
+// 로그아웃 — 인증 기록은 그대로 두고 이 기기의 로그인만 푼다
+$('btnMockOut').onclick = function(){
+  ['em.pass','em.okcycle','em.me','em.cache','em.admin'].forEach(function(k){
+    try{ localStorage.removeItem(k); }catch(e){}
+  });
+  location.reload();
+};
+// 처음으로 — 가짜 기록과 설정까지 전부 지운다
 $('btnMockReset').onclick = function(){
-  ['em.mock.rows','em.me','em.cache','em.okmonth'].forEach(function(k){
+  ['em.mock.rows','em.mock.set','em.mock.pw','em.pass','em.okcycle',
+   'em.me','em.cache','em.admin'].forEach(function(k){
     try{ localStorage.removeItem(k); }catch(e){}
   });
   location.reload();
