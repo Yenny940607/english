@@ -548,7 +548,8 @@
 
 var LS = {
   get:function(k,d){ try{var v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
-  set:function(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+  set:function(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} },
+  del:function(k){ try{localStorage.removeItem(k);}catch(e){} }
 };
 var K_CACHE='em.cache', K_PASS='em.pass', K_ADMIN='em.admin', K_OKC='em.okcycle', K_ME='em.me';
 var ADMIN_HINT = '8292';   // ?admin 으로 들어올 때 중계기에 대는 관리자 비번
@@ -1357,6 +1358,14 @@ document.addEventListener('keydown', function(e){
   // 관리자 진입: 주소에 ?admin 이 붙어 있을 때만.
   // 기기에 기억해두면 회원용 주소로 들어가도 설정이 보여 헷갈린다.
   var q = new URLSearchParams(location.search);
+
+  // 주소에 ?logout 을 붙이면 이 기기의 로그인을 모두 지운다 (회원 입장을 시험할 때)
+  if(q.has('logout')){
+    [K_PASS, K_OKC, K_ME, K_CACHE, K_ADMIN].forEach(function(k){ LS.del(k); });
+    location.replace(location.pathname);
+    return;
+  }
+
   state.admin = q.has('admin');
   // ?admin 이 붙어 있으면 관리자로 본다. 그 기기는 회원 비번과 무관하게 통과한다.
   if(state.admin) LS.set(K_ADMIN, q.get('admin') || ADMIN_HINT);
