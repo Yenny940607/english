@@ -160,6 +160,40 @@
   .day.has.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
 
   /* 이름 카드 */
+  /* 인증 화면 */
+  .ckme{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .ckme input{flex:1}
+  .ckrow{display:flex;gap:10px;align-items:baseline;padding:10px 0;
+    border-top:1px solid var(--line)}
+  .ckrow:first-of-type{border-top:none}
+  .ckrow .mark{flex:none;width:19px;font-size:13px}
+  .ckrow .nm{flex:none;min-width:86px;font-weight:600;font-size:14px;letter-spacing:-.02em}
+  .ckrow .tx{flex:1;font-size:14px;color:var(--text-2);line-height:1.5}
+  .ckrow.off .nm{color:var(--muted);font-weight:500}
+  .ckrow.me{background:var(--accent-soft);margin:0 -14px;padding:10px 14px;border-radius:9px}
+  .ckrow.me + .ckrow{border-top:none}
+  .mnrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+  .mnrow:first-of-type{border-top:none}
+  .mnrow b{font-weight:600;letter-spacing:-.02em}
+  .mnrow .won{font-variant-numeric:tabular-nums;font-weight:600}
+  .mnrow .cut{font-size:12.5px;color:var(--muted);font-weight:500;margin-left:6px}
+  .mnrow.pot{border-top:1px solid var(--line-2);margin-top:4px;padding-top:12px}
+  .mnrow.pot .won{color:var(--accent)}
+  .goalrow{display:flex;gap:9px;align-items:center;flex-wrap:wrap;
+    margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px}
+  .goalrow > span:first-child{font-weight:600;letter-spacing:-.02em}
+  .goalrow{row-gap:8px}
+  .goalrow select:disabled{opacity:.55;cursor:default}
+  .goalrow select{font-family:inherit;font-size:13.5px;padding:6px 9px;border-radius:9px;
+    border:1px solid var(--line-2);background:var(--surface);color:var(--text)}
+  .mnrow > span:first-child{display:flex;flex-direction:column;gap:2px}
+  .joinrow{display:flex;gap:10px;align-items:center;margin-top:12px}
+  .joinrow > span{flex:none;min-width:66px;font-weight:600;font-size:13.5px;letter-spacing:-.02em}
+  .joinrow select{flex:1;font-family:inherit;font-size:14px;padding:10px 12px;border-radius:10px;
+    border:1px solid var(--line-2);background:var(--surface);color:var(--text)}
+  .whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+
   /* 진행 방법 팝업 */
   .modal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;
     justify-content:center;padding:18px;background:rgba(18,18,22,.45)}
@@ -245,6 +279,7 @@
       <span class="lwm">In My Own Words</span>
     </button>
     <span class="hspace"></span>
+    <button class="btn-sm" id="btnCheck">인증</button>
     <button class="btn-sm btn-accent" id="btnGuide">진행 방법</button>
     <button class="btn-sm btn-ghost" id="btnBack" hidden>‹ 뒤로</button>
     <button class="btn-sm btn-ghost" id="btnSetup">설정</button>
@@ -256,11 +291,11 @@
   <!-- ── 설정 ── -->
   <section id="scSetup" hidden>
     <div class="card">
-      <h2>모임 비밀번호</h2>
+      <h2>입장 코드</h2>
       <div class="pwnow" id="pwNow">—</div>
-      <p class="note">회원들이 사이트에 들어올 때 입력하는 번호입니다.
-        아래에서 숫자를 고치고 저장하면, 회원 전원이 다음에 들어올 때
-        새 번호를 입력하게 됩니다.</p>
+      <p class="note">회원이 사이트에 들어올 때 입력하는 네 자리입니다.
+        <b>2주 회차가 바뀔 때마다</b> 입금을 확인하고 새 코드로 바꿔주세요.
+        코드를 바꾸면 회원 전원이 다음에 들어올 때 새 코드를 입력하게 됩니다.</p>
 
       <div class="pwrow" style="margin-top:16px">
         <input id="inpPw" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000">
@@ -295,12 +330,112 @@
     </div>
   </section>
 
+  <!-- ── 첫 입장 설정 ── -->
+  <section id="scJoin" hidden>
+    <div class="card">
+      <h2>처음 오셨네요</h2>
+      <p class="note">본인 이름을 고르고, 모임장에게 말씀하신 대로
+        주간 목표와 보증금을 정해주세요.
+        <b>한 번 정하면 이번 2주 회차 동안은 바꿀 수 없습니다.</b></p>
+
+      <div class="whogrid" id="joinNames" style="margin-top:16px"></div>
+
+      <div class="joinrow">
+        <span>주간 목표</span>
+        <select id="joinGoal">
+          <option value="1">주 1회</option>
+          <option value="2">주 2회</option>
+          <option value="3" selected>주 3회</option>
+          <option value="4">주 4회</option>
+          <option value="5">주 5회</option>
+          <option value="6">주 6회</option>
+          <option value="7">매일</option>
+        </select>
+      </div>
+      <div class="joinrow">
+        <span>보증금</span>
+        <select id="joinDeposit">
+          <option value="10000" selected>1만원</option>
+          <option value="20000">2만원</option>
+          <option value="30000">3만원</option>
+          <option value="50000">5만원</option>
+        </select>
+      </div>
+
+      <div class="hint" id="joinNote"></div>
+      <button class="btn-primary" id="btnJoin"
+              style="width:100%;padding:14px;font-size:15px;margin-top:16px">시작하기</button>
+      <div class="hint" id="joinMsg"></div>
+    </div>
+  </section>
+
+  <!-- ── 인증 ── -->
+  <section id="scCheck" hidden>
+    <div id="ckMsg"></div>
+
+    <div class="card" id="ckCardMine">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 id="ckHead" style="margin:0">오늘 인증</h2>
+        <button class="btn-sm btn-ghost" id="btnWho">이름 바꾸기</button>
+      </div>
+      <div class="ckme">
+        <input id="inpCheck" type="text" maxlength="100" placeholder="오늘 한 일을 한 줄로">
+        <button class="btn-primary" id="btnDoCheck">인증</button>
+      </div>
+      <div class="hint" id="ckHint">주간 목표를 정해주세요.</div>
+      <div class="goalrow" id="goalWrap" hidden>
+        <span>내 목표</span>
+        <select id="selGoal">
+          <option value="1">주 1회</option>
+          <option value="2">주 2회</option>
+          <option value="3">주 3회</option>
+          <option value="4">주 4회</option>
+          <option value="5">주 5회</option>
+          <option value="6">주 6회</option>
+          <option value="7">매일</option>
+        </select>
+        <select id="selDeposit">
+          <option value="10000">보증금 1만원</option>
+          <option value="20000">보증금 2만원</option>
+          <option value="30000">보증금 3만원</option>
+          <option value="50000">보증금 5만원</option>
+        </select>
+        <span class="note" id="goalNote"></span>
+        <span class="note" id="goalInfo"></span>
+      </div>
+    </div>
+
+    <div class="card" id="ckCardToday">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 id="ckDayHead" style="margin:0">오늘</h2>
+        <button class="btn-sm btn-ghost" id="btnCkReload">새로고침</button>
+      </div>
+      <div id="ckList"></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 id="ckMoneyHead" style="margin:0">보증금 정산</h2>
+        <div class="navs">
+          <button id="btnMonPrev" aria-label="이전 달">‹</button>
+          <button id="btnMonNext" aria-label="다음 달">›</button>
+        </div>
+      </div>
+      <div id="ckMoney"></div>
+      <div class="hint" id="ckMoneyHint"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn-sm" id="btnCopySettle">정산 문구 복사</button>
+        <span class="note" id="copyInfo" style="align-self:center"></span>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 비밀번호 ── -->
   <section id="scGate" hidden>
     <div class="card gate">
       <div class="gate-t">모임원 확인</div>
-      <div class="gate-s">비밀번호 4자리를 입력하세요</div>
-      <input id="inpPass" class="pass" inputmode="numeric" pattern="[0-9]*"
+      <div class="gate-s">모임장에게 받은 입장 코드 4자리를 입력하세요</div>
+      <input id="inpPass" class="pass" inputmode="numeric" pattern="[0-9]*" aria-label="입장 코드"
              maxlength="4" autocomplete="off" placeholder="••••">
       <div class="gate-err" id="gateMsg"></div>
       <button class="btn-primary" id="btnGate" style="width:100%;padding:14px;font-size:15px">들어가기</button>
@@ -371,6 +506,17 @@
 
 </div>
 
+<div class="modal" id="mdWho" hidden>
+  <div class="card">
+    <div class="ghead">
+      <h3>본인 이름을 고르세요</h3>
+      <button class="btn-sm btn-ghost" id="btnWhoClose">닫기</button>
+    </div>
+    <div class="whogrid" id="whoList"></div>
+    <div class="hint">한 번 고르면 이 기기에 기억됩니다. [이름 바꾸기]로 언제든 바꿀 수 있습니다.</div>
+  </div>
+</div>
+
 <div class="modal" id="mdGuide" hidden>
   <div class="card guide">
     <div class="ghead">
@@ -404,7 +550,7 @@ var LS = {
   get:function(k,d){ try{var v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
   set:function(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
 };
-var K_CACHE='em.cache', K_PASS='em.pass', K_ADMIN='em.admin', K_OKM='em.okmonth';
+var K_CACHE='em.cache', K_PASS='em.pass', K_ADMIN='em.admin', K_OKC='em.okcycle', K_ME='em.me';
 var ADMIN_HINT = '8292';   // ?admin 으로 들어올 때 중계기에 대는 관리자 비번
 
 var state = {
@@ -412,23 +558,25 @@ var state = {
   calY:0, calM:0, selDate:null, selNames:[], selMember:null, limit:20, session:null,
   locked:false,                             // 서버에 비밀번호가 걸려 있는지
   loaded:false,                             // 서버 응답을 받았는지
-  admin:false                               // 이 기기가 관리자 화면을 볼 수 있는지
+  admin:false,                              // 이 기기가 관리자 화면을 볼 수 있는지
+  me:'', board:null, cycle:'', pick:''       // 인증: 나는 누구인지, 보고 있는 회차
 };
 
 function $(id){ return document.getElementById(id); }
 function el(t,c,x){ var e=document.createElement(t); if(c)e.className=c; if(x!=null)e.textContent=x; return e; }
 function pad2(n){ return (n<10?'0':'')+n; }
-// 비밀번호는 매달 1일에 바뀐다. 같은 달이면 다시 묻지 않는다.
-function monthKey(){ var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth()+1); }
+// 입장 코드는 2주마다 바뀐다. 같은 회차 안에서는 다시 묻지 않는다.
+function cycleKey(){ return cycleStart(todayStr()); }
 
-var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz'];
+var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz','scCheck','scJoin'];
 function show(s){
   SCREENS.forEach(function(x){ $(x).hidden = (x!==s); });
-  $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate' || s==='scQuiz');
+  $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate' || s==='scQuiz' || s==='scJoin');
   // 진행 방법은 모임을 진행하는 두 화면에서만 띄운다
   $('btnGuide').hidden = !(s==='scCal' || s==='scMembers');
+  $('btnCheck').hidden = !(s==='scCal');
   // 관리자가 아니면 설정 버튼 자체가 없다 (회원에게는 이 화면이 존재하지 않는다)
-  $('btnSetup').hidden = (s==='scGate') || !state.admin;
+  $('btnSetup').hidden = (s==='scGate') || (s==='scJoin') || !state.admin;
   window.scrollTo(0,0);
 }
 
@@ -467,13 +615,13 @@ function loadAll(pw, fresh){
   $('syncInfo').textContent = '불러오는 중…';
   var adminTry = LS.get(K_ADMIN,'') || (pw || '');   // 잠금 화면에 관리자 비번을 넣어도 통과
   return callApi({ action:'data', pw: pw || '', admin: adminTry, fresh: fresh ? 1 : 0 }).then(function(j){
-    if(!j.ok && j.locked){ state.locked = true; state.loaded = true; LS.set(K_OKM, ''); return false; }
+    if(!j.ok && j.locked){ state.locked = true; state.loaded = true; LS.set(K_OKC, ''); return false; }
     if(!j.ok) throw new Error(j.error || '데이터를 불러오지 못했습니다.');
 
     state.locked = !!j.locked;
     state.loaded = true;
     if(j.admin) LS.set(K_ADMIN, adminTry);   // 관리자로 통과한 기기는 기억한다
-    LS.set(K_OKM, monthKey());          // 이 달은 통과한 걸로 기록
+    LS.set(K_OKC, cycleKey());          // 이번 회차는 통과한 걸로 기록
     var names = Object.keys(j.decks || {}), decks = {};
     names.forEach(function(n){
       decks[n] = (j.decks[n] || []).map(function(r){
@@ -536,6 +684,313 @@ function downloadMember(names){
   setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
 }
 
+/* ═════════ 인증 ═════════
+   평일에 한 줄씩 적는다. 안 적으면 보증금에서 깎이고 그 돈은 공금이 된다. */
+
+/** 그 달의 평일 중 이미 지난 날들. 오늘은 아직 기회가 있으므로 세지 않는다. */
+function pastWeekdays(ym, today){
+  var y = +ym.slice(0,4), m = +ym.slice(5,7), out = [];
+  var d = new Date(y, m-1, 1);
+  while(d.getMonth() === m-1){
+    var dow = d.getDay();
+    var k = y + '-' + pad2(m) + '-' + pad2(d.getDate());
+    if(dow !== 0 && dow !== 6 && k < today) out.push(k);
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+function won(n){ return n.toLocaleString('ko-KR') + '원'; }
+
+function loadBoard(){
+  var start = state.cycle || cycleStart(todayStr());
+  return callApi({ action:'board', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
+                   from: start, to: addDays(start, 13) }).then(function(j){
+    j.start = start;
+    if(!j.ok) throw new Error(j.locked
+      ? '입장 코드가 바뀌었습니다. 새로고침 후 다시 들어와 주세요.'
+      : (j.error || '인증 기록을 불러오지 못했습니다.'));
+    if(!j.names){                       // 옛 중계기는 이 물음을 모른다
+      var e = new Error('인증 기능이 아직 켜지지 않았습니다. 모임장에게 문의해 주세요.');
+      e.noBoard = true; throw e;
+    }
+    state.board = j;
+    return j;
+  });
+}
+
+function openCheck(){
+  state.cycle = '';
+  show('scCheck');
+  $('ckMsg').innerHTML = '';
+  $('ckList').innerHTML = '<p class="note">불러오는 중…</p>';
+  loadBoard().then(function(j){
+    if(!state.me || (j.names || []).indexOf(state.me) === -1) openWho();
+    renderCheck();
+  }, function(e){
+    if(e.noBoard){ alert(e.message); renderCal(); show('scCal'); return; }
+    $('ckList').innerHTML = '';
+    var box = el('div','card');
+    box.style.color = 'var(--danger)';
+    box.textContent = e.message;
+    $('ckMsg').appendChild(box);
+  });
+}
+
+function openWho(){
+  var names = (state.board && state.board.names) || [];
+  var box = $('whoList'); box.innerHTML = '';
+  names.forEach(function(n){
+    var b = el('button','mcard' + (n === state.me ? ' shared' : ''), n);
+    b.onclick = function(){
+      state.me = n; LS.set(K_ME, n);
+      $('mdWho').hidden = true; renderCheck();
+    };
+    box.appendChild(b);
+  });
+  if(!names.length) box.innerHTML = '<p class="note">회원 명단을 불러오지 못했습니다.</p>';
+  $('mdWho').hidden = false;
+}
+
+/* ───────── 2주 회차 ─────────
+   정산은 2주마다 끊는다. 아래 월요일을 기준으로 14일씩 나뉜다. */
+var CYCLE_ANCHOR = '2026-10-05';   // 기준 월요일
+var GOAL_DEFAULT = 3;              // 목표를 안 정했으면 주 3회
+var DEPOSIT_MIN = 10000;           // 보증금은 최소 1만원
+
+function dateOf(s){ return new Date(+s.slice(0,4), +s.slice(5,7)-1, +s.slice(8,10)); }
+// 이름이 겹치지 않게 ymdOf 로 둔다. 위쪽 ymd(y,m,d) 는 달력이 쓰는 것이다.
+function ymdOf(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+function addDays(s, n){ var d = dateOf(s); d.setDate(d.getDate() + n); return ymdOf(d); }
+
+/** 그 날짜가 속한 회차의 시작일(월요일) */
+function cycleStart(s){
+  var diff = Math.round((dateOf(s) - dateOf(CYCLE_ANCHOR)) / 86400000);
+  return addDays(CYCLE_ANCHOR, Math.floor(diff / 14) * 14);
+}
+
+function todayStr(){ return ymdOf(new Date()); }
+
+/** 회차 안의 두 주. 각각 7일씩. */
+function cycleWeeks(start){
+  var w1 = [], w2 = [];
+  for(var i = 0; i < 7; i++)  w1.push(addDays(start, i));
+  for(var j = 7; j < 14; j++) w2.push(addDays(start, j));
+  return [w1, w2];
+}
+
+function cycleLabel(start){
+  var end = addDays(start, 13);
+  return (+start.slice(5,7)) + '월 ' + (+start.slice(8,10)) + '일 ~ ' +
+         (+end.slice(5,7))   + '월 ' + (+end.slice(8,10))   + '일';
+}
+
+/** 지금 보고 있는 회차의 성적을 사람별로 셈한다 */
+function settle(b){
+  var byDay = {};
+  (b.rows || []).forEach(function(r){
+    if(!byDay[r.d]) byDay[r.d] = {};
+    byDay[r.d][r.who] = r.t;
+  });
+
+  var weeks = cycleWeeks(b.start);
+  var closed = weeks.filter(function(w){ return w[6] < b.today; });   // 끝난 주만 센다
+
+  var pot = 0;
+  var people = (b.names || []).map(function(n){
+    var goal = (b.targets  && b.targets[n])  || GOAL_DEFAULT;
+    var dep  = Math.max(DEPOSIT_MIN, (b.deposits && b.deposits[n]) || 0);
+    var need = goal * 2;                                 // 2주 동안 해야 할 횟수
+    var per  = Math.round(dep / need / 10) * 10;         // 한 번 빠질 때 깎이는 돈
+    var miss = 0, did = 0;
+    closed.forEach(function(w){
+      var k = 0;
+      w.forEach(function(d){ if(byDay[d] && byDay[d][n]) k++; });
+      did += k;
+      if(k < goal) miss += goal - k;                     // 한 주에 몰아쳐도 다른 주를 메우진 못한다
+    });
+    var cut = Math.min(miss * per, dep);
+    pot += cut;
+    return { name:n, goal:goal, dep:dep, need:need, per:per,
+             miss:miss, did:did, cut:cut, back:dep - cut };
+  });
+
+  return { weeks:weeks, closed:closed, byDay:byDay, people:people, pot:pot };
+}
+
+function settleText(b){
+  var r = settle(b);
+  var wide = 0;
+  r.people.forEach(function(x){ if(x.name.length > wide) wide = x.name.length; });
+  var lines = [];
+  lines.push('[ 각할모 정산 · ' + cycleLabel(b.start) + ' ]');
+  lines.push('');
+  lines.push('끝난 주 ' + r.closed.length + ' / 2주');
+  lines.push('');
+  r.people.forEach(function(x){
+    var nm = x.name;
+    while(nm.length < wide) nm += ' ';
+    lines.push(nm + '  주' + x.goal + '회 · 미인증 ' + x.miss + '회 · 환급 ' +
+               won(x.back) + ' / ' + won(x.dep));
+  });
+  lines.push('');
+  lines.push('공금 적립  ' + won(r.pot));
+  return lines.join(String.fromCharCode(10));
+}
+
+function copySettle(){
+  var b = state.board;
+  if(!b) return;
+  var txt = settleText(b);
+  var done = function(){
+    $('copyInfo').textContent = '복사했습니다';
+    setTimeout(function(){ $('copyInfo').textContent = ''; }, 2500);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, function(){ fallbackCopy(txt, done); });
+  } else {
+    fallbackCopy(txt, done);
+  }
+}
+
+function fallbackCopy(txt, done){
+  var ta = document.createElement('textarea');
+  ta.value = txt;
+  ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); }
+  catch(e){ alert(txt); }
+  document.body.removeChild(ta);
+}
+
+function goCycle(delta){
+  var b = state.board;
+  state.cycle = addDays((b && b.start) || cycleStart(todayStr()), delta * 14);
+  $('ckMoney').innerHTML = '<p class="note">불러오는 중…</p>';
+  loadBoard().then(renderCheck, function(e){ alert(e.message); });
+}
+
+/** 내 주간 목표와 보증금을 저장한다 */
+function saveGoal(){
+  if(!state.me) return;
+  $('goalInfo').textContent = '저장 중…';
+  callApi({ action:'target', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
+            who: state.me, goal: +$('selGoal').value,
+            deposit: +$('selDeposit').value }).then(function(j){
+    if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
+    return loadBoard();
+  }).then(function(){
+    $('goalInfo').textContent = '';
+    renderCheck();
+  }, function(e){
+    $('goalInfo').textContent = '';
+    alert(e.message);
+    renderCheck();                    // 거절당했으면 화면을 원래대로 되돌린다
+  });
+}
+
+function renderCheck(){
+  var b = state.board;
+  if(!b) return;
+  var cur = (b.start === cycleStart(b.today));
+  var r = settle(b);
+  var mine = null;
+  r.people.forEach(function(x){ if(x.name === state.me) mine = x; });
+
+  $('ckCardMine').hidden = !cur;
+  $('ckCardToday').hidden = !cur;
+
+  if(cur){
+    var mineToday = (r.byDay[b.today] || {})[state.me] || '';
+    $('ckHead').textContent = state.me ? (state.me + ' 님의 오늘 인증') : '오늘 인증';
+    $('inpCheck').value = mineToday;
+    $('btnDoCheck').textContent = mineToday ? '수정' : '인증';
+    $('ckHint').textContent = mineToday
+      ? '오늘 인증을 마쳤습니다. 내용을 고치고 다시 누르면 바뀝니다.'
+      : (mine ? '주 ' + mine.goal + '회가 목표입니다. 한 번 빠질 때마다 ' + won(mine.per) + '이 차감됩니다.'
+              : '본인 이름을 먼저 골라주세요.');
+
+    $('goalWrap').hidden = !mine;
+    if(mine){
+      $('selGoal').value = String(mine.goal);
+      $('selDeposit').value = String(mine.dep);
+      // 이번 회차에 이미 정했으면 본인은 못 바꾼다. 모임장은 언제든 바꿀 수 있다.
+      var fixed = !state.admin && b.setAt && b.setAt[state.me] === (b.cycle || cycleStart(b.today));
+      $('selGoal').disabled = fixed;
+      $('selDeposit').disabled = fixed;
+      $('goalNote').textContent = fixed
+        ? '2주 ' + mine.need + '회 · 한 번 빠지면 ' + won(mine.per) +
+          ' — 이번 회차에는 바꿀 수 없습니다'
+        : '2주 ' + mine.need + '회 · 한 번 빠지면 ' + won(mine.per);
+    }
+
+    var names = b.names || [];
+    var done = r.byDay[b.today] || {};
+    var cnt = 0;
+    names.forEach(function(n){ if(done[n]) cnt++; });
+    $('ckDayHead').textContent = dateLabel(b.today) + '  ' + cnt + ' / ' + names.length;
+
+    var list = $('ckList'); list.innerHTML = '';
+    names.forEach(function(n){
+      var ok = !!done[n];
+      var row = el('div','ckrow' + (ok ? '' : ' off') + (n === state.me ? ' me' : ''));
+      row.appendChild(el('span','mark', ok ? '✅' : '⬜'));
+      row.appendChild(el('span','nm', n));
+      row.appendChild(el('span','tx', ok ? done[n] : ''));
+      list.appendChild(row);
+    });
+    if(!names.length) list.innerHTML = '<p class="note">회원이 없습니다.</p>';
+  }
+
+  $('ckMoneyHead').textContent = cycleLabel(b.start);
+  $('btnMonNext').disabled = cur;
+
+  var money = $('ckMoney'); money.innerHTML = '';
+  r.people.forEach(function(x){
+    var row = el('div','mnrow');
+    var left = el('span');
+    left.appendChild(el('b', null, x.name));
+    left.appendChild(el('span','cut', '주' + x.goal + '회 · 보증금 ' + won(x.dep) +
+                                      ' · 1회 ' + won(x.per)));
+    row.appendChild(left);
+    var right = el('span');
+    right.appendChild(el('span','won', won(x.back)));
+    if(x.miss) right.appendChild(el('span','cut', '미인증 ' + x.miss + '회'));
+    row.appendChild(right);
+    money.appendChild(row);
+  });
+  if(!r.people.length) money.innerHTML = '<p class="note">회원이 없습니다.</p>';
+
+  var potRow = el('div','mnrow pot');
+  potRow.appendChild(el('b', null, '공금 (회식비)'));
+  potRow.appendChild(el('span','won', won(r.pot)));
+  money.appendChild(potRow);
+
+  $('ckMoneyHint').textContent = cur
+    ? (r.closed.length
+        ? '첫 주가 끝났습니다. 이번 주는 아직 세지 않습니다.'
+        : '이번 회차는 아직 끝난 주가 없습니다. 2주가 끝나면 정산됩니다.')
+    : '2주 전체 기준 최종 정산입니다.';
+}
+
+function submitCheck(){
+  if(!state.me){ openWho(); return; }
+  var t = $('inpCheck').value.trim();
+  if(!t){ $('inpCheck').focus(); return; }
+  var btn = $('btnDoCheck');
+  btn.disabled = true; btn.textContent = '보내는 중…';
+  callApi({ action:'checkin', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
+            who: state.me, text: t }).then(function(j){
+    if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
+    return loadBoard();
+  }).then(function(){
+    btn.disabled = false; renderCheck();
+  }, function(e){
+    btn.disabled = false; btn.textContent = '인증';
+    alert(e.message);
+  });
+}
+
 function rebuildIndex(){
   var byDate = {};
   state.members.forEach(function(n){
@@ -563,6 +1018,65 @@ function showGate(msg){
   show('scGate');
   setTimeout(function(){ try{ $('inpPass').focus(); }catch(e){} }, 60);
 }
+/** 코드를 통과한 뒤. 처음이면 이름·목표·보증금부터 받는다. */
+function afterGate(){
+  if(state.me) enterApp(); else openJoin();
+}
+
+/* ───────── 첫 입장 설정 ───────── */
+
+function openJoin(){
+  state.pick = '';
+  show('scJoin');
+  $('joinNames').innerHTML = '<p class="note">회원 명단을 불러오는 중…</p>';
+  $('joinMsg').textContent = '';
+  loadBoard().then(function(){
+    renderJoin();
+  }, function(e){
+    if(e.noBoard){ enterApp(); return; }   // 인증이 아직 없으면 예전처럼 달력으로
+    $('joinNames').innerHTML = '';
+    $('joinMsg').textContent = e.message;
+  });
+}
+
+function renderJoin(){
+  var names = (state.board && state.board.names) || [];
+  var box = $('joinNames'); box.innerHTML = '';
+  names.forEach(function(n){
+    var b = el('button','mcard' + (n === state.pick ? ' shared' : ''), n);
+    b.setAttribute('aria-pressed', String(n === state.pick));
+    b.onclick = function(){ state.pick = n; renderJoin(); };
+    box.appendChild(b);
+  });
+  if(!names.length) box.innerHTML = '<p class="note">회원이 없습니다. 모임장에게 문의해 주세요.</p>';
+
+  var goal = +$('joinGoal').value, dep = +$('joinDeposit').value;
+  var per = Math.round(dep / (goal * 2) / 10) * 10;
+  $('joinNote').textContent = '2주 ' + (goal * 2) + '회가 목표입니다. ' +
+    '한 번 빠질 때마다 ' + won(per) + '이 차감됩니다.';
+  $('btnJoin').disabled = !state.pick;
+}
+
+function submitJoin(){
+  if(!state.pick) return;
+  var btn = $('btnJoin');
+  btn.disabled = true; btn.textContent = '저장 중…';
+  $('joinMsg').textContent = '';
+  callApi({ action:'target', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
+            who: state.pick, goal: +$('joinGoal').value,
+            deposit: +$('joinDeposit').value }).then(function(j){
+    if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
+    state.me = state.pick; LS.set(K_ME, state.me);
+    btn.textContent = '시작하기';
+    enterApp();          // 설정이 끝나면 원래대로 달력부터
+  }, function(e){
+    btn.disabled = false; btn.textContent = '시작하기';
+    $('joinMsg').textContent = e.message;
+  });
+}
+
+
+
 function enterApp(){
   var lm = latestMonth(); state.calY = lm[0]; state.calM = lm[1];
   renderCal(); show('scCal');
@@ -748,11 +1262,11 @@ function savePw(np){
     }
     LS.set(K_ADMIN, admin);            // 확인됐으니 이 기기에선 다시 안 묻는다
     LS.set(K_PASS, np);                // 바꾼 기기는 새 번호를 그대로 기억한다
-    LS.set(K_OKM, np ? monthKey() : '');
+    LS.set(K_OKC, np ? cycleKey() : '');
     state.locked = !!j.locked;
     renderAdmin();
     $('pwMsg').className = 'hint saved';
-    $('pwMsg').textContent = np ? '저장됐습니다. 이제 비밀번호는 ' + np + ' 입니다.'
+    $('pwMsg').textContent = np ? '저장됐습니다. 이제 입장 코드는 ' + np + ' 입니다.'
                                 : '잠금을 해제했습니다. 누구나 들어올 수 있습니다.';
   }).catch(function(e){
     $('pwMsg').textContent = e.message;
@@ -785,11 +1299,11 @@ $('btnPrevM').onclick = function(){ state.calM--; if(state.calM<0){state.calM=11
 $('btnNextM').onclick = function(){ state.calM++; if(state.calM>11){state.calM=0;state.calY++;} renderCal(); };
 $('btnGate').onclick = function(){
   var v = ($('inpPass').value || '').trim();
-  if(!/^\d{4}$/.test(v)){ $('gateMsg').textContent = '네 자리 숫자를 입력하세요.'; return; }
+  if(!/^\d{4}$/.test(v)){ $('gateMsg').textContent = '코드 네 자리를 입력하세요.'; return; }
   $('btnGate').disabled = true; $('gateMsg').textContent = '확인 중…';
   loadAll(v).then(function(ok){
-    if(ok){ LS.set(K_PASS, v); enterApp(); return; }
-    $('gateMsg').textContent = '비밀번호가 맞지 않습니다.';
+    if(ok){ LS.set(K_PASS, v); afterGate(); return; }
+    $('gateMsg').textContent = '입장 코드가 맞지 않습니다.';
     $('inpPass').value = ''; $('inpPass').focus();
   }).catch(function(e){
     $('gateMsg').textContent = e.message;
@@ -809,11 +1323,28 @@ $('btnPrev').onclick = function(){ step(-1); };
 $('btnNext').onclick = function(){ step(1); };
 $('btnQuit').onclick = function(){ renderMembers(); show('scMembers'); };
 
+$('btnJoin').onclick       = function(){ submitJoin(); };
+$('joinGoal').onchange     = function(){ renderJoin(); };
+$('joinDeposit').onchange  = function(){ renderJoin(); };
+$('btnCheck').onclick    = function(){ openCheck(); };
+$('btnWho').onclick      = function(){ openWho(); };
+$('btnWhoClose').onclick = function(){ $('mdWho').hidden = true; };
+$('mdWho').onclick       = function(ev){ if(ev.target === this) this.hidden = true; };
+$('btnDoCheck').onclick  = function(){ submitCheck(); };
+$('btnCkReload').onclick = function(){ openCheck(); };
+$('btnMonPrev').onclick  = function(){ goCycle(-1); };
+$('btnMonNext').onclick  = function(){ goCycle(1); };
+$('btnCopySettle').onclick = function(){ copySettle(); };
+$('selGoal').onchange      = function(){ saveGoal(); };
+$('selDeposit').onchange   = function(){ saveGoal(); };
+$('inpCheck').onkeydown  = function(e){ if(e.key === 'Enter') submitCheck(); };
+
 $('btnGuide').onclick      = function(){ $('mdGuide').hidden = false; };
 $('btnGuideClose').onclick = function(){ $('mdGuide').hidden = true; };
 // 바깥 어두운 곳을 눌러도 닫힌다
 $('mdGuide').onclick = function(ev){ if(ev.target === this) this.hidden = true; };
 document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && !$('mdWho').hidden){ $('mdWho').hidden = true; return; }
   if(e.key === 'Escape' && !$('mdGuide').hidden){ $('mdGuide').hidden = true; return; }
   if($('scQuiz').hidden) return;
   if(e.key===' '||e.key==='Enter'){ e.preventDefault(); setReveal($('qEn').hidden); }
@@ -830,25 +1361,26 @@ document.addEventListener('keydown', function(e){
   // ?admin 이 붙어 있으면 관리자로 본다. 그 기기는 회원 비번과 무관하게 통과한다.
   if(state.admin) LS.set(K_ADMIN, q.get('admin') || ADMIN_HINT);
 
+  state.me = LS.get(K_ME, '');
   var saved = LS.get(K_PASS, '');
   var cached = loadCache();
   var isAdminDevice = !!LS.get(K_ADMIN, '');        // 관리자는 비번을 묻지 않는다
-  var sameMonth = isAdminDevice || (cached && LS.get(K_OKM, '') === monthKey());
+  var sameCycle = isAdminDevice || (cached && LS.get(K_OKC, '') === cycleKey());
 
-  if(sameMonth && cached){
+  if(sameCycle && cached){
     enterApp();                                // 이미 통과한 기기면 기다리지 않는다
   } else {
-    showGate('확인 중…');                      // 달이 바뀌었으면 다시 확인한다
+    showGate('확인 중…');                      // 회차가 바뀌었으면 다시 확인한다
     $('inpPass').value = saved;
   }
 
   loadAll(saved).then(function(ok){
-    if(!ok){ showGate(saved ? '비밀번호가 바뀌었습니다. 다시 입력해 주세요.' : ''); return; }
-    if(!sameMonth || !cached) enterApp();
+    if(!ok){ showGate(saved ? '입장 코드가 바뀌었습니다. 모임장에게 새 코드를 받아주세요.' : ''); return; }
+    if(!sameCycle || !cached) afterGate();
     else if(!$('scCal').hidden) renderCal();   // 뒤에서 받아온 최신 내용 반영
     if(!$('scSetup').hidden) renderAdmin();
   }).catch(function(e){
-    if(!sameMonth || !cached) showGate(e.message); // 이미 들어와 있으면 통신 실패는 무시
+    if(!sameCycle || !cached) showGate(e.message); // 이미 들어와 있으면 통신 실패는 무시
   });
 })();
 
