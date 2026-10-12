@@ -708,8 +708,12 @@ function loadBoard(){
                    from: start, to: addDays(start, 13) }).then(function(j){
     j.start = start;
     if(!j.ok) throw new Error(j.locked
-      ? '비밀번호가 바뀌었습니다. 새로고침 후 다시 들어와 주세요.'
+      ? '입장 코드가 바뀌었습니다. 새로고침 후 다시 들어와 주세요.'
       : (j.error || '인증 기록을 불러오지 못했습니다.'));
+    if(!j.names){                       // 옛 중계기는 이 물음을 모른다
+      var e = new Error('인증 기능이 아직 켜지지 않았습니다. 모임장에게 문의해 주세요.');
+      e.noBoard = true; throw e;
+    }
     state.board = j;
     return j;
   });
@@ -724,6 +728,7 @@ function openCheck(){
     if(!state.me || (j.names || []).indexOf(state.me) === -1) openWho();
     renderCheck();
   }, function(e){
+    if(e.noBoard){ alert(e.message); renderCal(); show('scCal'); return; }
     $('ckList').innerHTML = '';
     var box = el('div','card');
     box.style.color = 'var(--danger)';
@@ -1028,6 +1033,7 @@ function openJoin(){
   loadBoard().then(function(){
     renderJoin();
   }, function(e){
+    if(e.noBoard){ enterApp(); return; }   // 인증이 아직 없으면 예전처럼 달력으로
     $('joinNames').innerHTML = '';
     $('joinMsg').textContent = e.message;
   });
