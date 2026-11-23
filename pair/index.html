@@ -3,54 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>영어모임 암기테스트</title>
+<meta name="robots" content="noindex">
+<title>굿플레이스 영작 스터디</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
   :root{
-    --bg:#FAFAFA;
-    --surface:#FFFFFF;
-    --surface-2:#F3F3F5;
-    --text:#15161A;
-    --text-2:#55575F;
-    --muted:#8A8C95;
-    --line:#EBEBEF;
-    --line-2:#DEDEE4;
-    --btn-bg:#15161A;
-    --btn-fg:#FFFFFF;
-    --btn-fg-dim:rgba(255,255,255,.68);
-    --accent:#3B63F6;
-    --accent-soft:#EDF1FE;
-    --danger:#E5484D;
-    --sat:#3B63F6;
-    --sun:#E5484D;
+    --bg:#FAFAFA; --surface:#FFFFFF; --surface-2:#F3F3F5;
+    --text:#15161A; --text-2:#55575F; --muted:#8A8C95;
+    --line:#EBEBEF; --line-2:#DEDEE4;
+    --btn-bg:#15161A; --btn-fg:#FFFFFF;
+    --accent:#3B63F6; --accent-soft:#EDF1FE;
+    --danger:#E5484D; --ok:#1A8F5C; --ok-soft:#E6F5EE;
     --r-sm:9px; --r:12px; --r-lg:16px;
-    --shadow-sm:0 1px 2px rgba(16,17,20,.04);
     --shadow:0 4px 16px rgba(16,17,20,.06), 0 1px 3px rgba(16,17,20,.04);
   }
   @media (prefers-color-scheme:dark){
     :root{
-      --bg:#0C0D10;
-      --surface:#15171C;
-      --surface-2:#1E2027;
-      --text:#F0F1F3;
-      --text-2:#A6A8B2;
-      --muted:#787B85;
-      --line:#23252C;
-      --line-2:#2D3039;
-      --btn-bg:#F0F1F3;
-      --btn-fg:#15161A;
-      --btn-fg-dim:rgba(21,22,26,.6);
-      --accent:#8AA0FF;
-      --accent-soft:#1A1F38;
-      --danger:#FF6369;
-      --sat:#8AA0FF;
-      --sun:#FF6369;
-      --shadow-sm:none;
+      --bg:#0C0D10; --surface:#15171C; --surface-2:#1E2027;
+      --text:#F0F1F3; --text-2:#A6A8B2; --muted:#787B85;
+      --line:#23252C; --line-2:#2D3039;
+      --btn-bg:#F0F1F3; --btn-fg:#15161A;
+      --accent:#8AA0FF; --accent-soft:#1A1F38;
+      --danger:#FF6369; --ok:#4CC38A; --ok-soft:#12261D;
       --shadow:0 4px 20px rgba(0,0,0,.4);
     }
   }
-
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   [hidden]{display:none !important}
@@ -59,548 +37,504 @@
     font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,
       system-ui,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
     font-size:15px; line-height:1.6; letter-spacing:-.011em;
-    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-    -webkit-text-size-adjust:100%;
+    -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
   }
-  .wrap{max-width:600px; margin:0 auto; padding:0 18px 64px}
+  button,input,select{font:inherit;color:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:640px; margin:0 auto; padding:0 16px 120px}
 
   header{position:sticky; top:0; z-index:30; background:var(--bg);
-    border-bottom:1px solid var(--line); padding-block:11px; margin-bottom:24px}
-  header .inner{max-width:600px;margin:0 auto;padding:0 18px;display:flex;align-items:center;gap:8px}
+    border-bottom:1px solid var(--line); padding-block:10px; margin-bottom:20px}
+  header .inner{max-width:640px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:6px}
   .hspace{flex:1}
   .logo{display:flex;align-items:center;gap:9px;border:none;background:transparent;
-    padding:5px 8px;margin-left:-8px;border-radius:10px;flex:none;color:var(--text)}
+    padding:5px 8px;margin-left:-8px;border-radius:10px;font-weight:700;font-size:15px}
   .logo:hover{background:var(--surface-2)}
-  .logo .lmark{display:inline-flex;align-items:center;justify-content:center;
-    width:28px;height:28px;border-radius:9px;background:var(--btn-bg);color:var(--btn-fg);flex:none}
-  .logo .lwm{font-size:17px;font-weight:700;letter-spacing:-.025em;white-space:nowrap}
-  /* 좁은 화면에서도 이름은 계속 보이게 하고, 대신 글자와 여백을 줄인다 */
-  @media (max-width:420px){
-    .logo .lwm{font-size:14.5px}
-    .logo{gap:7px;padding:5px 6px;margin-left:-6px}
-    header .inner{gap:4px;padding:0 14px}
-  }
+  .lmark{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;
+    border-radius:9px;background:var(--btn-bg);color:var(--btn-fg);font-size:14px;font-weight:800}
+  .hbtn{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;
+    padding:5px 12px;font-size:13px;color:var(--text-2)}
+  .hbtn:hover{color:var(--text)}
+  .badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;
+    background:var(--accent-soft);color:var(--accent)}
 
-  button{font-family:inherit;font-size:14.5px;font-weight:500;cursor:pointer;
-    border-radius:var(--r-sm);border:1px solid var(--line-2);
-    background:var(--surface);color:var(--text);padding:9px 14px;
-    transition:background .13s ease, border-color .13s ease, opacity .13s ease}
-  button:hover{background:var(--surface-2)}
-  button:disabled{opacity:.4;cursor:default}
-  button:disabled:hover{background:var(--surface)}
-  .btn-primary{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-fg);font-weight:600}
-  .btn-primary:hover{background:var(--btn-bg);opacity:.86}
-  .btn-primary:disabled:hover{background:var(--btn-bg)}
-  .btn-accent{background:var(--accent-soft);border-color:transparent;
-    color:var(--accent);font-weight:600}
-  .btn-accent:hover{background:var(--accent-soft);opacity:.82}
-  .btn-ghost{background:transparent;border-color:transparent;color:var(--text-2)}
-  .btn-ghost:hover{background:var(--surface-2)}
-  .btn-sm{padding:6px 11px;font-size:13px;border-radius:8px}
-  .row{display:flex;gap:8px;flex-wrap:wrap}
+  h1{font-size:22px;line-height:1.3;margin:0 0 4px;letter-spacing:-.02em;text-wrap:balance}
+  .sub{color:var(--text-2);margin:0 0 20px;font-size:14px}
+  .back{border:none;background:none;color:var(--text-2);padding:4px 0;margin-bottom:10px;font-size:14px}
+  .back:hover{color:var(--text)}
 
-  input,textarea{font-family:inherit;font-size:15px;padding:11px 13px;border-radius:10px;
-    border:1px solid var(--line-2);background:var(--surface);color:var(--text);width:100%;
-    transition:border-color .13s, box-shadow .13s}
-  input:focus,textarea:focus{outline:none;border-color:var(--accent);
-    box-shadow:0 0 0 3px var(--accent-soft)}
-  textarea{resize:vertical;min-height:70px;line-height:1.55}
-  label.fl{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;font-weight:600}
+  .btn{border:1px solid var(--line-2);background:var(--surface);border-radius:var(--r-sm);
+    padding:9px 14px;font-size:14px;font-weight:600}
+  .btn:hover{background:var(--surface-2)}
+  .btn.pri{background:var(--btn-bg);color:var(--btn-fg);border-color:var(--btn-bg)}
+  .btn.pri:hover{opacity:.9}
+  .btn.sm{padding:5px 10px;font-size:13px;font-weight:500}
+  .btn.danger{color:var(--danger)}
+  .btn:disabled{opacity:.45;cursor:default}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
   .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
-    padding:20px;margin-bottom:12px;box-shadow:var(--shadow-sm)}
-  .card h2{font-size:11.5px;margin:0 0 15px;font-weight:700;color:var(--muted);letter-spacing:.05em}
-  .note{font-size:13px;color:var(--text-2);line-height:1.65}
-  .hint{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.6}
-  .err{background:var(--surface);border:1px solid var(--danger);color:var(--danger);
-    padding:13px 15px;border-radius:var(--r);font-size:13.5px;margin-bottom:12px;
-    white-space:pre-wrap;line-height:1.6}
-  .ok-msg{background:var(--accent-soft);border:1px solid transparent;color:var(--accent);
-    padding:11px 15px;border-radius:var(--r);font-size:13.5px;margin-bottom:12px;font-weight:500}
+    padding:16px;margin-bottom:12px}
+  .empty{text-align:center;color:var(--muted);padding:48px 16px;border:1px dashed var(--line-2);
+    border-radius:var(--r-lg)}
 
-  /* 비밀번호 */
-  .gate{max-width:330px;margin:10vh auto 0;text-align:center;padding:28px 24px}
-  .gate-t{font-size:18px;font-weight:700;letter-spacing:-.03em}
-  .gate-s{font-size:13px;color:var(--muted);margin:7px 0 22px;line-height:1.6}
-  .pass{text-align:center;font-size:24px;font-weight:700;letter-spacing:.55em;
-    text-indent:.55em;padding:14px 12px;font-variant-numeric:tabular-nums}
-  .gate-err{font-size:13px;color:var(--danger);min-height:20px;margin:11px 0 5px;font-weight:500}
+  /* 입장 */
+  .gate{max-width:340px;margin:12vh auto 0;text-align:center}
+  .gate input{width:100%;text-align:center;font-size:26px;letter-spacing:.3em;padding:12px;
+    border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);margin:16px 0 10px}
+  .gate .btn{width:100%}
+  .msg{color:var(--danger);font-size:13px;min-height:20px;margin-top:8px;white-space:pre-line}
 
-  .pwnow{font-size:32px;font-weight:800;letter-spacing:.2em;text-indent:.2em;
-    font-variant-numeric:tabular-nums;line-height:1.2;margin:0 0 4px}
-  .pwnow.off{font-size:19px;letter-spacing:-.02em;text-indent:0;color:var(--muted)}
-  .pwrow{display:flex;gap:8px;align-items:stretch}
-  .pwrow input{flex:1;text-align:center;font-size:22px;font-weight:700;
-    letter-spacing:.3em;text-indent:.3em;font-variant-numeric:tabular-nums}
-  .pwrow button{flex:none;padding-inline:22px}
-  .saved{color:var(--ok);font-weight:600}
+  /* 회차 목록 */
+  .lesson{display:block;width:100%;text-align:left;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;margin-bottom:10px}
+  button.lesson:hover{border-color:var(--line-2);box-shadow:var(--shadow)}
+  .lesson .t{font-weight:700;font-size:16px;line-height:1.4}
+  .lesson .m{color:var(--muted);font-size:13px;margin-top:2px}
+  .chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;
+    background:var(--surface-2);color:var(--text-2);margin-right:4px;vertical-align:middle}
+  .chip.on{background:var(--ok-soft);color:var(--ok)}
+  .chip.ans{background:var(--accent-soft);color:var(--accent)}
+  .lesson .acts{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 
-  /* 달력 */
-  .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-  .calhead b{font-size:18px;font-weight:700;letter-spacing:-.03em}
-  .calhead .navs{display:flex;gap:4px}
-  .calhead .navs button{width:32px;height:32px;padding:0;font-size:16px;line-height:1;
-    color:var(--text-2);border-color:transparent;background:transparent}
-  .calhead .navs button:hover{background:var(--surface-2)}
-  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-  .cal .dow{text-align:center;font-size:11px;font-weight:600;color:var(--muted);
-    padding:0 0 10px;letter-spacing:.03em}
-  .cal .dow:first-child{color:var(--sun)}
-  .cal .dow:last-child{color:var(--sat)}
-  .day{aspect-ratio:1;min-width:0;padding:0;border:none;background:transparent;
-    border-radius:12px;display:flex;flex-direction:column;align-items:center;
-    justify-content:center;font-size:15px;font-weight:500;color:var(--text-2)}
-  .day:hover{background:var(--surface-2)}
-  .day.blank{visibility:hidden}
-  .day.none{color:var(--muted);opacity:.4;cursor:default}
-  .day.none:hover{background:transparent}
-  .day.has{background:var(--accent-soft);color:var(--text);font-weight:700}
-  .day.has:hover{background:var(--accent-soft);opacity:.82}
-  .day.today{box-shadow:inset 0 0 0 1.5px var(--line-2)}
-  .day.has.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
+  /* 대본 */
+  .scene{border:none;border-top:1px dashed var(--line-2);margin:22px 0}
+  .ln{padding:14px 0;border-bottom:1px solid var(--line)}
+  .ln:last-child{border-bottom:none}
+  .who{font-size:12px;font-weight:800;color:var(--accent);letter-spacing:.02em;margin-bottom:3px}
+  .ko{font-size:16px;line-height:1.65;word-break:keep-all}
+  .en{font-size:16px;line-height:2.1;color:var(--text-2);margin-top:6px;overflow-wrap:anywhere}
+  .bl{white-space:pre-wrap;white-space:break-spaces;border-bottom:1.5px solid var(--text);padding-bottom:1px}
+  .bl.ans{color:var(--accent);font-weight:600;border-bottom-color:var(--accent)}
+  .bl.mine{color:var(--text);border-bottom-color:var(--line-2)}
+  .bl.mine.none{color:var(--muted);font-size:13px}
+  .my{font-size:15px;line-height:1.9;color:var(--text-2);margin-top:6px;padding:6px 10px;
+    background:var(--surface-2);border-radius:var(--r-sm);overflow-wrap:anywhere}
+  .my{display:flex;gap:10px;align-items:baseline}
+  .my .tag{flex:none;font-size:11px;font-weight:800;color:var(--muted)}
+  .my .fills{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .my .bl.mine{border-bottom:none;padding:0;white-space:normal}
+  .my.key{background:var(--accent-soft)}
+  .my.key .tag{color:var(--accent)}
+  .my.key .bl.ans{border-bottom:none;padding:0;white-space:normal}
+  .ln .in{font:inherit;font-size:16px;color:var(--text);background:var(--accent-soft);border:none;
+    border-bottom:1.5px solid var(--accent);border-radius:6px 6px 0 0;padding:3px 7px;margin:2px 0;
+    max-width:100%;line-height:1.5;outline:none;vertical-align:baseline}
+  .ln .in:focus{background:var(--surface);box-shadow:0 0 0 2px var(--accent)}
+  .ln textarea.in.wide{display:block;width:100%;resize:none;overflow:hidden;margin:6px 0}
+  .mem{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+  .mem .nm{flex:1;min-width:0}
+  .mem .nm b{display:block}
+  .mefields{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+  .mefields > div{flex:1;min-width:120px}
+  .mefields .btn{flex:none;height:42px}
+  .viewbar select{width:auto;padding:5px 10px;font-size:13px;border-radius:999px}
+  /* 대본 도구(정답 보기 등): 스크롤해도 늘 보인다.
+     좁은 화면에서는 머리말 바로 아래에 붙는 가로 줄, 넓은 화면에서는 대본 오른쪽의 세로 탭 */
+  .viewbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px -16px 6px;padding:8px 16px;
+    position:sticky;top:49px;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+  @media (min-width:1000px){
+    .viewbar{position:fixed;top:96px;left:calc(50% + 320px + 20px);width:150px;margin:0;padding:0;
+      flex-direction:column;align-items:stretch;flex-wrap:nowrap;background:none;border-bottom:none}
+    .viewbar .btn{text-align:left;padding:9px 12px;border-radius:var(--r-sm)}
+    .viewbar select{width:100% !important;border-radius:var(--r-sm) !important}
+    .viewbar .note{font-size:12px;line-height:1.5}
+  }
+  .note{font-size:13px;color:var(--muted)}
 
-  /* 이름 카드 */
-  /* 인증 화면 */
-  .ckme{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-  .ckme input{flex:1}
-  .ckrow{display:flex;gap:10px;align-items:baseline;padding:10px 0;
-    border-top:1px solid var(--line)}
-  .ckrow:first-of-type{border-top:none}
-  .ckrow .mark{flex:none;width:19px;font-size:13px}
-  .ckrow .nm{flex:none;min-width:86px;font-weight:600;font-size:14px;letter-spacing:-.02em}
-  .ckrow .tx{flex:1;font-size:14px;color:var(--text-2);line-height:1.5}
-  .ckrow.off .nm{color:var(--muted);font-weight:500}
-  .ckrow.me{background:var(--accent-soft);margin:0 -14px;padding:10px 14px;border-radius:9px}
-  .ckrow.me + .ckrow{border-top:none}
-  .mnrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-    padding:9px 0;border-top:1px solid var(--line);font-size:14px}
-  .mnrow:first-of-type{border-top:none}
-  .mnrow b{font-weight:600;letter-spacing:-.02em}
-  .mnrow .won{font-variant-numeric:tabular-nums;font-weight:600}
-  .mnrow .cut{font-size:12.5px;color:var(--muted);font-weight:500;margin-left:6px}
-  .mnrow.pot{border-top:1px solid var(--line-2);margin-top:4px;padding-top:12px}
-  .mnrow.pot .won{color:var(--accent)}
-  .goalrow{display:flex;gap:9px;align-items:center;flex-wrap:wrap;
-    margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px}
-  .goalrow > span:first-child{font-weight:600;letter-spacing:-.02em}
-  .goalrow{row-gap:8px}
-  .goalrow select:disabled{opacity:.55;cursor:default}
-  .goalrow select{font-family:inherit;font-size:13.5px;padding:6px 9px;border-radius:9px;
-    border:1px solid var(--line-2);background:var(--surface);color:var(--text)}
-  .mnrow > span:first-child{display:flex;flex-direction:column;gap:2px}
-  .joinrow{display:flex;gap:10px;align-items:center;margin-top:12px}
-  .joinrow > span{flex:none;min-width:66px;font-weight:600;font-size:13.5px;letter-spacing:-.02em}
-  .joinrow select{flex:1;font-family:inherit;font-size:14px;padding:10px 12px;border-radius:10px;
-    border:1px solid var(--line-2);background:var(--surface);color:var(--text)}
-  .whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+  /* 관리자: 대사 고르기 */
+  .field{display:block;font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:6px}
+  select,input[type=text],input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--line-2);
+    border-radius:var(--r-sm);background:var(--surface)}
+  .scn{display:flex;align-items:center;gap:10px;margin:26px 0 8px;font-size:12px;font-weight:800;
+    letter-spacing:.04em;color:var(--muted);scroll-margin-top:64px}
+  .scn::after{content:"";flex:1;border-top:1px dashed var(--line-2)}
+  .scn:first-child{margin-top:4px}
 
-  /* 진행 방법 팝업 */
-  .modal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;
-    justify-content:center;padding:18px;background:rgba(18,18,22,.45)}
-  .modal > .card{width:100%;max-width:430px;max-height:84vh;overflow:auto;margin:0}
-  .ghead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-  .ghead h3{margin:0;font-size:16px;letter-spacing:-.022em}
-  .ghead h3 em{font-style:normal;font-size:12.5px;font-weight:500;
-    color:var(--muted);letter-spacing:0;margin-left:5px}
-  .guide .step{margin-top:15px}
-  .guide .step:first-of-type{margin-top:0}
-  .guide .step b{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-    font-size:13.5px;margin-bottom:3px;letter-spacing:-.02em}
-  .guide .step b em{font-style:normal;font-weight:500;font-size:12.5px;
-    color:var(--muted);letter-spacing:0;flex:none}
-  .guide .step p{margin:0;font-size:13.5px;line-height:1.6;color:var(--text-2)}
-  .guide .tip{margin-top:17px;padding-top:13px;border-top:1px solid var(--line);
-    font-size:13.5px;line-height:1.6;color:var(--text);font-weight:600;letter-spacing:-.015em}
+  /* 관리자: 빈칸 만들기 */
+  .ed{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+  .ed .top{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+  .ed .who{margin:0;flex:1}
+  .ed .mini{border:none;background:var(--surface-2);border-radius:999px;font-size:12px;padding:3px 9px;color:var(--text-2)}
+  .ed .mini:hover{color:var(--text)}
+  .ed .ko{font-size:14px;color:var(--text-2);border-radius:6px;padding:2px 4px;margin:0 -4px 8px;outline:none}
+  .ed .ko:focus{background:var(--surface-2);color:var(--text)}
+  .words{display:flex;flex-wrap:wrap;gap:6px}
+  .w{border:1px solid var(--line-2);background:none;border-radius:8px;padding:5px 9px;font-size:15.5px;line-height:1.45;
+    text-align:left;user-select:none;-webkit-user-select:none}
+  .w:hover{border-color:var(--text-2)}
+  .w.on{background:var(--btn-bg);color:var(--btn-fg);border-color:var(--btn-bg)}
+  .w.x{cursor:default;color:var(--muted);border-color:transparent}
+  .w.x:hover{border-color:transparent}
 
-  .mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
-  .mcard{padding:15px 10px;border-radius:var(--r);font-size:16px;font-weight:600;
-    line-height:1.35;letter-spacing:-.02em;border:1px solid var(--line-2);text-align:center}
-  .mcard span{display:block;font-size:12px;color:var(--muted);font-weight:500;
-    margin-top:4px;letter-spacing:0}
-  .mcard i.tick{display:block;width:17px;height:17px;margin:0 auto 8px;border-radius:6px;
-    border:1.5px solid var(--line-2);font-style:normal;font-size:10px;line-height:14px;
-    color:transparent;transition:.13s}
-  .mcard.shared{background:var(--accent-soft);border-color:transparent}
-  .mcard.shared span{color:var(--accent)}
-  .mcard.shared i.tick{border-color:#B9C8FB}
-  .mcard.shared[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-  .mcard.shared[aria-pressed="true"] span{color:rgba(255,255,255,.82)}
-  .mcard.shared[aria-pressed="true"] i.tick{background:#fff;border-color:#fff;color:var(--accent)}
-  .mcard[aria-pressed="true"]{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-fg)}
-  .mcard[aria-pressed="true"]:hover{background:var(--btn-bg);opacity:.88}
-  .mcard[aria-pressed="true"] span{color:var(--btn-fg-dim)}
-  .mcard[aria-pressed="true"] i.tick{background:var(--btn-fg);border-color:var(--btn-fg);color:var(--btn-bg)}
+  .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--bg);
+    border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+  .dock .inner{max-width:608px;margin:0 auto;display:flex;gap:8px;align-items:center}
+  .dock .info{flex:1;font-size:13px;color:var(--text-2);min-width:0}
 
-  .chips{display:flex;gap:6px;flex-wrap:wrap}
-  .chip{padding:7px 14px;border-radius:999px;border:1px solid var(--line-2);
-    background:var(--surface);font-size:13.5px;font-weight:500;color:var(--text-2);cursor:pointer}
-  .chip[aria-pressed="true"]{background:var(--btn-bg);border-color:var(--btn-bg);
-    color:var(--btn-fg);font-weight:600}
-  .chip[aria-pressed="true"]:hover{background:var(--btn-bg);opacity:.88}
-  .toggle{display:flex;align-items:center;gap:11px;padding:9px 0;cursor:pointer;
-    font-size:14px;color:var(--text-2)}
-  .toggle input{margin:0;width:18px;height:18px;accent-color:var(--accent);flex:none}
+  #toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:60;
+    background:var(--btn-bg);color:var(--btn-fg);padding:9px 16px;border-radius:999px;
+    font-size:14px;box-shadow:var(--shadow);max-width:90vw;text-align:center}
 
-  /* 퀴즈 */
-  .quiz-top{display:flex;align-items:center;gap:12px;margin-bottom:16px;
-    font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:500}
-  .progress{flex:1;height:3px;background:var(--line);border-radius:99px;overflow:hidden}
-  .progress i{display:block;height:100%;background:var(--accent);border-radius:99px;
-    transition:width .3s cubic-bezier(.4,0,.2,1)}
-  .stage{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
-    padding:32px 26px;min-height:270px;display:flex;flex-direction:column;
-    justify-content:center;margin-bottom:12px;box-shadow:var(--shadow)}
-  .owner{font-size:12px;color:var(--muted);margin-bottom:16px;font-weight:600;letter-spacing:.01em}
-  .ko{font-size:clamp(21px,5vw,27px);font-weight:700;line-height:1.5;
-    letter-spacing:-.035em;word-break:keep-all}
-  .en{margin-top:24px;padding-top:22px;border-top:1px solid var(--line);
-    font-size:clamp(16px,3.9vw,19px);line-height:1.6;color:var(--accent);
-    font-weight:500;letter-spacing:-.012em;word-break:break-word}
-  .nav2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-  .nav2 button{padding:13px 6px;font-size:14.5px;font-weight:600;color:var(--text-2)}
-
-  table.tpl{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px;
-    border:1px solid var(--line);border-radius:10px;overflow:hidden}
-  table.tpl th,table.tpl td{border-bottom:1px solid var(--line);
-    border-right:1px solid var(--line);padding:8px 10px;text-align:left;color:var(--text-2)}
-  table.tpl tr:last-child th,table.tpl tr:last-child td{border-bottom:none}
-  table.tpl th:last-child,table.tpl td:last-child{border-right:none}
-  table.tpl th{background:var(--surface-2);font-weight:600;color:var(--text)}
-  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;
-    background:var(--surface-2);padding:1px 5px;border-radius:5px}
+  @media print{
+    header,.back,.viewbar,.dock,#toast{display:none !important}
+    body{background:#fff;color:#000;font-size:12pt}
+    .wrap{max-width:none;padding:0}
+    .en{color:#000;line-height:2.6}
+    #meCard{display:none !important}
+    .ln .in{background:none;border-bottom:1px solid #000;border-radius:0}
+    .who,.scn{color:#000}
+    .ln{break-inside:avoid}
+  }
 </style>
 </head>
 <body>
 
 <header>
   <div class="inner">
-    <button class="logo" id="btnLogo" title="처음 화면으로">
-      <span class="lmark" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-3.6-.7L3 21l1.9-4.9A8.2 8.2 0 0 1 4 11.5 8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/></svg></span>
-      <span class="lwm">In My Own Words</span>
-    </button>
+    <button class="logo" id="btnHome"><span class="lmark">G</span><span>굿플레이스 영작</span></button>
     <span class="hspace"></span>
-    <button class="btn-sm" id="btnCheck">인증</button>
-    <button class="btn-sm btn-accent" id="btnGuide">진행 방법</button>
-    <button class="btn-sm btn-ghost" id="btnBack" hidden>‹ 뒤로</button>
-    <button class="btn-sm btn-ghost" id="btnSetup">설정</button>
+    <span class="badge" id="adminBadge" hidden>관리자</span>
+    <button class="hbtn" id="btnSetup" hidden>설정</button>
   </div>
 </header>
 
-<div class="wrap">
+<main class="wrap">
 
-  <!-- ── 설정 ── -->
-  <section id="scSetup" hidden>
-    <div class="card">
-      <h2>입장 코드</h2>
-      <div class="pwnow" id="pwNow">—</div>
-      <p class="note">회원이 사이트에 들어올 때 입력하는 네 자리입니다.
-        <b>2주 회차가 바뀔 때마다</b> 입금을 확인하고 새 코드로 바꿔주세요.
-        코드를 바꾸면 회원 전원이 다음에 들어올 때 새 코드를 입력하게 됩니다.</p>
-
-      <div class="pwrow" style="margin-top:16px">
-        <input id="inpPw" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000">
-        <button class="btn-primary" id="btnSavePw">저장</button>
-      </div>
-      <div class="hint" id="pwMsg"></div>
-
-      <div id="adminWrap" style="margin-top:18px">
-        <label class="fl">관리자 비밀번호</label>
-        <input id="inpAdmin" type="password" autocomplete="off" placeholder="모임장만 아는 비밀번호">
-        <div class="hint">저장할 때 한 번만 확인합니다. 이후엔 이 기기에서 다시 묻지 않습니다.</div>
-      </div>
-
-      <div class="row" style="margin-top:18px">
-        <button class="btn-ghost btn-sm" id="btnCancelSetup">닫기</button>
-        <button class="btn-ghost btn-sm" id="btnUnlock">잠금 해제</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>문장 올리는 법</h2>
-      <p class="note">구글 드라이브 폴더 <code>In my own words</code> 안에 회원별 스프레드시트
-        파일을 하나씩 둡니다. <b>파일 이름이 곧 회원 이름</b>이 되며, 각 파일은 해당 회원에게만
-        개별 공유합니다.</p>
-      <table class="tpl">
-        <tr><th>스터디 일자</th><th>한글</th><th>영어</th></tr>
-        <tr><td>2026. 9. 10</td><td>오늘 뭐 먹고 싶은데?</td><td>What do you want to eat today?</td></tr>
-        <tr><td>2026. 9. 10</td><td>나 사실 배불러서 먹고 싶은거 없어</td><td>Actually, I'm already full.</td></tr>
-      </table>
-      <div class="hint">입력한 일자를 기준으로 달력에 표시되며, 해당 날짜에 문장을 올린 회원만
-        이름 카드가 나타납니다. 문장은 파일의 첫 번째 탭에만 입력합니다.</div>
-    </div>
-  </section>
-
-  <!-- ── 첫 입장 설정 ── -->
-  <section id="scJoin" hidden>
-    <div class="card">
-      <h2>처음 오셨네요</h2>
-      <p class="note">본인 이름을 고르고, 모임장에게 말씀하신 대로
-        주간 목표와 보증금을 정해주세요.
-        <b>한 번 정하면 이번 2주 회차 동안은 바꿀 수 없습니다.</b></p>
-
-      <div class="whogrid" id="joinNames" style="margin-top:16px"></div>
-
-      <div class="joinrow">
-        <span>주간 목표</span>
-        <select id="joinGoal">
-          <option value="1">주 1회</option>
-          <option value="2">주 2회</option>
-          <option value="3" selected>주 3회</option>
-          <option value="4">주 4회</option>
-          <option value="5">주 5회</option>
-          <option value="6">주 6회</option>
-          <option value="7">매일</option>
-        </select>
-      </div>
-      <div class="joinrow">
-        <span>보증금</span>
-        <select id="joinDeposit">
-          <option value="10000" selected>1만원</option>
-          <option value="20000">2만원</option>
-          <option value="30000">3만원</option>
-          <option value="50000">5만원</option>
-        </select>
-      </div>
-
-      <div class="hint" id="joinNote"></div>
-      <button class="btn-primary" id="btnJoin"
-              style="width:100%;padding:14px;font-size:15px;margin-top:16px">시작하기</button>
-      <div class="hint" id="joinMsg"></div>
-    </div>
-  </section>
-
-  <!-- ── 인증 ── -->
-  <section id="scCheck" hidden>
-    <div id="ckMsg"></div>
-
-    <div class="card" id="ckCardMine">
-      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h2 id="ckHead" style="margin:0">오늘 인증</h2>
-        <button class="btn-sm btn-ghost" id="btnWho">이름 바꾸기</button>
-      </div>
-      <div class="ckme">
-        <input id="inpCheck" type="text" maxlength="100" placeholder="오늘 한 일을 한 줄로">
-        <button class="btn-primary" id="btnDoCheck">인증</button>
-      </div>
-      <div class="hint" id="ckHint">주간 목표를 정해주세요.</div>
-      <div class="goalrow" id="goalWrap" hidden>
-        <span>내 목표</span>
-        <select id="selGoal">
-          <option value="1">주 1회</option>
-          <option value="2">주 2회</option>
-          <option value="3">주 3회</option>
-          <option value="4">주 4회</option>
-          <option value="5">주 5회</option>
-          <option value="6">주 6회</option>
-          <option value="7">매일</option>
-        </select>
-        <select id="selDeposit">
-          <option value="10000">보증금 1만원</option>
-          <option value="20000">보증금 2만원</option>
-          <option value="30000">보증금 3만원</option>
-          <option value="50000">보증금 5만원</option>
-        </select>
-        <span class="note" id="goalNote"></span>
-        <span class="note" id="goalInfo"></span>
-      </div>
-    </div>
-
-    <div class="card" id="ckCardToday">
-      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h2 id="ckDayHead" style="margin:0">오늘</h2>
-        <button class="btn-sm btn-ghost" id="btnCkReload">새로고침</button>
-      </div>
-      <div id="ckList"></div>
-    </div>
-
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h2 id="ckMoneyHead" style="margin:0">보증금 정산</h2>
-        <div class="navs">
-          <button id="btnMonPrev" aria-label="이전 달">‹</button>
-          <button id="btnMonNext" aria-label="다음 달">›</button>
-        </div>
-      </div>
-      <div id="ckMoney"></div>
-      <div class="hint" id="ckMoneyHint"></div>
-      <div class="row" style="margin-top:14px">
-        <button class="btn-sm" id="btnCopySettle">정산 문구 복사</button>
-        <span class="note" id="copyInfo" style="align-self:center"></span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── 비밀번호 ── -->
+  <!-- 입장 -->
   <section id="scGate" hidden>
-    <div class="card gate">
-      <div class="gate-t">모임원 확인</div>
-      <div class="gate-s">모임장에게 받은 입장 코드 4자리를 입력하세요</div>
-      <input id="inpPass" class="pass" inputmode="numeric" pattern="[0-9]*" aria-label="입장 코드"
-             maxlength="4" autocomplete="off" placeholder="••••">
-      <div class="gate-err" id="gateMsg"></div>
-      <button class="btn-primary" id="btnGate" style="width:100%;padding:14px;font-size:15px">들어가기</button>
+    <div class="gate">
+      <h1 id="gateTitle">입장 코드</h1>
+      <p class="sub" id="gateSub">모임장에게 받은 네 자리 코드를 입력하세요.</p>
+      <form id="gateForm" autocomplete="off">
+        <input id="inpCode" type="password" inputmode="numeric" maxlength="12" aria-label="코드">
+        <button class="btn pri" type="submit" id="btnEnter">들어가기</button>
+      </form>
+      <div class="msg" id="gateMsg"></div>
     </div>
   </section>
 
-  <!-- ── 달력 ── -->
-  <section id="scCal" hidden>
-    <div id="calMsg"></div>
-    <div class="card">
-      <div class="calhead">
-        <b id="calLabel">—</b>
-        <div class="navs">
-          <button id="btnPrevM" aria-label="이전 달">‹</button>
-          <button id="btnNextM" aria-label="다음 달">›</button>
+  <!-- 회차 목록 -->
+  <section id="scList" hidden>
+    <h1>The Good Place</h1>
+    <p class="sub" id="listSub">한글 대사를 보고 빈칸의 영어를 직접 써 보세요.</p>
+    <div class="row" id="adminBar" hidden style="margin-bottom:16px">
+      <button class="btn pri" id="btnNew">+ 에피소드 올리기</button>
+      <button class="btn" id="btnReload">새로고침</button>
+    </div>
+    <div id="listBox"></div>
+    <p class="note" id="listInfo" style="margin-top:14px"></p>
+  </section>
+
+  <!-- 회차 보기 -->
+  <section id="scView" hidden>
+    <button class="back" data-go="">← 목록</button>
+    <h1 id="viewTitle"></h1>
+    <div class="viewbar">
+      <button class="btn sm" id="btnAns" hidden>정답 보기</button>
+      <button class="btn sm" id="btnPrint">인쇄</button>
+      <button class="btn sm" id="btnClear" hidden>내 답 모두 지우기</button>
+      <button class="btn sm" id="btnUndo" hidden>되돌리기</button>
+      <select id="selWho" hidden aria-label="회원 답 보기"></select>
+      <span class="note" id="viewNote"></span>
+    </div>
+    <div class="card" id="meCard" hidden>
+      <form id="meForm" autocomplete="off">
+        <div class="mefields">
+          <div><label class="field" for="inpMe">내 이름</label>
+            <input type="text" id="inpMe" maxlength="20" placeholder="이름"></div>
+          <div><label class="field" for="inpPin">내 비밀번호</label>
+            <input type="password" id="inpPin" inputmode="numeric" maxlength="4" placeholder="숫자 4자리"></div>
+          <button class="btn pri" type="submit" id="btnMe">확인</button>
         </div>
+        <div class="msg" id="meMsg"></div>
+        <p class="note" style="margin:4px 0 0">이름과 비밀번호를 넣어야 대본이 열립니다. 처음이면 지금 적는 숫자 네 자리가 내 비밀번호가 되고, 다음부터 같은 이름과 비밀번호를 넣으면 쓰던 답을 불러옵니다.</p>
+      </form>
+      <div id="meDone" hidden>
+        <div class="row"><b id="meName"></b><span class="note" id="meNote"></span></div>
       </div>
-      <div class="cal" id="calGrid"></div>
     </div>
-    <div class="row">
-      <button class="btn-sm" id="btnSheet" hidden>공용문장 열기</button>
-      <button class="btn-sm btn-ghost" id="btnReload">시트 새로고침</button>
-      <span class="note" id="syncInfo" style="align-self:center"></span>
+    <div id="viewBox"></div>
+    <div class="dock" id="viewDock" hidden>
+      <div class="inner">
+        <div class="info" id="ansInfo"></div>
+        <button class="btn pri" id="btnSubmit">답 등록</button>
+      </div>
     </div>
   </section>
 
-  <!-- ── 이름 카드 ── -->
-  <section id="scMembers" hidden>
+  <!-- 관리자 ① 대사 고르기 -->
+  <section id="scPick" hidden>
+    <button class="back" data-go="">← 목록</button>
+    <h1>① 에피소드 고르기</h1>
+    <p class="sub">에피소드 대본 전체가 장면별로 나뉘어 올라갑니다. 다음 화면에서 문제로 낼 문장만 고르면 됩니다.</p>
+    <div class="card" id="srcCard">
+      <div id="srcNone">
+        <b>대본 파일을 먼저 불러오세요.</b>
+        <p class="note" style="margin:4px 0 12px">「굿플레이스2027」 폴더의 <b>굿플레이스_시즌1_대본.json</b> 파일입니다.
+          이 기기에만 저장되고 서버로 올라가지 않습니다.</p>
+      </div>
+      <div id="srcHave" hidden>
+        <label class="field" for="selEp">에피소드</label>
+        <select id="selEp"></select>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="btn sm" for="inpSrc" id="lblSrc">대본 파일 불러오기</label>
+        <input type="file" id="inpSrc" accept=".json,application/json" hidden>
+        <span class="note" id="srcInfo"></span>
+      </div>
+    </div>
+    <div id="pickBox"></div>
+    <div class="dock" id="pickDock" hidden>
+      <div class="inner">
+        <div class="info" id="pickInfo"></div>
+                <button class="btn pri" id="btnPickNext">대본 열기 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 관리자 ② 빈칸 만들기 -->
+  <section id="scEdit" hidden>
+    <button class="back" id="btnEditBack">← 뒤로</button>
+    <h1>② 문제로 낼 문장 고르기</h1>
+    <p class="sub">대본 전체가 회원에게 보입니다. 문제로 낼 문장만 누르면 검게 표시되고, 그 문장만 빈칸이 됩니다. 한글 뜻은 눌러서 고칠 수 있습니다.</p>
     <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h2 id="mHead" style="margin:0">—</h2>
-        <button class="btn-sm btn-ghost" id="btnAll">전체 선택</button>
+      <label class="field" for="inpTitle">제목</label>
+      <input type="text" id="inpTitle" maxlength="80" placeholder="예: E01 · Everything is Fine">
+      <div class="row" style="margin-top:10px">
+        <button class="btn sm" id="btnAllOn">모든 문장 통째로 숨기기</button>
+        <button class="btn sm" id="btnAllOff">빈칸 모두 지우기</button>
       </div>
-      <div class="mcards" id="mCards"></div>
-      <div class="row" style="margin-top:12px">
-        <button class="btn-sm" id="btnDlSel">예문 다운받기</button>
+    </div>
+    <div id="editBox"></div>
+    <div class="dock">
+      <div class="inner">
+        <div class="info" id="editInfo"></div>
+        <button class="btn" id="btnPreview">미리보기</button>
+        <button class="btn pri" id="btnSave">등록</button>
       </div>
-      <div class="hint">여러 명을 선택하면 해당 회원들의 문장이 <b>섞여서</b> 출제됩니다.<br>
-        <b>예문 다운받기</b>를 누르면 선택한 회원의 <b>전체 문장</b>을 파일로 저장할 수 있습니다.</div>
+    </div>
+  </section>
+
+  <!-- 관리자 설정 -->
+  <section id="scSetup" hidden>
+    <button class="back" data-go="">← 목록</button>
+    <h1>설정</h1>
+    <p class="sub">회원이 들어올 때 쓰는 입장 코드를 바꿉니다.</p>
+    <div class="card">
+      <label class="field" for="inpNewPw">새 입장 코드 (숫자 네 자리 · 비우면 잠금 해제)</label>
+      <input type="text" id="inpNewPw" inputmode="numeric" maxlength="4" placeholder="0000">
+      <div class="row" style="margin-top:10px">
+        <button class="btn pri" id="btnSetPw">입장 코드 바꾸기</button>
+        <span class="note" id="pwState"></span>
+      </div>
+      <div class="msg" id="pwMsg"></div>
     </div>
     <div class="card">
-      <h2>문항 수</h2>
-      <div class="chips" id="countChips"></div>
-      <label class="toggle"><input type="checkbox" id="chkShuffle" checked> 카드 섞기</label>
-      <label class="toggle"><input type="checkbox" id="chkBlind"> 이름 가리기 (즉석 영작용)</label>
+      <b>회원</b>
+      <p class="note" style="margin:4px 0 10px">회원이 개인 비밀번호를 잊었으면 [비밀번호 초기화]를 누르세요. 그 회원이 다음에 넣는 네 자리가 새 비밀번호가 되고, 써 둔 답은 그대로 남습니다.</p>
+      <div id="memBox"><span class="note">불러오는 중…</span></div>
     </div>
-    <button class="btn-primary" id="btnStart" style="width:100%;padding:15px;font-size:16px">시작</button>
-  </section>
-
-  <!-- ── 퀴즈 ── -->
-  <section id="scQuiz" hidden>
-    <div class="quiz-top">
-      <span id="qCount">1 / 10</span>
-      <div class="progress"><i id="qBar"></i></div>
-      <button class="btn-sm btn-ghost" id="btnQuit">끝내기</button>
-    </div>
-    <div class="stage">
-      <div class="owner" id="qOwner"></div>
-      <div class="ko" id="qKo"></div>
-      <div class="en" id="qEn" hidden></div>
-    </div>
-    <button class="btn-primary" id="btnReveal" style="width:100%;padding:15px;font-size:16px">정답 확인</button>
-    <div class="nav2">
-      <button id="btnPrev">‹ 이전</button>
-      <button id="btnNext">다음 ›</button>
+    <div class="card">
+      <b>이 기기에서 관리자 로그아웃</b>
+      <p class="note" style="margin:4px 0 10px">저장해 둔 관리자 비밀번호와 작성 중이던 초안을 지웁니다.</p>
+      <button class="btn danger" id="btnLogout">로그아웃</button>
     </div>
   </section>
 
-</div>
+</main>
 
-<div class="modal" id="mdWho" hidden>
-  <div class="card">
-    <div class="ghead">
-      <h3>본인 이름을 고르세요</h3>
-      <button class="btn-sm btn-ghost" id="btnWhoClose">닫기</button>
-    </div>
-    <div class="whogrid" id="whoList"></div>
-    <div class="hint">한 번 고르면 이 기기에 기억됩니다. [이름 바꾸기]로 언제든 바꿀 수 있습니다.</div>
-  </div>
-</div>
-
-<div class="modal" id="mdGuide" hidden>
-  <div class="card guide">
-    <div class="ghead">
-      <h3>진행 방법 <em>총 60분</em></h3>
-      <button class="btn-sm btn-ghost" id="btnGuideClose">닫기</button>
-    </div>
-    <div class="step">
-      <b>1단계 · 복습 <em>20분</em></b>
-      <p>파트너의 카드를 선택해 한글 예문 제시, 파트너는 영어로 바꿔 말해보기.<br>
-        (각자 문장 복습형태) 서로 번갈아 가며 진행함.</p>
-    </div>
-    <div class="step">
-      <b>2단계 · 즉석 영작 <em>20분</em></b>
-      <p>같은 방식으로 본인의 카드를 선택해 진행.<br>
-        (파트너에게는 처음 보는 문장 · 즉석 영작)</p>
-    </div>
-    <div class="step">
-      <b>3단계 · 무작위 <em>20분</em></b>
-      <p>다른 회원의 카드를 선택해 추가 영작 연습.</p>
-    </div>
-    <div class="tip">각자 공부한 내용과 새로 알게 된 표현에 대해
-      서로 공유하는 시간도 가져보세요~!</div>
-  </div>
-</div>
+<div id="toast" hidden></div>
 
 <script>
-(function(){
-"use strict";
+/* ═══════════════════════════════════════════════════════
+   굿플레이스 영작 스터디
+   · 회원: 입장 코드 → 회차 목록 → 한글 + 빈칸 뚫린 영어 대본
+   · 모임장(주소 뒤 ?admin): 대사 범위를 고르고 숨길 낱말을 눌러 회차를 등록
+   · 숨긴 낱말은 모임장이 [정답 공개]를 켜기 전에는 회원 기기로 오지 않는다
+   · ?demo 를 붙이면 중계기 없이 이 기기 안에서만 돌아간다 (연습용)
+   ═══════════════════════════════════════════════════════ */
 
-var LS = {
-  get:function(k,d){ try{var v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
-  set:function(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} },
-  del:function(k){ try{localStorage.removeItem(k);}catch(e){} }
-};
-var K_CACHE='em.cache', K_PASS='em.pass', K_ADMIN='em.admin', K_OKC='em.okcycle', K_ME='em.me';
-var ADMIN_HINT = '8292';   // ?admin 으로 들어올 때 중계기에 대는 관리자 비번
-
-var state = {
-  sheetId:'', members:[], decks:{}, byDate:{}, syncedAt:0,
-  calY:0, calM:0, selDate:null, selNames:[], selMember:null, limit:20, session:null,
-  locked:false,                             // 서버에 비밀번호가 걸려 있는지
-  loaded:false,                             // 서버 응답을 받았는지
-  admin:false,                              // 이 기기가 관리자 화면을 볼 수 있는지
-  me:'', board:null, cycle:'', pick:''       // 인증: 나는 누구인지, 보고 있는 회차
-};
-
-function $(id){ return document.getElementById(id); }
-function el(t,c,x){ var e=document.createElement(t); if(c)e.className=c; if(x!=null)e.textContent=x; return e; }
-function pad2(n){ return (n<10?'0':'')+n; }
-// 입장 코드는 2주마다 바뀐다. 같은 회차 안에서는 다시 묻지 않는다.
-function cycleKey(){ return cycleStart(todayStr()); }
-
-var SCREENS = ['scGate','scSetup','scCal','scMembers','scQuiz','scCheck','scJoin'];
-function show(s){
-  SCREENS.forEach(function(x){ $(x).hidden = (x!==s); });
-  $('btnBack').hidden = (s==='scCal' || s==='scSetup' || s==='scGate' || s==='scQuiz' || s==='scJoin');
-  // 진행 방법은 모임을 진행하는 두 화면에서만 띄운다
-  $('btnGuide').hidden = !(s==='scCal' || s==='scMembers');
-  $('btnCheck').hidden = !(s==='scCal');
-  // 관리자가 아니면 설정 버튼 자체가 없다 (회원에게는 이 화면이 존재하지 않는다)
-  $('btnSetup').hidden = (s==='scGate') || (s==='scJoin') || !state.admin;
-  window.scrollTo(0,0);
-}
-
-/* ───────── 날짜 ───────── */
-function ymd(y,m,d){ return y+'-'+pad2(m)+'-'+pad2(d); }
-var DOW = ['일','월','화','수','목','금','토'];
-function dateLabel(key){
-  var p = key.split('-');
-  var d = new Date(+p[0], +p[1]-1, +p[2]);
-  return (+p[1]) + '월 ' + (+p[2]) + '일 (' + DOW[d.getDay()] + ')';
-}
-
-/* ───────── 데이터: Apps Script 중계기 ─────────
-   시트를 직접 읽지 않고 모임장 권한으로 도는 스크립트에 물어본다.
-   덕분에 시트를 공개하지 않아도 되고, 비밀번호 검사도 서버에서 한다. */
-// 모임장이 공용 문장을 적는 시트 (관리자에게만 버튼이 보인다)
-var SHARED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Q2r0wqk32PQZ4U93RollVu8nhvid1FSNVqSn5shhYiQ/edit';
 var API = 'https://script.google.com/macros/s/AKfycbysvePf_fN3ABV1KNmamdaAmJxzpp2P_FG1WFxbDD8YAAAwM2p2H1SWeZ8xTwXpaBoR9g/exec';
 
+var K_PASS='gp.pass', K_ADMIN='gp.admin', K_CACHE='gp.cache', K_SRC='gp.source',
+    K_DRAFT='gp.draft', K_DEMO='gp.demo', K_ME='gp.me', K_PIN='gp.pin', K_ANS='gp.ans', K_UNDO='gp.undo';
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+var LS = {
+  get:function(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:v; }catch(e){ return d; } },
+  set:function(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } },
+  del:function(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+function readJson(k, d){ try{ var v = JSON.parse(LS.get(k,'')); return v == null ? d : v; }catch(e){ return d; } }
+
+var Q = new URLSearchParams(location.search);
+var DEMO = Q.has('demo');
+
+var state = {
+  admin: Q.has('admin'),     // 주소에 ?admin 이 있을 때만 관리자 화면
+  ready: false,              // 서버 답을 한 번이라도 받았는지
+  locked: null,
+  lessons: [],
+  showAns: false,
+  mine: {},                  // 내가 등록한 답 {대본ID:{열쇠:답}}
+  subs: {}, subsAt: {},      // 관리자: 회원들이 등록한 답
+  viewWho: '',
+  src: null,                 // 대본 원본 (관리자 기기에만)
+  pick: { ep: '' },
+  ed: null,                  // 작성 중인 회차 {id,title,lines:[{s,ko,en,b:[],br}]}
+  preview: false
+};
+
+/* ───────────────── 낱말 가리기 ─────────────────
+   중계기(AppsScript_대본추가.gs)의 gpMask 와 똑같이 동작해야 한다. */
+function wordsOf(en){ return String(en).split(/\s+/).filter(function(w){ return w !== ''; }); }
+function splitWord(w){
+  var m = w.match(/^([^A-Za-z0-9]*)(.*?)([^A-Za-z0-9]*)$/);
+  return (m && m[2]) ? [m[1], m[2], m[3]] : null;
+}
+/** 영어 한 줄을 문장으로 나눈다. [[낱말번호,…], …] */
+var ABBR = /^(Mr|Mrs|Ms|Dr|St|Jr|Sr|vs|etc)\.$/i;
+function sentencesOf(en){
+  var ws = wordsOf(en), out = [], cur = [];
+  ws.forEach(function(w, k){
+    cur.push(k);
+    var ends = /[.!?…]["”’')\]]*$/.test(w) || /(--|—)["”’']*$/.test(w);
+    if(ends && !ABBR.test(w) && k < ws.length - 1){ out.push(cur); cur = []; }
+  });
+  if(cur.length) out.push(cur);
+  // 낱말이 없는 토막(부호뿐)은 앞 문장에 붙인다
+  return out.reduce(function(acc, sn){
+    var has = sn.some(function(k){ return splitWord(ws[k]); });
+    if(!has && acc.length) acc[acc.length - 1] = acc[acc.length - 1].concat(sn); else acc.push(sn);
+    return acc;
+  }, []);
+}
+function maskLine(en, blanks, reveal){
+  var hide = {}; (blanks || []).forEach(function(i){ hide[i] = true; });
+  return wordsOf(en).map(function(w, i){
+    if(!hide[i]) return w;
+    var p = splitWord(w);
+    if(!p) return w;
+    var cell = [p[0], p[1].length, p[2]];
+    if(reveal) cell.push(p[1]);
+    return cell;
+  });
+}
+
+/** 낱말 배열을 훑으며 빈칸 덩어리마다 fn 을 부른다. 이어진 빈칸은 사이의 쉼표까지 삼켜 하나로 본다.
+ *  run = { wi: 덩어리가 시작하는 낱말 번호, n: 가린 글자 수, gaps, known, text: 정답 } */
+function eachRun(t, fn){
+  var out = '', i = 0;
+  while(i < t.length){
+    var c = t[i];
+    if(typeof c === 'string'){ out += esc(c) + ' '; i++; continue; }
+    var run = { wi:i, lead:c[0], n:c[1], known:c[3] != null, text:c[3], trail:c[2], gaps:0 };
+    i++;
+    while(i < t.length && typeof t[i] !== 'string' && !/[.!?]/.test(run.trail)){
+      var d = t[i];
+      run.n += d[1]; run.gaps++;
+      if(d[3] == null) run.known = false; else run.text += run.trail + ' ' + d[0] + d[3];
+      run.trail = d[2]; i++;
+    }
+    out += esc(run.lead) + fn(run) + esc(run.trail) + ' ';
+  }
+  return out;
+}
+
+var IN_ATTR = ' autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"';
+
+/** o.ans: 정답을 채워 보여준다 / o.input: 입력칸(o.vals 로 채움) / o.fill: 누군가의 답을 채워 보여준다 */
+function tokensHtml(t, o, li){
+  o = o || {};
+  return eachRun(t, function(run){
+    var key = li + ':' + run.wi;
+    if(o.fill){
+      var mine = String(o.fill[key] || '').trim();
+      return '<span class="bl mine' + (mine ? '' : ' none') + '">' + (mine ? esc(mine) : '안 씀') + '</span>';
+    }
+    if(o.ans && run.known) return '<span class="bl ans">' + esc(run.text) + '</span>';
+    if(o.input){
+      var v = esc((o.vals || {})[key] || ''), len = run.n + run.gaps;
+      if(len > 20){ run.trail = ''; }              // 긴 칸은 한 줄을 다 쓰므로 뒤의 마침표를 따로 두지 않는다
+      if(len > 20) return '<textarea class="in wide" rows="1" data-k="' + key + '"' + IN_ATTR + '>' + v + '</textarea>';
+      return '<input class="in" type="text" data-k="' + key + '" value="' + v + '" style="width:' +
+        Math.max(6, Math.round(len * 1.2) + 3) + 'ch"' + IN_ATTR + '>';
+    }
+    return '<span class="bl">' + new Array(Math.max(8, Math.round(run.n * 2.1) + run.gaps * 2) + 1).join(' ') + '</span>';
+  });
+}
+
+/** 빈칸에 쓴 답만 모아 보여준다 (대본의 나머지 부분은 되풀이하지 않는다) */
+function fillHtml(t, fill, li){
+  var parts = [];
+  eachRun(t, function(run){
+    var v = String(fill[li + ':' + run.wi] || '').trim();
+    parts.push('<span class="bl mine' + (v ? '' : ' none') + '">' + (v ? esc(v) : '안 씀') + '</span>');
+    return '';
+  });
+  return '<span class="fills">' + parts.join('') + '</span>';
+}
+
+/** 빈칸의 정답만 모아 보여준다 */
+function keyHtml(t){
+  var parts = [];
+  eachRun(t, function(run){
+    if(run.known) parts.push('<span class="bl ans">' + esc(run.text) + '</span>');
+    return '';
+  });
+  return parts.length ? '<div class="my key"><span class="tag">정답</span><span class="fills">' + parts.join('') + '</span></div>' : '';
+}
+
+function hasBlank(t){ return t.some(function(c){ return typeof c !== 'string'; }); }
+
+/** 대본의 빈칸 열쇠 목록 ["대사번호:낱말번호", …] */
+function blankKeys(lines){
+  var keys = [];
+  lines.forEach(function(ln, i){ eachRun(ln.t, function(run){ keys.push(i + ':' + run.wi); return ''; }); });
+  return keys;
+}
+
+function sceneHead(n){ return '<div class="scn" id="scene' + n + '">장면 ' + n + '</div>'; }
+
+function scriptHtml(lines, o){
+  o = o || {};
+  var scene = 0;
+  return lines.map(function(ln, i){
+    return (ln.br || i === 0 ? sceneHead(++scene) : '') +
+      '<div class="ln">' +
+        (ln.s ? '<div class="who">' + esc(ln.s) + '</div>' : '') +
+        '<div class="ko">' + esc(ln.ko) + '</div>' +
+        '<div class="en">' + tokensHtml(ln.t, { ans:o.ans, input:o.input, vals:o.vals }, i) + '</div>' +
+        (o.key && hasBlank(ln.t) ? keyHtml(ln.t) : '') +
+        (o.fill && hasBlank(ln.t)
+          ? '<div class="my"><span class="tag">' + esc(o.fillLabel || '내 답') + '</span>' + fillHtml(ln.t, o.fill, i) + '</div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+/** 빈칸 덩어리 수 (이어진 낱말은 하나로 센다) */
+function countBlanks(lines){
+  var n = 0;
+  lines.forEach(function(ln){
+    var t = ln.t || maskLine(ln.en, ln.b, false), open = false;
+    t.forEach(function(c){
+      if(typeof c === 'string'){ open = false; return; }
+      if(!open) n++;
+      open = !/[.!?]/.test(c[2]);
+    });
+  });
+  return n;
+}
+
+/* ───────────────── 중계기 ───────────────── */
 function callApi(body){
+  if(DEMO) return mockApi(body);
   return fetch(API, {
-    method: 'POST',
-    cache: 'no-store',
+    method: 'POST', cache: 'no-store',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // 이래야 사전요청이 안 생긴다
     body: JSON.stringify(body || {})
   }).then(function(r){ return r.text(); }).then(function(t){
@@ -610,789 +544,736 @@ function callApi(body){
     return j;
   });
 }
+function creds(extra){
+  var o = { pw: LS.get(K_PASS,''), admin: state.admin ? LS.get(K_ADMIN,'') : '' };
+  for(var k in (extra || {})) o[k] = extra[k];
+  return o;
+}
 
-/** 성공하면 true, 비밀번호가 필요하면 false */
-function loadAll(pw, fresh){
-  $('syncInfo').textContent = '불러오는 중…';
-  var adminTry = LS.get(K_ADMIN,'') || (pw || '');   // 잠금 화면에 관리자 비번을 넣어도 통과
-  return callApi({ action:'data', pw: pw || '', admin: adminTry, fresh: fresh ? 1 : 0 }).then(function(j){
-    if(!j.ok && j.locked){ state.locked = true; state.loaded = true; LS.set(K_OKC, ''); return false; }
-    if(!j.ok) throw new Error(j.error || '데이터를 불러오지 못했습니다.');
-
-    state.locked = !!j.locked;
-    state.loaded = true;
-    if(j.admin) LS.set(K_ADMIN, adminTry);   // 관리자로 통과한 기기는 기억한다
-    LS.set(K_OKC, cycleKey());          // 이번 회차는 통과한 걸로 기록
-    var names = Object.keys(j.decks || {}), decks = {};
-    names.forEach(function(n){
-      decks[n] = (j.decks[n] || []).map(function(r){
-        return { id: n + '::' + r.k, owner: n, date: r.d, ko: r.k, en: r.e || '' };
-      }).filter(function(c){ return c.ko && c.date; });
-    });
-    state.members = names; state.decks = decks;
-    rebuildIndex();
-    state.syncedAt = Date.now();
-    LS.set(K_CACHE, { members:names, decks:decks, at:state.syncedAt });
-    return true;
+/* 연습용 가짜 중계기 — 이 기기의 저장소만 쓴다 */
+function mockApi(p){
+  return new Promise(function(done){
+    var db = readJson(K_DEMO, []);
+    var ans = readJson(K_DEMO + '.ans', []);
+    var mem = readJson(K_DEMO + '.mem', {});
+    var pinOk = p.who && mem[p.who] != null && mem[p.who] === String(p.pin || '');
+    var isAdmin = !!p.admin;
+    var res;
+    if(p.action === 'gp_list'){
+      res = { ok:true, admin:isAdmin, locked:false, lessons: db.filter(function(L){ return isAdmin || L.open; })
+        .map(function(L){
+          if(isAdmin) return L;
+          return { id:L.id, title:L.title, reveal:L.reveal, at:L.at, lines: L.lines.map(function(ln){
+            var r = { s:ln.s, ko:ln.ko, t: maskLine(ln.en, ln.b, L.reveal) }; if(ln.br) r.br = 1; return r; }) };
+        }), mine: {} };
+      if(p.who && !isAdmin){
+        if(pinOk) ans.forEach(function(x){ if(x.who === p.who) res.mine[x.id] = x.a; });
+        else res.me = mem[p.who] == null ? 'none' : 'bad';
+      }
+    } else if(p.action === 'gp_login'){
+      if(!p.who || !/^\d{4}$/.test(String(p.pin || ''))) res = { ok:false, error:'BAD_FORMAT' };
+      else if(mem[p.who] != null && !pinOk) res = { ok:false, error:'BAD_PIN' };
+      else {
+        res = { ok:true, isNew: mem[p.who] == null, mine:{} };
+        mem[p.who] = String(p.pin);
+        ans.forEach(function(x){ if(x.who === p.who) res.mine[x.id] = x.a; });
+      }
+    } else if(p.action === 'gp_answer'){
+      var Lx = db.filter(function(x){ return x.id === p.id; })[0];
+      if(!p.who) res = { ok:false, error:'NO_NAME' };
+      else if(!pinOk) res = { ok:false, error:'BAD_PIN' };
+      else if(!Lx || !Lx.open) res = { ok:false, error:'NO_LESSON' };
+      else {
+        ans = ans.filter(function(x){ return !(x.id === p.id && x.who === p.who); });
+        ans.push({ id:p.id, who:p.who, at:new Date().toISOString().slice(0,16).replace('T',' '), a:p.answers || {} });
+        res = { ok:true, count:Object.keys(p.answers || {}).length };
+      }
+    } else if(!isAdmin){
+      res = { ok:false, error:'BAD_ADMIN' };
+    } else if(p.action === 'gp_members'){
+      res = { ok:true, list: Object.keys(mem).sort().map(function(w){
+        return { who:w, at:'', n: ans.filter(function(x){ return x.who === w; }).length }; }) };
+    } else if(p.action === 'gp_resetpin'){
+      if(mem[p.who] == null) res = { ok:false, error:'그런 회원이 없습니다' };
+      else { delete mem[p.who]; res = { ok:true }; }
+    } else if(p.action === 'gp_answers'){
+      res = { ok:true, list: ans.filter(function(x){ return x.id === p.id; }) };
+    } else if(p.action === 'gp_save'){
+      var L = p.lesson, old = db.filter(function(x){ return x.id === L.id; })[0];
+      var rec = { id: old ? old.id : 'L' + Date.now(), title: L.title,
+                  open: L.open != null ? !!L.open : (old ? old.open : false),
+                  reveal: L.reveal != null ? !!L.reveal : (old ? old.reveal : false),
+                  at: new Date().toISOString().slice(0,16).replace('T',' '), lines: L.lines };
+      if(old) db[db.indexOf(old)] = rec; else db.push(rec);
+      res = { ok:true, id: rec.id };
+    } else if(p.action === 'gp_flag' || p.action === 'gp_delete'){
+      var hit = db.filter(function(x){ return x.id === p.id; })[0];
+      if(!hit) res = { ok:false, error:'회차를 찾을 수 없습니다' };
+      else {
+        if(p.action === 'gp_delete'){ db.splice(db.indexOf(hit), 1); ans = ans.filter(function(x){ return x.id !== p.id; }); }
+        else { if(p.open != null) hit.open = !!p.open; if(p.reveal != null) hit.reveal = !!p.reveal; }
+        res = { ok:true };
+      }
+    } else if(p.action === 'setpw'){
+      res = { ok:true, locked:false };
+    } else res = { ok:false, error:'UNKNOWN_ACTION' };
+    LS.set(K_DEMO, JSON.stringify(db));
+    LS.set(K_DEMO + '.ans', JSON.stringify(ans));
+    LS.set(K_DEMO + '.mem', JSON.stringify(mem));
+    setTimeout(function(){ done(JSON.parse(JSON.stringify(res))); }, 150);
   });
 }
 
-/* ── 한 회원의 문장을 표 파일로 내려받기 ──
-   엑셀·구글 스프레드시트에서 바로 열린다. */
-/* 한 회원의 문장을 표 파일(CSV)로 내려받는다. 엑셀·구글 스프레드시트에서 바로 열린다. */
-var CSV_LF = String.fromCharCode(10);
-var CSV_CR = String.fromCharCode(13);
-var CSV_BOM = String.fromCharCode(65279);   // 이게 있어야 엑셀에서 한글이 안 깨진다
-
-function csvCell(v){
-  v = String(v == null ? "" : v);
-  var needs = v.indexOf(String.fromCharCode(34)) !== -1 || v.indexOf(",") !== -1 ||
-              v.indexOf(CSV_LF) !== -1 || v.indexOf(CSV_CR) !== -1;
-  if(!needs) return v;
-  var q = String.fromCharCode(34);
-  return q + v.split(q).join(q + q) + q;
-}
-
-/** 여러 명을 한꺼번에 받으면 이름 열이 앞에 붙는다 */
-function downloadMember(names){
-  if(typeof names === "string") names = [names];
-  names = (names || []).filter(function(n){ return (state.decks[n] || []).length; });
-  if(!names.length){ alert("내려받을 문장이 없습니다."); return; }
-
-  var many = names.length > 1;
-  var rows = [];
-  names.forEach(function(n){
-    (state.decks[n] || []).forEach(function(c){ rows.push({ who:n, c:c }); });
-  });
-  rows.sort(function(a,b){
-    if(a.c.date !== b.c.date) return a.c.date < b.c.date ? -1 : 1;
-    return a.who < b.who ? -1 : a.who > b.who ? 1 : 0;
-  });
-
-  var lines = [many ? "이름,스터디 일자,한글,영어" : "스터디 일자,한글,영어"];
-  rows.forEach(function(r){
-    var cols = [csvCell(r.c.date), csvCell(r.c.ko), csvCell(r.c.en)];
-    if(many) cols.unshift(csvCell(r.who));
-    lines.push(cols.join(","));
-  });
-
-  var base = many ? (names[0] + " 외 " + (names.length - 1) + "명") : names[0];
-  var text = CSV_BOM + lines.join(CSV_CR + CSV_LF);
-  var url = URL.createObjectURL(new Blob([text], { type:"text/csv;charset=utf-8" }));
-  var a = document.createElement("a");
-  a.href = url; a.download = base + "_문장.csv";
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
-}
-
-/* ═════════ 인증 ═════════
-   평일에 한 줄씩 적는다. 안 적으면 보증금에서 깎이고 그 돈은 공금이 된다. */
-
-/** 그 달의 평일 중 이미 지난 날들. 오늘은 아직 기회가 있으므로 세지 않는다. */
-function pastWeekdays(ym, today){
-  var y = +ym.slice(0,4), m = +ym.slice(5,7), out = [];
-  var d = new Date(y, m-1, 1);
-  while(d.getMonth() === m-1){
-    var dow = d.getDay();
-    var k = y + '-' + pad2(m) + '-' + pad2(d.getDate());
-    if(dow !== 0 && dow !== 6 && k < today) out.push(k);
-    d.setDate(d.getDate() + 1);
-  }
-  return out;
-}
-
-function won(n){ return n.toLocaleString('ko-KR') + '원'; }
-
-function loadBoard(){
-  var start = state.cycle || cycleStart(todayStr());
-  return callApi({ action:'board', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
-                   from: start, to: addDays(start, 13) }).then(function(j){
-    j.start = start;
-    if(!j.ok) throw new Error(j.locked
-      ? '입장 코드가 바뀌었습니다. 새로고침 후 다시 들어와 주세요.'
-      : (j.error || '인증 기록을 불러오지 못했습니다.'));
-    if(!j.names){                       // 옛 중계기는 이 물음을 모른다
-      var e = new Error('인증 기능이 아직 켜지지 않았습니다. 모임장에게 문의해 주세요.');
-      e.noBoard = true; throw e;
-    }
-    state.board = j;
-    return j;
-  });
-}
-
-function openCheck(){
-  state.cycle = '';
-  show('scCheck');
-  $('ckMsg').innerHTML = '';
-  $('ckList').innerHTML = '<p class="note">불러오는 중…</p>';
-  loadBoard().then(function(j){
-    if(!state.me || (j.names || []).indexOf(state.me) === -1) openWho();
-    renderCheck();
-  }, function(e){
-    if(e.noBoard){ alert(e.message); renderCal(); show('scCal'); return; }
-    $('ckList').innerHTML = '';
-    var box = el('div','card');
-    box.style.color = 'var(--danger)';
-    box.textContent = e.message;
-    $('ckMsg').appendChild(box);
-  });
-}
-
-function openWho(){
-  var names = (state.board && state.board.names) || [];
-  var box = $('whoList'); box.innerHTML = '';
-  names.forEach(function(n){
-    var b = el('button','mcard' + (n === state.me ? ' shared' : ''), n);
-    b.onclick = function(){
-      state.me = n; LS.set(K_ME, n);
-      $('mdWho').hidden = true; renderCheck();
-    };
-    box.appendChild(b);
-  });
-  if(!names.length) box.innerHTML = '<p class="note">회원 명단을 불러오지 못했습니다.</p>';
-  $('mdWho').hidden = false;
-}
-
-/* ───────── 2주 회차 ─────────
-   정산은 2주마다 끊는다. 아래 월요일을 기준으로 14일씩 나뉜다. */
-var CYCLE_ANCHOR = '2026-10-05';   // 기준 월요일
-var GOAL_DEFAULT = 3;              // 목표를 안 정했으면 주 3회
-var DEPOSIT_MIN = 10000;           // 보증금은 최소 1만원
-
-function dateOf(s){ return new Date(+s.slice(0,4), +s.slice(5,7)-1, +s.slice(8,10)); }
-// 이름이 겹치지 않게 ymdOf 로 둔다. 위쪽 ymd(y,m,d) 는 달력이 쓰는 것이다.
-function ymdOf(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
-function addDays(s, n){ var d = dateOf(s); d.setDate(d.getDate() + n); return ymdOf(d); }
-
-/** 그 날짜가 속한 회차의 시작일(월요일) */
-function cycleStart(s){
-  var diff = Math.round((dateOf(s) - dateOf(CYCLE_ANCHOR)) / 86400000);
-  return addDays(CYCLE_ANCHOR, Math.floor(diff / 14) * 14);
-}
-
-function todayStr(){ return ymdOf(new Date()); }
-
-/** 회차 안의 두 주. 각각 7일씩. */
-function cycleWeeks(start){
-  var w1 = [], w2 = [];
-  for(var i = 0; i < 7; i++)  w1.push(addDays(start, i));
-  for(var j = 7; j < 14; j++) w2.push(addDays(start, j));
-  return [w1, w2];
-}
-
-function cycleLabel(start){
-  var end = addDays(start, 13);
-  return (+start.slice(5,7)) + '월 ' + (+start.slice(8,10)) + '일 ~ ' +
-         (+end.slice(5,7))   + '월 ' + (+end.slice(8,10))   + '일';
-}
-
-/** 지금 보고 있는 회차의 성적을 사람별로 셈한다 */
-function settle(b){
-  var byDay = {};
-  (b.rows || []).forEach(function(r){
-    if(!byDay[r.d]) byDay[r.d] = {};
-    byDay[r.d][r.who] = r.t;
-  });
-
-  var weeks = cycleWeeks(b.start);
-  var closed = weeks.filter(function(w){ return w[6] < b.today; });   // 끝난 주만 센다
-
-  var pot = 0;
-  var people = (b.names || []).map(function(n){
-    var goal = (b.targets  && b.targets[n])  || GOAL_DEFAULT;
-    var dep  = Math.max(DEPOSIT_MIN, (b.deposits && b.deposits[n]) || 0);
-    var need = goal * 2;                                 // 2주 동안 해야 할 횟수
-    var per  = Math.round(dep / need / 10) * 10;         // 한 번 빠질 때 깎이는 돈
-    var miss = 0, did = 0;
-    closed.forEach(function(w){
-      var k = 0;
-      w.forEach(function(d){ if(byDay[d] && byDay[d][n]) k++; });
-      did += k;
-      if(k < goal) miss += goal - k;                     // 한 주에 몰아쳐도 다른 주를 메우진 못한다
-    });
-    var cut = Math.min(miss * per, dep);
-    pot += cut;
-    return { name:n, goal:goal, dep:dep, need:need, per:per,
-             miss:miss, did:did, cut:cut, back:dep - cut };
-  });
-
-  return { weeks:weeks, closed:closed, byDay:byDay, people:people, pot:pot };
-}
-
-function settleText(b){
-  var r = settle(b);
-  var wide = 0;
-  r.people.forEach(function(x){ if(x.name.length > wide) wide = x.name.length; });
-  var lines = [];
-  lines.push('[ 각할모 정산 · ' + cycleLabel(b.start) + ' ]');
-  lines.push('');
-  lines.push('끝난 주 ' + r.closed.length + ' / 2주');
-  lines.push('');
-  r.people.forEach(function(x){
-    var nm = x.name;
-    while(nm.length < wide) nm += ' ';
-    lines.push(nm + '  주' + x.goal + '회 · 미인증 ' + x.miss + '회 · 환급 ' +
-               won(x.back) + ' / ' + won(x.dep));
-  });
-  lines.push('');
-  lines.push('공금 적립  ' + won(r.pot));
-  return lines.join(String.fromCharCode(10));
-}
-
-function copySettle(){
-  var b = state.board;
-  if(!b) return;
-  var txt = settleText(b);
-  var done = function(){
-    $('copyInfo').textContent = '복사했습니다';
-    setTimeout(function(){ $('copyInfo').textContent = ''; }, 2500);
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(txt).then(done, function(){ fallbackCopy(txt, done); });
-  } else {
-    fallbackCopy(txt, done);
-  }
-}
-
-function fallbackCopy(txt, done){
-  var ta = document.createElement('textarea');
-  ta.value = txt;
-  ta.style.position = 'fixed'; ta.style.opacity = '0';
-  document.body.appendChild(ta); ta.select();
-  try { document.execCommand('copy'); done(); }
-  catch(e){ alert(txt); }
-  document.body.removeChild(ta);
-}
-
-function goCycle(delta){
-  var b = state.board;
-  state.cycle = addDays((b && b.start) || cycleStart(todayStr()), delta * 14);
-  $('ckMoney').innerHTML = '<p class="note">불러오는 중…</p>';
-  loadBoard().then(renderCheck, function(e){ alert(e.message); });
-}
-
-/** 내 주간 목표와 보증금을 저장한다 */
-function saveGoal(){
-  if(!state.me) return;
-  $('goalInfo').textContent = '저장 중…';
-  callApi({ action:'target', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
-            who: state.me, goal: +$('selGoal').value,
-            deposit: +$('selDeposit').value }).then(function(j){
-    if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
-    return loadBoard();
-  }).then(function(){
-    $('goalInfo').textContent = '';
-    renderCheck();
-  }, function(e){
-    $('goalInfo').textContent = '';
-    alert(e.message);
-    renderCheck();                    // 거절당했으면 화면을 원래대로 되돌린다
-  });
-}
-
-function renderCheck(){
-  var b = state.board;
-  if(!b) return;
-  var cur = (b.start === cycleStart(b.today));
-  var r = settle(b);
-  var mine = null;
-  r.people.forEach(function(x){ if(x.name === state.me) mine = x; });
-
-  $('ckCardMine').hidden = !cur;
-  $('ckCardToday').hidden = !cur;
-
-  if(cur){
-    var mineToday = (r.byDay[b.today] || {})[state.me] || '';
-    $('ckHead').textContent = state.me ? (state.me + ' 님의 오늘 인증') : '오늘 인증';
-    $('inpCheck').value = mineToday;
-    $('btnDoCheck').textContent = mineToday ? '수정' : '인증';
-    $('ckHint').textContent = mineToday
-      ? '오늘 인증을 마쳤습니다. 내용을 고치고 다시 누르면 바뀝니다.'
-      : (mine ? '주 ' + mine.goal + '회가 목표입니다. 한 번 빠질 때마다 ' + won(mine.per) + '이 차감됩니다.'
-              : '본인 이름을 먼저 골라주세요.');
-
-    $('goalWrap').hidden = !mine;
-    if(mine){
-      $('selGoal').value = String(mine.goal);
-      $('selDeposit').value = String(mine.dep);
-      // 이번 회차에 이미 정했으면 본인은 못 바꾼다. 모임장은 언제든 바꿀 수 있다.
-      var fixed = !state.admin && b.setAt && b.setAt[state.me] === (b.cycle || cycleStart(b.today));
-      $('selGoal').disabled = fixed;
-      $('selDeposit').disabled = fixed;
-      $('goalNote').textContent = fixed
-        ? '2주 ' + mine.need + '회 · 한 번 빠지면 ' + won(mine.per) +
-          ' — 이번 회차에는 바꿀 수 없습니다'
-        : '2주 ' + mine.need + '회 · 한 번 빠지면 ' + won(mine.per);
-    }
-
-    var names = b.names || [];
-    var done = r.byDay[b.today] || {};
-    var cnt = 0;
-    names.forEach(function(n){ if(done[n]) cnt++; });
-    $('ckDayHead').textContent = dateLabel(b.today) + '  ' + cnt + ' / ' + names.length;
-
-    var list = $('ckList'); list.innerHTML = '';
-    names.forEach(function(n){
-      var ok = !!done[n];
-      var row = el('div','ckrow' + (ok ? '' : ' off') + (n === state.me ? ' me' : ''));
-      row.appendChild(el('span','mark', ok ? '✅' : '⬜'));
-      row.appendChild(el('span','nm', n));
-      row.appendChild(el('span','tx', ok ? done[n] : ''));
-      list.appendChild(row);
-    });
-    if(!names.length) list.innerHTML = '<p class="note">회원이 없습니다.</p>';
-  }
-
-  $('ckMoneyHead').textContent = cycleLabel(b.start);
-  $('btnMonNext').disabled = cur;
-
-  var money = $('ckMoney'); money.innerHTML = '';
-  r.people.forEach(function(x){
-    var row = el('div','mnrow');
-    var left = el('span');
-    left.appendChild(el('b', null, x.name));
-    left.appendChild(el('span','cut', '주' + x.goal + '회 · 보증금 ' + won(x.dep) +
-                                      ' · 1회 ' + won(x.per)));
-    row.appendChild(left);
-    var right = el('span');
-    right.appendChild(el('span','won', won(x.back)));
-    if(x.miss) right.appendChild(el('span','cut', '미인증 ' + x.miss + '회'));
-    row.appendChild(right);
-    money.appendChild(row);
-  });
-  if(!r.people.length) money.innerHTML = '<p class="note">회원이 없습니다.</p>';
-
-  var potRow = el('div','mnrow pot');
-  potRow.appendChild(el('b', null, '공금 (회식비)'));
-  potRow.appendChild(el('span','won', won(r.pot)));
-  money.appendChild(potRow);
-
-  $('ckMoneyHint').textContent = cur
-    ? (r.closed.length
-        ? '첫 주가 끝났습니다. 이번 주는 아직 세지 않습니다.'
-        : '이번 회차는 아직 끝난 주가 없습니다. 2주가 끝나면 정산됩니다.')
-    : '2주 전체 기준 최종 정산입니다.';
-}
-
-function submitCheck(){
-  if(!state.me){ openWho(); return; }
-  var t = $('inpCheck').value.trim();
-  if(!t){ $('inpCheck').focus(); return; }
-  var btn = $('btnDoCheck');
-  btn.disabled = true; btn.textContent = '보내는 중…';
-  callApi({ action:'checkin', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
-            who: state.me, text: t }).then(function(j){
-    if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
-    return loadBoard();
-  }).then(function(){
-    btn.disabled = false; renderCheck();
-  }, function(e){
-    btn.disabled = false; btn.textContent = '인증';
-    alert(e.message);
-  });
-}
-
-function rebuildIndex(){
-  var byDate = {};
-  state.members.forEach(function(n){
-    (state.decks[n]||[]).forEach(function(c){
-      if(!byDate[c.date]) byDate[c.date] = {};
-      if(!byDate[c.date][c.owner]) byDate[c.date][c.owner] = [];
-      byDate[c.date][c.owner].push(c);
-    });
-  });
-  state.byDate = byDate;
-}
-function loadCache(){
-  var c = LS.get(K_CACHE, null);
-  if(c && c.members && c.decks){
-    state.members = c.members; state.decks = c.decks; state.syncedAt = c.at || 0;
-    rebuildIndex(); return true;
-  }
-  return false;
-}
-
-/* ───────── 비밀번호 ───────── */
-function showGate(msg){
-  $('gateMsg').textContent = msg || '';
-  if(msg !== '확인 중…') $('inpPass').value = '';
-  show('scGate');
-  setTimeout(function(){ try{ $('inpPass').focus(); }catch(e){} }, 60);
-}
-/** 코드를 통과한 뒤. 처음이면 이름·목표·보증금부터 받는다. */
-function afterGate(){
-  if(state.me) enterApp(); else openJoin();
-}
-
-/* ───────── 첫 입장 설정 ───────── */
-
-function openJoin(){
-  state.pick = '';
-  show('scJoin');
-  $('joinNames').innerHTML = '<p class="note">회원 명단을 불러오는 중…</p>';
-  $('joinMsg').textContent = '';
-  loadBoard().then(function(){
-    renderJoin();
-  }, function(e){
-    if(e.noBoard){ enterApp(); return; }   // 인증이 아직 없으면 예전처럼 달력으로
-    $('joinNames').innerHTML = '';
-    $('joinMsg').textContent = e.message;
-  });
-}
-
-function renderJoin(){
-  var names = (state.board && state.board.names) || [];
-  var box = $('joinNames'); box.innerHTML = '';
-  names.forEach(function(n){
-    var b = el('button','mcard' + (n === state.pick ? ' shared' : ''), n);
-    b.setAttribute('aria-pressed', String(n === state.pick));
-    b.onclick = function(){ state.pick = n; renderJoin(); };
-    box.appendChild(b);
-  });
-  if(!names.length) box.innerHTML = '<p class="note">회원이 없습니다. 모임장에게 문의해 주세요.</p>';
-
-  var goal = +$('joinGoal').value, dep = +$('joinDeposit').value;
-  var per = Math.round(dep / (goal * 2) / 10) * 10;
-  $('joinNote').textContent = '2주 ' + (goal * 2) + '회가 목표입니다. ' +
-    '한 번 빠질 때마다 ' + won(per) + '이 차감됩니다.';
-  $('btnJoin').disabled = !state.pick;
-}
-
-function submitJoin(){
-  if(!state.pick) return;
-  var btn = $('btnJoin');
-  btn.disabled = true; btn.textContent = '저장 중…';
-  $('joinMsg').textContent = '';
-  callApi({ action:'target', pw: LS.get(K_PASS,''), admin: LS.get(K_ADMIN,''),
-            who: state.pick, goal: +$('joinGoal').value,
-            deposit: +$('joinDeposit').value }).then(function(j){
-    if(!j.ok) throw new Error(j.error || '저장하지 못했습니다.');
-    state.me = state.pick; LS.set(K_ME, state.me);
-    btn.textContent = '시작하기';
-    enterApp();          // 설정이 끝나면 원래대로 달력부터
-  }, function(e){
-    btn.disabled = false; btn.textContent = '시작하기';
-    $('joinMsg').textContent = e.message;
-  });
-}
-
-
-
-function enterApp(){
-  var lm = latestMonth(); state.calY = lm[0]; state.calM = lm[1];
-  renderCal(); show('scCal');
-}
-
-/* ───────── 달력 ───────── */
-function latestMonth(){
-  var keys = Object.keys(state.byDate).sort();
-  if(keys.length){ var p = keys[keys.length-1].split('-'); return [+p[0], +p[1]-1]; }
-  var n = new Date(); return [n.getFullYear(), n.getMonth()];
-}
-function renderCal(){
-  $('calLabel').textContent = state.calY + '년 ' + (state.calM+1) + '월';
-  var g = $('calGrid'); g.innerHTML = '';
-  DOW.forEach(function(d){ g.appendChild(el('div','dow',d)); });
-
-  var first = new Date(state.calY, state.calM, 1).getDay();
-  var days  = new Date(state.calY, state.calM+1, 0).getDate();
-  var today = ymd(new Date().getFullYear(), new Date().getMonth()+1, new Date().getDate());
-
-  for(var i=0;i<first;i++) g.appendChild(el('button','day blank',''));
-
-  for(var d=1; d<=days; d++){
-    var key = ymd(state.calY, state.calM+1, d);
-    var who = state.byDate[key];
-    var n = who ? Object.keys(who).length : 0;
-    var dow = new Date(state.calY, state.calM, d).getDay();
-    var b = el('button','day ' + (n ? 'has' : 'none') + (dow===0?' sun':dow===6?' sat':''));
-    b.appendChild(el('b', null, String(d)));
-    if(key === today) b.classList.add('today');
-    if(n){
-      (function(k){ b.onclick = function(){
-        state.selDate = k;
-        state.selNames = [];          // 날짜를 새로 누르면 지난 선택은 지운다
-        renderMembers(); show('scMembers');
-      }; })(key);
-    } else { b.disabled = true; }
-    g.appendChild(b);
-  }
-  $('btnSheet').hidden = !state.admin;        // 관리자에게만
-  $('syncInfo').textContent = state.syncedAt
-    ? new Date(state.syncedAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) + ' 기준'
-    : '';
-}
-
-/* ───────── 이름 카드 (여러 명 선택 가능) ───────── */
-// 모임 공용 문장 파일인지 (회원 개인 문장과 구분)
-function isShared(n){
-  return /공용|공통/.test(n) || String(n).indexOf('모임') === 0;
-}
-function dayNames(){
-  var who = state.byDate[state.selDate] || {};
-  var names = state.members.filter(function(n){ return who[n] && who[n].length; });
-  // 모임 공용 문장은 늘 맨 앞에. 나머지는 시트에서 읽은 순서 그대로 둔다.
-  return names.filter(isShared).concat(names.filter(function(n){ return !isShared(n); }));
-}
-function selectedCards(){
-  var who = state.byDate[state.selDate] || {}, out = [];
-  state.selNames.forEach(function(n){ out = out.concat(who[n] || []); });
-  return out;
-}
-function renderMembers(){
-  var key = state.selDate, who = state.byDate[key] || {};
-  $('mHead').textContent = dateLabel(key);
-
-  var names = dayNames();
-  // 이 날에 없는 사람은 선택 해제. 한 명뿐이면 자동 선택.
-  state.selNames = state.selNames.filter(function(n){ return names.indexOf(n) !== -1; });
-  if(!state.selNames.length && names.length === 1) state.selNames = [names[0]];
-
-  var box = $('mCards'); box.innerHTML = '';
-  names.forEach(function(n){
-    var on = state.selNames.indexOf(n) !== -1;
-    // 모임장이 올리는 공용 문장은 회원 카드와 구분해 연한 색으로
-    var b = el('button','mcard' + (isShared(n) ? ' shared' : ''));
-    b.setAttribute('aria-pressed', String(on));
-    b.appendChild(el('i','tick', on ? '✓' : ''));
-    b.appendChild(document.createTextNode(n));
-    b.appendChild(el('span', null, who[n].length + '문장'));
-    b.onclick = function(){
-      var i = state.selNames.indexOf(n);
-      if(i === -1) state.selNames.push(n); else state.selNames.splice(i,1);
-      renderMembers();
-    };
-    box.appendChild(b);
-  });
-
-  $('btnAll').textContent =
-    (names.length && state.selNames.length === names.length) ? '전체 해제' : '전체 선택';
-
-  var dlBtn = $('btnDlSel');
-  dlBtn.disabled = !state.selNames.length;
-  dlBtn.textContent = state.selNames.length > 1
-    ? '예문 다운받기 (' + state.selNames.length + '명)'
-    : '예문 다운받기';
-
-  var cbox = $('countChips'); cbox.innerHTML = '';
-  [10,20,50,0].forEach(function(v){
-    var b = el('button','chip', v===0 ? '전체' : v+'개');
-    b.setAttribute('aria-pressed', String(state.limit===v));
-    b.onclick = function(){ state.limit = v; renderMembers(); };
-    cbox.appendChild(b);
-  });
-
-  var total = selectedCards().length;
-  var willUse = (state.limit && total > state.limit) ? state.limit : total;
-  $('btnStart').disabled = !total;
-  $('btnStart').textContent = total
-    ? '시작 (' + willUse + '문장' + (state.selNames.length > 1 ? ' · ' + state.selNames.length + '명 믹스' : '') + ')'
-    : '사람을 선택하세요';
-}
-
-/* ───────── 퀴즈 ───────── */
-function startQuiz(){
-  var cards = selectedCards().slice();
-  if(!cards.length) return;
-  var many = state.selNames.length > 1;
-  state.selMember = many ? (state.selNames.length + '명 믹스') : state.selNames[0];
-  // 여러 명을 고르면 무조건 섞는다
-  if(many || $('chkShuffle').checked){
-    for(var i=cards.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=cards[i]; cards[i]=cards[j]; cards[j]=t; }
-  }
-  if(state.limit && cards.length > state.limit) cards = cards.slice(0, state.limit);
-  state.session = { cards:cards, i:0 };
-  show('scQuiz'); renderCard();
-}
-function renderCard(){
-  var s = state.session, c = s.cards[s.i];
-  $('qCount').textContent = (s.i+1) + ' / ' + s.cards.length;
-  $('qBar').style.width = ((s.i+1) / s.cards.length * 100) + '%';
-  $('qOwner').textContent = ($('chkBlind').checked ? '' : c.owner + ' · ') + dateLabel(state.selDate);
-  $('qKo').textContent = c.ko;
-  $('qEn').textContent = c.en || '(영어가 비어 있습니다)';
-  setReveal(false);
-  $('btnPrev').disabled = (s.i === 0);
-  $('btnNext').disabled = (s.i >= s.cards.length - 1);
-}
-function setReveal(on){
-  $('qEn').hidden = !on;
-  $('btnReveal').textContent = on ? '정답 가리기' : '정답 확인';
-}
-function step(d){
-  var s = state.session, n = s.i + d;
-  if(!s || n < 0 || n >= s.cards.length) return;
-  s.i = n; renderCard();
-}
-
-/* ───────── 이벤트 ───────── */
-$('btnBack').onclick = function(){ renderCal(); show('scCal'); };
-$('btnLogo').onclick = function(){
-  if(!state.members.length || !$('scGate').hidden) return;
-  renderCal(); show('scCal');
-};
-function renderAdmin(){
-  var pw = LS.get(K_PASS, '');
-  var label = !state.loaded ? '확인 중…'
-            : state.locked ? (pw || '(이 기기엔 저장 안 됨)')
-            : '잠금 없음';
-  $('pwNow').textContent = label;
-  $('pwNow').className = 'pwnow' + (state.loaded && state.locked && pw ? '' : ' off');
-  $('inpPw').value = state.locked ? pw : '';
-  $('inpAdmin').value = '';
-  $('adminWrap').hidden = !!LS.get(K_ADMIN, '');   // 이미 확인했으면 안 묻는다
-  $('btnUnlock').hidden = !state.locked;
-  $('pwMsg').textContent = '';
-}
-$('btnSetup').onclick = function(){ renderAdmin(); show('scSetup'); };
-$('btnCancelSetup').onclick = function(){ renderCal(); show('scCal'); };
-
-function savePw(np){
-  var admin = LS.get(K_ADMIN, '') || $('inpAdmin').value.trim();
-  if(!admin){ $('pwMsg').textContent = '관리자 비밀번호를 입력하세요.'; return; }
-
-  $('btnSavePw').disabled = true;
-  $('pwMsg').className = 'hint';
-  $('pwMsg').textContent = '저장 중…';
-
-  callApi({ action:'setpw', admin: admin, newpw: np }).then(function(j){
-    if(!j.ok){
-      $('pwMsg').textContent = (j.error === 'BAD_ADMIN')
-        ? '관리자 비밀번호가 맞지 않습니다.' : '저장하지 못했습니다: ' + (j.error || '');
-      return;
-    }
-    LS.set(K_ADMIN, admin);            // 확인됐으니 이 기기에선 다시 안 묻는다
-    LS.set(K_PASS, np);                // 바꾼 기기는 새 번호를 그대로 기억한다
-    LS.set(K_OKC, np ? cycleKey() : '');
-    state.locked = !!j.locked;
-    renderAdmin();
-    $('pwMsg').className = 'hint saved';
-    $('pwMsg').textContent = np ? '저장됐습니다. 이제 입장 코드는 ' + np + ' 입니다.'
-                                : '잠금을 해제했습니다. 누구나 들어올 수 있습니다.';
-  }).catch(function(e){
-    $('pwMsg').textContent = e.message;
-  }).then(function(){ $('btnSavePw').disabled = false; });
-}
-$('btnSavePw').onclick = function(){
-  var np = $('inpPw').value.trim();
-  if(!/^\d{4}$/.test(np)){ $('pwMsg').className='hint'; $('pwMsg').textContent = '숫자 네 자리로 입력하세요.'; return; }
-  savePw(np);
-};
-$('btnUnlock').onclick = function(){
-  if(!confirm('잠금을 해제하면 비밀번호 없이 누구나 들어올 수 있습니다. 계속할까요?')) return;
-  savePw('');
-};
-$('inpPw').onkeydown = function(e){ if(e.key === 'Enter') $('btnSavePw').onclick(); };
-$('inpAdmin').onkeydown = function(e){ if(e.key === 'Enter') $('btnSavePw').onclick(); };
-
-$('btnReload').onclick = function(){
-  $('btnReload').disabled = true; $('calMsg').innerHTML='';
-  loadAll(LS.get(K_PASS,''), true).then(function(ok){   // 새로고침은 캐시를 건너뛴다
-    if(!ok){ showGate(); return; }
-    renderCal();
-    $('calMsg').innerHTML = '<div class="ok-msg">시트를 새로 불러왔습니다.</div>';
-    setTimeout(function(){ $('calMsg').innerHTML=''; }, 2500);
-  }).catch(function(e){
-    $('calMsg').innerHTML = '<div class="err">'+e.message+'</div>';
-  }).then(function(){ $('btnReload').disabled=false; });
-};
-$('btnPrevM').onclick = function(){ state.calM--; if(state.calM<0){state.calM=11;state.calY--;} renderCal(); };
-$('btnNextM').onclick = function(){ state.calM++; if(state.calM>11){state.calM=0;state.calY++;} renderCal(); };
-$('btnGate').onclick = function(){
-  var v = ($('inpPass').value || '').trim();
-  if(!/^\d{4}$/.test(v)){ $('gateMsg').textContent = '코드 네 자리를 입력하세요.'; return; }
-  $('btnGate').disabled = true; $('gateMsg').textContent = '확인 중…';
-  loadAll(v).then(function(ok){
-    if(ok){ LS.set(K_PASS, v); afterGate(); return; }
-    $('gateMsg').textContent = '입장 코드가 맞지 않습니다.';
-    $('inpPass').value = ''; $('inpPass').focus();
-  }).catch(function(e){
-    $('gateMsg').textContent = e.message;
-  }).then(function(){ $('btnGate').disabled = false; });
-};
-$('inpPass').onkeydown = function(e){ if(e.key === 'Enter') $('btnGate').onclick(); };
-$('btnSheet').onclick = function(){ window.open(SHARED_SHEET_URL, '_blank', 'noopener'); };
-$('btnDlSel').onclick = function(){ downloadMember(state.selNames.slice()); };
-$('btnAll').onclick = function(){
-  var names = dayNames();
-  state.selNames = (state.selNames.length === names.length) ? [] : names.slice();
-  renderMembers();
-};
-$('btnStart').onclick = startQuiz;
-$('btnReveal').onclick = function(){ setReveal($('qEn').hidden); };
-$('btnPrev').onclick = function(){ step(-1); };
-$('btnNext').onclick = function(){ step(1); };
-$('btnQuit').onclick = function(){ renderMembers(); show('scMembers'); };
-
-$('btnJoin').onclick       = function(){ submitJoin(); };
-$('joinGoal').onchange     = function(){ renderJoin(); };
-$('joinDeposit').onchange  = function(){ renderJoin(); };
-$('btnCheck').onclick    = function(){ openCheck(); };
-$('btnWho').onclick      = function(){ openWho(); };
-$('btnWhoClose').onclick = function(){ $('mdWho').hidden = true; };
-$('mdWho').onclick       = function(ev){ if(ev.target === this) this.hidden = true; };
-$('btnDoCheck').onclick  = function(){ submitCheck(); };
-$('btnCkReload').onclick = function(){ openCheck(); };
-$('btnMonPrev').onclick  = function(){ goCycle(-1); };
-$('btnMonNext').onclick  = function(){ goCycle(1); };
-$('btnCopySettle').onclick = function(){ copySettle(); };
-$('selGoal').onchange      = function(){ saveGoal(); };
-$('selDeposit').onchange   = function(){ saveGoal(); };
-$('inpCheck').onkeydown  = function(e){ if(e.key === 'Enter') submitCheck(); };
-
-$('btnGuide').onclick      = function(){ $('mdGuide').hidden = false; };
-$('btnGuideClose').onclick = function(){ $('mdGuide').hidden = true; };
-// 바깥 어두운 곳을 눌러도 닫힌다
-$('mdGuide').onclick = function(ev){ if(ev.target === this) this.hidden = true; };
-document.addEventListener('keydown', function(e){
-  if(e.key === 'Escape' && !$('mdWho').hidden){ $('mdWho').hidden = true; return; }
-  if(e.key === 'Escape' && !$('mdGuide').hidden){ $('mdGuide').hidden = true; return; }
-  if($('scQuiz').hidden) return;
-  if(e.key===' '||e.key==='Enter'){ e.preventDefault(); setReveal($('qEn').hidden); }
-  else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
-  else if(e.key==='ArrowRight'){ e.preventDefault(); step(1); }
-});
-
-/* ───────── 시작 ───────── */
-(function init(){
-  // 관리자 진입: 주소에 ?admin 이 붙어 있을 때만.
-  // 기기에 기억해두면 회원용 주소로 들어가도 설정이 보여 헷갈린다.
-  var q = new URLSearchParams(location.search);
-
-  // 주소에 ?logout 을 붙이면 이 기기의 로그인을 모두 지운다 (회원 입장을 시험할 때)
-  if(q.has('logout')){
-    [K_PASS, K_OKC, K_ME, K_CACHE, K_ADMIN].forEach(function(k){ LS.del(k); });
-    location.replace(location.pathname);
+/* ───────────────── 화면 전환 ───────────────── */
+var SCREENS = ['scGate','scList','scView','scPick','scEdit','scSetup'];
+function show(id, key){
+  // 같은 화면을 다시 그릴 때(정답 보기, 지우기, 되돌리기 등)는 보던 자리에 그대로 둔다
+  var same = !$(id).hidden && state.shownKey === (key || '');
+  state.shownKey = key || '';
+  SCREENS.forEach(function(s){ $(s).hidden = (s !== id); });
+  if(same){
+    $('btnSetup').hidden = !state.admin || id === 'scGate';
+    $('adminBadge').hidden = !state.admin || id === 'scGate';
     return;
   }
+  $('btnSetup').hidden = !state.admin || id === 'scGate';
+  $('adminBadge').hidden = !state.admin || id === 'scGate';
+  window.scrollTo(0, 0);
+}
+function go(hash){
+  if(location.hash.replace(/^#/, '') === hash) route(); else location.hash = hash;
+}
+var toastTimer = null;
+function toast(msg){
+  var t = $('toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.hidden = true; }, 2600);
+}
 
-  state.admin = q.has('admin');
-  // ?admin 이 붙어 있으면 관리자로 본다. 그 기기는 회원 비번과 무관하게 통과한다.
-  if(state.admin) LS.set(K_ADMIN, q.get('admin') || ADMIN_HINT);
+function route(){
+  if(state.needGate){ show('scGate'); return; }
+  var h = decodeURIComponent(location.hash.replace(/^#/, ''));
+  if(h.indexOf('v/') === 0) return renderView(h.slice(2));
+  if(state.admin && h === 'pick')  return renderPick();
+  if(state.admin && h === 'edit')  return renderEdit();
+  if(state.admin && h === 'setup') return renderSetup();
+  renderList();
+}
+window.addEventListener('hashchange', route);
 
-  state.me = LS.get(K_ME, '');
-  var saved = LS.get(K_PASS, '');
-  var cached = loadCache();
-  var isAdminDevice = !!LS.get(K_ADMIN, '');        // 관리자는 비번을 묻지 않는다
-  var sameCycle = isAdminDevice || (cached && LS.get(K_OKC, '') === cycleKey());
+/* ───────────────── 불러오기 ───────────────── */
+function cacheKey(){ return K_CACHE + (state.admin ? '.admin' : ''); }
 
-  if(sameCycle && cached){
-    enterApp();                                // 이미 통과한 기기면 기다리지 않는다
-  } else {
-    showGate('확인 중…');                      // 회차가 바뀌었으면 다시 확인한다
-    $('inpPass').value = saved;
-  }
-
-  loadAll(saved).then(function(ok){
-    if(!ok){ showGate(saved ? '입장 코드가 바뀌었습니다. 모임장에게 새 코드를 받아주세요.' : ''); return; }
-    if(!sameCycle || !cached) afterGate();
-    else if(!$('scCal').hidden) renderCal();   // 뒤에서 받아온 최신 내용 반영
-    if(!$('scSetup').hidden) renderAdmin();
+function load(){
+  $('listInfo').textContent = '불러오는 중…';
+  return callApi(creds({ action:'gp_list', who: LS.get(K_ME,''), pin: LS.get(K_PIN,'') })).then(function(j){
+    if(j.locked && !j.ok) return askGate(false, LS.get(K_PASS,'') ? '코드가 바뀌었습니다. 새 코드를 입력하세요.' : '');
+    if(state.admin && j.ok && !j.admin) return askGate(true, LS.get(K_ADMIN,'') ? '관리자 비밀번호가 맞지 않습니다.' : '');
+    if(!j.ok || !j.lessons){
+      state.ready = true; state.lessons = [];
+      $('listInfo').textContent = j.error ? ('오류: ' + j.error)
+        : '중계기에 대본 기능이 아직 설치되지 않았습니다. (AppsScript_대본추가.gs)';
+      state.needGate = false; route(); return;
+    }
+    state.ready = true; state.needGate = false;
+    state.locked = !!j.locked;
+    state.lessons = j.lessons;
+    state.mine = j.mine || {};
+    // 비밀번호가 바뀌었거나 지워졌으면 이 기기의 로그인을 푼다
+    if(j.me === 'bad' || j.me === 'none'){ LS.del(K_ME); LS.del(K_PIN); state.mine = {}; }
+    LS.set(cacheKey(), JSON.stringify(j.lessons));
+    $('listInfo').textContent = '';
+    route();
   }).catch(function(e){
-    if(!sameCycle || !cached) showGate(e.message); // 이미 들어와 있으면 통신 실패는 무시
+    $('listInfo').textContent = e.message || '연결하지 못했습니다.';
+    if(state.needGate) $('gateMsg').textContent = e.message || '연결하지 못했습니다.';
   });
-})();
+}
 
+function askGate(forAdmin, msg){
+  state.needGate = true; state.gateAdmin = forAdmin;
+  $('gateTitle').textContent = forAdmin ? '관리자 비밀번호' : '입장 코드';
+  $('gateSub').textContent = forAdmin ? '모임장만 아는 비밀번호를 입력하세요. 이 기기에 기억해 둡니다.'
+                                      : '모임장에게 받은 네 자리 코드를 입력하세요.';
+  $('gateMsg').textContent = msg || '';
+  $('inpCode').value = '';
+  $('btnEnter').disabled = false;
+  show('scGate');
+  setTimeout(function(){ $('inpCode').focus(); }, 50);
+}
+
+$('gateForm').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  var v = $('inpCode').value.trim();
+  if(!v) return;
+  LS.set(state.gateAdmin ? K_ADMIN : K_PASS, v);
+  $('btnEnter').disabled = true; $('gateMsg').textContent = '';
+  load().then(function(){ $('btnEnter').disabled = false; });
+});
+
+/* ───────────────── 회차 목록 ───────────────── */
+function lessonById(id){ return state.lessons.filter(function(L){ return L.id === id; })[0]; }
+
+function renderList(){
+  show('scList');
+  $('adminBar').hidden = !state.admin;
+  $('listSub').textContent = state.admin
+    ? '에피소드 대본을 올리고, 문제로 낼 문장을 고르고, 모임 날 정답을 공개합니다.'
+    : '한글 대사를 보고 빈칸의 영어를 직접 써 보세요.';
+  var list = state.lessons.slice().reverse();          // 최근 회차가 위로
+  if(!list.length){
+    $('listBox').innerHTML = '<div class="empty">' + (state.ready
+      ? (state.admin ? '아직 올린 대본이 없습니다.<br>[에피소드 올리기]로 시작하세요.' : '아직 올라온 대본이 없습니다.')
+      : '불러오는 중…') + '</div>';
+    return;
+  }
+  $('listBox').innerHTML = list.map(function(L){
+    var meta = L.lines.length + '줄 · 빈칸 ' + countBlanks(L.lines) + '개' + (L.at ? ' · ' + esc(L.at.slice(5)) : '');
+    if(!state.admin){
+      return '<button class="lesson" data-open="' + esc(L.id) + '">' +
+        '<div class="t">' + esc(L.title) + '</div>' +
+        '<div class="m">' + (L.reveal ? '<span class="chip ans">정답 공개</span>' : '') + meta + '</div></button>';
+    }
+    return '<div class="lesson">' +
+      '<div class="t">' + esc(L.title) + '</div>' +
+      '<div class="m"><span class="chip' + (L.open ? ' on' : '') + '">' + (L.open ? '회원에게 보임' : '숨김') + '</span>' +
+        '<span class="chip' + (L.reveal ? ' ans' : '') + '">' + (L.reveal ? '정답 공개 중' : '정답 비공개') + '</span>' + meta + '</div>' +
+      '<div class="acts row">' +
+        '<button class="btn sm" data-open="' + esc(L.id) + '">회원 화면 보기</button>' +
+        '<button class="btn sm" data-edit="' + esc(L.id) + '">수정</button>' +
+        '<button class="btn sm" data-reveal="' + esc(L.id) + '">' + (L.reveal ? '정답 다시 숨기기' : '정답 공개') + '</button>' +
+        '<button class="btn sm" data-toggle="' + esc(L.id) + '">' + (L.open ? '회원에게 숨기기' : '회원에게 열기') + '</button>' +
+        '<button class="btn sm danger" data-del="' + esc(L.id) + '">삭제</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+$('listBox').addEventListener('click', function(ev){
+  var b = ev.target.closest('button'); if(!b) return;
+  var d = b.dataset;
+  if(d.open) return go('v/' + d.open);
+  if(d.edit){
+    var L = lessonById(d.edit); if(!L) return;
+    state.ed = JSON.parse(JSON.stringify({ id:L.id, title:L.title, lines:L.lines }));
+    state.edFromPick = false; saveDraft();
+    return go('edit');
+  }
+  var id = d.reveal || d.toggle || d.del, L2 = lessonById(id); if(!L2) return;
+  var req;
+  if(d.reveal){
+    if(!L2.reveal && !confirm('「' + L2.title + '」의 정답을 회원에게 공개할까요?')) return;
+    req = { action:'gp_flag', id:id, reveal: !L2.reveal };
+  } else if(d.toggle){
+    req = { action:'gp_flag', id:id, open: !L2.open };
+  } else {
+    if(!confirm('「' + L2.title + '」을(를) 삭제할까요?\n되돌릴 수 없습니다.')) return;
+    req = { action:'gp_delete', id:id };
+  }
+  b.disabled = true;
+  callApi(creds(req)).then(function(j){
+    if(!j.ok) throw new Error(j.error || '실패했습니다');
+    toast(d.del ? '삭제했습니다' : '바꿨습니다');
+    return load();
+  }).catch(function(e){ b.disabled = false; alert(e.message); });
+});
+
+$('btnHome').addEventListener('click', function(){ go(''); });
+$('btnReload').addEventListener('click', function(){ load().then(function(){ toast('새로 불러왔습니다'); }); });
+$('btnSetup').addEventListener('click', function(){ go('setup'); });
+document.addEventListener('click', function(ev){
+  var b = ev.target.closest('[data-go]'); if(b) go(b.dataset.go);
+});
+
+/* ───────────────── 대본 보기 · 답 쓰기 ───────────────── */
+function cleanAns(a){
+  var out = {};
+  Object.keys(a || {}).sort().forEach(function(k){ var v = String(a[k] || '').replace(/\s+/g, ' ').trim(); if(v) out[k] = v; });
+  return out;
+}
+/** 이 기기에서 쓰던 답(아직 등록 전일 수 있다). 없으면 서버에 등록해 둔 답 */
+function myVals(id){
+  var local = readJson(K_ANS, {})[id];
+  return local || (state.mine || {})[id] || {};
+}
+function isDirty(id){
+  var local = readJson(K_ANS, {})[id];
+  return !!local && JSON.stringify(cleanAns(local)) !== JSON.stringify(cleanAns((state.mine || {})[id]));
+}
+function setLocal(id, vals){
+  var all = readJson(K_ANS, {});
+  if(vals) all[id] = vals; else delete all[id];
+  LS.set(K_ANS, JSON.stringify(all));
+}
+function growAll(){
+  Array.prototype.forEach.call($('viewBox').querySelectorAll('textarea.in'), function(el){
+    el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; });
+}
+
+function renderView(id){
+  var L = lessonById(id);
+  if(!L){ if(state.ready){ toast('없는 대본입니다'); go(''); } else renderList(); return; }
+  show('scView', id);
+  $('viewTitle').textContent = L.title;
+  // 관리자는 원문을 갖고 있으므로 같은 방식으로 가려서 보여준다
+  var lines = L.lines.map(function(ln){
+    return ln.t ? ln : { s:ln.s, ko:ln.ko, br:ln.br, t: maskLine(ln.en, ln.b, true) };
+  });
+  var canAns = state.admin || L.reveal;
+  // 정답이 공개된 대본은 열자마자 정답이 보인다 (버튼으로 다시 가릴 수 있다)
+  if(state.viewId !== id || state.viewReveal !== !!L.reveal){ state.showAns = !!L.reveal; state.viewWho = ''; }
+  state.viewReveal = !!L.reveal;
+  if(!canAns) state.showAns = false;
+  var writing = !state.admin;                       // 회원은 정답 공개 뒤에도 계속 고쳐 쓸 수 있다 (복습)
+  state.viewId = id; state.viewLines = lines;
+
+  $('btnAns').hidden = !canAns;
+  $('btnAns').textContent = state.showAns ? '정답 가리기' : '정답 보기';
+  $('meCard').hidden = state.admin;
+  $('btnPrint').hidden = false;
+  if(!state.admin){
+    paintMe();
+    $('meNote').textContent = '쓰는 대로 자동 저장됩니다. 몇 번이든 고칠 수 있습니다.';
+    $('btnClear').hidden = $('btnUndo').hidden = true;
+    if(!myName()){
+      // 회원은 정답 공개 전이든 뒤든 이름과 비밀번호를 넣어야 대본이 열린다
+      $('btnAns').hidden = true; $('btnPrint').hidden = true; $('selWho').hidden = true;
+      $('viewDock').hidden = true; $('viewNote').textContent = '';
+      $('viewBox').innerHTML = '';
+      return;
+    }
+  }
+  $('viewDock').hidden = !writing;
+  $('selWho').hidden = !state.admin;
+  $('viewNote').textContent = state.admin ? (L.reveal ? '' : '회원에게는 아직 정답이 보이지 않습니다')
+    : '';
+
+  var o = {};
+  if(writing){
+    // 빈칸은 늘 입력칸이고, 정답은 그 아래 상자에 따로 보여준다
+    o.input = true; o.vals = myVals(id); o.key = state.showAns;
+    $('btnClear').hidden = false;
+    $('btnUndo').hidden = !readJson(K_UNDO, {})[id];
+  } else {
+    o.ans = state.showAns;
+    $('btnClear').hidden = $('btnUndo').hidden = true;
+    var sub = (state.subs[id] || []).filter(function(x){ return x.who === state.viewWho; })[0];
+    if(sub){ o.fill = sub.a; o.fillLabel = sub.who; }
+  }
+  $('viewBox').innerHTML = scriptHtml(lines, o);
+  if(writing){ growAll(); paintAnsInfo(); }
+  if(state.admin) loadSubs(id);
+}
+
+function paintAnsInfo(){
+  var id = state.viewId, keys = blankKeys(state.viewLines), vals = cleanAns(myVals(id));
+  var done = keys.filter(function(k){ return vals[k]; }).length;
+  var saved = (state.mine || {})[id];
+  $('ansInfo').textContent = '빈칸 ' + keys.length + '개 중 ' + done + '개 작성 · ' +
+    (isDirty(id) ? (LS.get(K_ME, '') ? '저장 중…' : '이름과 비밀번호를 넣으면 저장됩니다') : (saved && Object.keys(saved).length ? '저장됨' : '작성 전'));
+  $('btnSubmit').textContent = '답 등록';
+}
+
+$('viewBox').addEventListener('input', function(ev){
+  var el = ev.target.closest('.in'); if(!el) return;
+  if(el.tagName === 'TEXTAREA'){ el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+  var id = state.viewId, vals = JSON.parse(JSON.stringify(myVals(id)));
+  vals[el.dataset.k] = el.value;
+  setLocal(id, vals);
+  paintAnsInfo();
+  autoSaveSoon();
+});
+$('viewBox').addEventListener('keydown', function(ev){
+  if(ev.key !== 'Enter' || !ev.target.closest('.in')) return;
+  ev.preventDefault();                               // 줄바꿈 대신 다음 빈칸으로
+  var all = Array.prototype.slice.call($('viewBox').querySelectorAll('.in'));
+  var nx = all[all.indexOf(ev.target) + 1];
+  if(nx) nx.focus(); else ev.target.blur();
+});
+function myName(){ return LS.get(K_ME, ''); }      // 비밀번호까지 확인된 이름
+
+function paintMe(){
+  var who = myName();
+  $('meForm').hidden = !!who; $('meDone').hidden = !who;
+  $('meName').textContent = who ? who + ' 님' : '';
+}
+
+/* 이름과 비밀번호를 확인하고, 그 이름으로 저장해 둔 답을 불러온다 */
+$('meForm').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  var who = $('inpMe').value.replace(/\s+/g, ' ').trim(), pin = $('inpPin').value.trim();
+  if(!who){ $('meMsg').textContent = '이름을 적어주세요.'; $('inpMe').focus(); return; }
+  if(!/^\d{4}$/.test(pin)){ $('meMsg').textContent = '비밀번호는 숫자 네 자리입니다.'; $('inpPin').focus(); return; }
+  $('meMsg').textContent = ''; $('btnMe').disabled = true;
+  callApi(creds({ action:'gp_login', who:who, pin:pin })).then(function(j){
+    if(j.locked) throw new Error('입장 코드가 바뀌었습니다. 새로고침해서 다시 들어와 주세요.');
+    if(j.error === 'BAD_PIN') throw new Error('비밀번호가 맞지 않습니다.\n처음 쓰는 이름이라면 이미 같은 이름이 있으니 다른 이름(예: ' + who + '2)으로 해주세요.');
+    if(!j.ok) throw new Error(j.error || '확인하지 못했습니다.');
+    LS.set(K_ME, who); LS.set(K_PIN, pin);
+    state.mine = j.mine || {};
+    $('inpPin').value = '';
+    var id = state.viewId, got = state.mine[id], mineN = got ? Object.keys(got).length : 0;
+    // 이름을 넣기 전에 이 기기에서 먼저 써 둔 답이 있으면 그것을 살린다
+    renderView(id);
+    toast(j.isNew ? who + ' 님, 등록했습니다. 비밀번호를 기억해 두세요'
+                  : (mineN ? who + ' 님이 쓰던 답 ' + mineN + '개를 불러왔습니다' : who + ' 님, 어서 오세요'));
+    if(isDirty(id)) autoSaveSoon();
+  }).catch(function(e){ $('meMsg').textContent = e.message; })
+    .then(function(){ $('btnMe').disabled = false; });
+});
+/* 내 답 모두 지우기 — 지우기 직전 상태를 기억해 두었다가 [되돌리기]로 살린다 */
+function setUndo(id, vals){
+  var all = readJson(K_UNDO, {});
+  if(vals) all[id] = vals; else delete all[id];
+  LS.set(K_UNDO, JSON.stringify(all));
+}
+$('btnClear').addEventListener('click', function(){
+  var id = state.viewId, cur = cleanAns(myVals(id));
+  if(!Object.keys(cur).length) return toast('지울 답이 없습니다');
+  setUndo(id, cur);
+  setLocal(id, {});
+  renderView(id);
+  autoSaveSoon();
+  toast('모두 지웠습니다 — [되돌리기]로 살릴 수 있습니다');
+});
+$('btnUndo').addEventListener('click', function(){
+  var id = state.viewId, old = readJson(K_UNDO, {})[id];
+  if(!old) return;
+  setLocal(id, old);
+  setUndo(id, null);
+  renderView(id);
+  autoSaveSoon();
+  toast('지우기 전으로 되돌렸습니다');
+});
+
+/** 답을 서버에 올린다. quiet 면 조용히(자동 저장) */
+var saving = false, saveTimer = null;
+function submitAns(quiet){
+  var id = state.viewId, who = myName();
+  if(!who){
+    if(!quiet){ window.scrollTo(0, 0); $('inpMe').focus(); toast('이름과 비밀번호를 먼저 넣어주세요'); }
+    return Promise.resolve(false);
+  }
+  var answers = cleanAns(myVals(id));
+  if(!Object.keys(answers).length && !((state.mine || {})[id])){
+    if(!quiet) toast('쓴 답이 없습니다');
+    return Promise.resolve(false);
+  }
+  if(saving){ autoSaveSoon(); return Promise.resolve(false); }
+  saving = true;
+  return callApi(creds({ action:'gp_answer', id:id, who:who, pin: LS.get(K_PIN,''), answers:answers })).then(function(j){
+    if(j.locked) throw new Error('입장 코드가 바뀌었습니다. 새로고침해서 다시 들어와 주세요.');
+    if(j.error === 'BAD_PIN'){ LS.del(K_ME); LS.del(K_PIN); renderView(id); throw new Error('비밀번호가 바뀌었습니다. 이름과 비밀번호를 다시 넣어주세요.'); }
+    if(!j.ok) throw new Error(j.error === 'NO_LESSON' ? '이 대본은 지금 닫혀 있습니다.' : (j.error || '등록하지 못했습니다'));
+    state.mine = state.mine || {}; state.mine[id] = answers;
+    // 올리는 사이에 더 쓴 게 없으면 기기 쪽 초안은 지운다
+    if(!isDirty(id)) setLocal(id, null);
+    if(state.viewId === id && !$('viewDock').hidden) paintAnsInfo();
+    if(!quiet) toast(who + ' 님의 답 ' + Object.keys(answers).length + '개를 등록했습니다');
+    return true;
+  }).catch(function(e){
+    if(!quiet) alert(e.message); else $('ansInfo').textContent = '자동 저장 실패 — [답 등록]을 눌러주세요';
+    return false;
+  }).then(function(ok){ saving = false; return ok; });
+}
+/** 입력을 멈추고 2초 뒤 자동으로 올린다 (이름을 적어 둔 경우만) */
+function autoSaveSoon(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function(){
+    if(!$('viewDock').hidden && myName() && isDirty(state.viewId)) submitAns(true);
+  }, 2000);
+}
+$('btnSubmit').addEventListener('click', function(){
+  var btn = this; btn.disabled = true; clearTimeout(saveTimer);
+  submitAns(false).then(function(){ btn.disabled = false; });
+});
+// 창을 닫거나 다른 앱으로 넘어갈 때 마지막으로 한 번 더 올린다
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'hidden' && !$('viewDock').hidden && myName() && isDirty(state.viewId)){
+    clearTimeout(saveTimer); submitAns(true);
+  }
+});
+
+/* 모임장: 회원들이 등록한 답 */
+function loadSubs(id){
+  paintWho(id);
+  if(state.subsAt[id] && Date.now() - state.subsAt[id] < 15000) return;
+  state.subsAt[id] = Date.now();
+  callApi(creds({ action:'gp_answers', id:id })).then(function(j){
+    if(!j.ok || !j.list) return;
+    state.subs[id] = j.list;
+    if(state.viewId === id) paintWho(id);
+  }).catch(function(){});
+}
+function paintWho(id){
+  var list = state.subs[id] || [];
+  $('selWho').innerHTML = '<option value="">' + (list.length ? '회원 답 보기 (' + list.length + '명 등록)' : '등록한 회원 없음') + '</option>' +
+    list.map(function(x){
+      return '<option value="' + esc(x.who) + '"' + (x.who === state.viewWho ? ' selected' : '') + '>' +
+        esc(x.who + ' · ' + Object.keys(x.a).length + '개') + '</option>'; }).join('');
+}
+$('selWho').addEventListener('change', function(){ state.viewWho = this.value; renderView(state.viewId); });
+
+$('btnAns').addEventListener('click', function(){ state.showAns = !state.showAns; renderView(state.viewId); });
+$('btnPrint').addEventListener('click', function(){ window.print(); });
+
+/* ───────────────── 관리자 ① 대사 고르기 ───────────────── */
+function loadSource(){
+  if(state.src) return state.src;
+  var s = readJson(K_SRC, null);
+  if(s && s.episodes) state.src = s;
+  return state.src;
+}
+
+$('inpSrc').addEventListener('change', function(){
+  var f = this.files[0]; if(!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){
+    try{
+      var s = JSON.parse(rd.result);
+      if(!s.episodes || !s.episodes.length) throw 0;
+      state.src = s;
+      if(!LS.set(K_SRC, rd.result)) toast('이 기기에 저장하지 못했습니다. 다음에 다시 불러와야 합니다.');
+      state.pick = { ep: s.episodes[0].id };
+      renderPick();
+    }catch(e){ alert('대본 파일이 아닙니다.\n굿플레이스_시즌1_대본.json 을 골라주세요.'); }
+  };
+  rd.readAsText(f, 'utf-8');
+  this.value = '';
+});
+
+function curEpisode(){
+  var s = loadSource(); if(!s) return null;
+  return s.episodes.filter(function(e){ return e.id === state.pick.ep; })[0] || s.episodes[0];
+}
+
+/** 이 에피소드로 이미 등록한 대본 (제목이 E01 로 시작하는 것) */
+function lessonOfEpisode(epId){
+  return state.lessons.filter(function(L){ return L.title.indexOf(epId + ' ') === 0 || L.title === epId; })[0];
+}
+
+function renderPick(){
+  show('scPick');
+  var s = loadSource();
+  $('srcNone').hidden = !!s; $('srcHave').hidden = !s;
+  $('lblSrc').textContent = s ? '다른 대본 파일로 바꾸기' : '대본 파일 불러오기';
+  $('pickDock').hidden = !s;
+  $('pickBox').innerHTML = '';
+  if(!s){ $('srcInfo').textContent = ''; return; }
+  var ep = curEpisode(); state.pick.ep = ep.id;
+  $('srcInfo').textContent = s.title || '';
+  $('selEp').innerHTML = s.episodes.map(function(e){
+    return '<option value="' + esc(e.id) + '"' + (e.id === ep.id ? ' selected' : '') + '>' +
+      esc(e.id + ' · ' + e.title + (lessonOfEpisode(e.id) ? '  ✓ 등록됨' : '')) + '</option>'; }).join('');
+  var scenes = ep.lines.filter(function(ln, i){ return i === 0 || ln.br; }).length;
+  var had = lessonOfEpisode(ep.id);
+  $('pickInfo').textContent = '장면 ' + scenes + '개 · 대사 ' + ep.lines.length + '줄' + (had ? ' · 이미 등록됨' : '');
+  $('btnPickNext').disabled = false;
+  $('btnPickNext').textContent = had ? '이어서 고치기 →' : '대본 열기 →';
+}
+
+$('selEp').addEventListener('change', function(){ state.pick = { ep:this.value }; renderPick(); });
+$('btnPickNext').addEventListener('click', function(){
+  var ep = curEpisode(); if(!ep) return;
+  var had = lessonOfEpisode(ep.id);
+  if(had){
+    state.ed = JSON.parse(JSON.stringify({ id:had.id, title:had.title, lines:had.lines }));
+  } else {
+    state.ed = { id:'', title: ep.id + ' · ' + ep.title, lines: ep.lines.map(function(ln, k){
+      var r = { s:ln.s, ko:ln.ko, en:ln.en, b:[] }; if(ln.br && k) r.br = 1; return r; }) };
+  }
+  state.edFromPick = true; saveDraft();
+  go('edit');
+});
+$('btnNew').addEventListener('click', function(){
+  var d = readJson(K_DRAFT, null);
+  if(d && d.lines && d.lines.length && !d.id && confirm('작성하다 만 대본이 있습니다. 이어서 할까요?\n\n「' + d.title + '」')){
+    state.ed = d; state.edFromPick = false; return go('edit');
+  }
+  go('pick');
+});
+
+/* ───────────────── 관리자 ② 빈칸 만들기 ───────────────── */
+function saveDraft(){ if(state.ed) LS.set(K_DRAFT, JSON.stringify(state.ed)); }
+
+function sceneNo(i){
+  var n = 1;
+  for(var k = 1; k <= i; k++) if(state.ed.lines[k].br) n++;
+  return n;
+}
+function edLineHtml(ln, i){
+  var hide = {}; ln.b.forEach(function(x){ hide[x] = true; });
+  var ws = wordsOf(ln.en);
+  var chips = sentencesOf(ln.en).map(function(sn, k){
+    var can = sn.filter(function(x){ return splitWord(ws[x]); });
+    var text = sn.map(function(x){ return ws[x]; }).join(' ');
+    if(!can.length) return '<span class="w x">' + esc(text) + '</span>';
+    var on = can.every(function(x){ return hide[x]; });
+    return '<button class="w' + (on ? ' on' : '') + '" data-l="' + i + '" data-s="' + k + '">' + esc(text) + '</button>';
+  }).join('');
+  return (ln.br || i === 0 ? sceneHead(sceneNo(i)) : '') +
+    '<div class="ed" data-line="' + i + '">' +
+      '<div class="top"><div class="who">' + esc(ln.s) + '</div>' +
+        '<button class="mini" data-act="all" data-l="' + i + '">통째로</button>' +
+        '<button class="mini" data-act="none" data-l="' + i + '">지우기</button>' +
+        '<button class="mini" data-act="drop" data-l="' + i + '" title="이 대사를 회차에서 뺀다">빼기</button></div>' +
+      '<div class="ko" contenteditable="true" spellcheck="false" data-ko="' + i + '">' + esc(ln.ko) + '</div>' +
+      '<div class="words">' + chips + '</div>' +
+    '</div>';
+}
+
+function renderEdit(){
+  if(!state.ed){
+    var d = readJson(K_DRAFT, null);
+    if(d && d.lines && d.lines.length) state.ed = d; else return go('pick');
+  }
+  show('scEdit');
+  state.preview = false;
+  $('inpTitle').value = state.ed.title || '';
+  $('btnSave').textContent = state.ed.id ? '수정 저장' : '등록';
+  paintEdit();
+}
+
+function paintEdit(){
+  var ed = state.ed;
+  $('btnPreview').textContent = state.preview ? '편집으로' : '미리보기';
+  if(state.preview){
+    $('editBox').innerHTML = '<div class="card">' + scriptHtml(ed.lines.map(function(ln){
+      return { s:ln.s, ko:ln.ko, br:ln.br, t: maskLine(ln.en, ln.b, false) }; })) + '</div>';
+  } else {
+    $('editBox').innerHTML = ed.lines.map(edLineHtml).join('');
+  }
+  paintEditInfo();
+}
+function paintEditInfo(){
+  $('editInfo').textContent = state.ed.lines.length + '줄 · 빈칸 ' + countBlanks(state.ed.lines) + '개';
+}
+function blankable(en){
+  var out = []; wordsOf(en).forEach(function(w, k){ if(splitWord(w)) out.push(k); }); return out;
+}
+
+$('editBox').addEventListener('click', function(ev){
+  var ed = state.ed;
+  var w = ev.target.closest('button.w');
+  if(w){
+    var ln = ed.lines[+w.dataset.l], ws = wordsOf(ln.en);
+    var sn = sentencesOf(ln.en)[+w.dataset.s].filter(function(x){ return splitWord(ws[x]); });
+    var turnOn = !w.classList.contains('on');
+    ln.b = ln.b.filter(function(x){ return sn.indexOf(x) < 0; });
+    if(turnOn) ln.b = ln.b.concat(sn);
+    ln.b.sort(function(a, b){ return a - b; });
+    w.classList.toggle('on', turnOn);
+    paintEditInfo(); saveDraft(); return;
+  }
+  var m = ev.target.closest('button.mini'); if(!m) return;
+  var i = +m.dataset.l, act = m.dataset.act;
+  if(act === 'drop'){
+    if(ed.lines.length <= 1) return toast('마지막 한 줄은 뺄 수 없습니다');
+    var gone = ed.lines.splice(i, 1)[0];
+    if(gone.br && ed.lines[i]) ed.lines[i].br = 1;
+    if(ed.lines[0]) delete ed.lines[0].br;
+    paintEdit();
+  } else {
+    ed.lines[i].b = act === 'all' ? blankable(ed.lines[i].en) : [];
+    var box = $('editBox').querySelector('[data-line="' + i + '"]');
+    Array.prototype.forEach.call(box.querySelectorAll('button.w'), function(el){ el.classList.toggle('on', act === 'all'); });
+    paintEditInfo();
+  }
+  saveDraft();
+});
+// 한글 뜻 고치기
+$('editBox').addEventListener('focusout', function(ev){
+  var el = ev.target.closest('[data-ko]'); if(!el || !state.ed) return;
+  var v = el.textContent.replace(/\s+/g, ' ').trim();
+  var ln = state.ed.lines[+el.dataset.ko]; if(!ln) return;
+  if(v){ ln.ko = v; saveDraft(); }
+  el.textContent = ln.ko;
+});
+$('editBox').addEventListener('keydown', function(ev){
+  if(ev.key === 'Enter' && ev.target.closest('[data-ko]')){ ev.preventDefault(); ev.target.blur(); }
+});
+$('inpTitle').addEventListener('input', function(){ if(state.ed){ state.ed.title = this.value; saveDraft(); } });
+$('btnAllOn').addEventListener('click', function(){
+  state.ed.lines.forEach(function(ln){ ln.b = blankable(ln.en); }); saveDraft(); paintEdit(); });
+$('btnAllOff').addEventListener('click', function(){
+  if(countBlanks(state.ed.lines) && !confirm('만든 빈칸을 모두 지울까요?')) return;
+  state.ed.lines.forEach(function(ln){ ln.b = []; }); saveDraft(); paintEdit(); });
+$('btnPreview').addEventListener('click', function(){ state.preview = !state.preview; paintEdit(); window.scrollTo(0, 0); });
+$('btnEditBack').addEventListener('click', function(){ go(state.edFromPick ? 'pick' : ''); });
+
+$('btnSave').addEventListener('click', function(){
+  var ed = state.ed, btn = this;
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  ed.title = $('inpTitle').value.trim();
+  if(!ed.title){ $('inpTitle').focus(); return toast('제목을 적어주세요'); }
+  if(!countBlanks(ed.lines) && !confirm('빈칸이 하나도 없습니다. 대본 전체가 그대로 보입니다. 등록할까요?')) return;
+  var lesson = { id: ed.id, title: ed.title, lines: ed.lines };
+  if(!ed.id) lesson.open = true;                 // 새로 등록하면 바로 회원에게 보인다
+  btn.disabled = true;
+  callApi(creds({ action:'gp_save', lesson: lesson })).then(function(j){
+    if(!j.ok) throw new Error(j.error === 'BAD_ADMIN' ? '관리자 비밀번호가 맞지 않습니다.' : (j.error || '저장하지 못했습니다'));
+    LS.del(K_DRAFT); state.ed = null;
+    toast(ed.id ? '수정했습니다' : '등록했습니다 — 회원에게 바로 보입니다');
+    go('');
+    return load();
+  }).catch(function(e){ alert(e.message); }).then(function(){ btn.disabled = false; });
+});
+
+/* ───────────────── 관리자 설정 ───────────────── */
+function renderSetup(){
+  show('scSetup');
+  $('pwMsg').textContent = '';
+  loadMembers();
+  $('pwState').textContent = state.locked == null ? '' : (state.locked ? '지금 잠금 사용 중' : '지금 잠금 없음');
+}
+function loadMembers(){
+  callApi(creds({ action:'gp_members' })).then(function(j){
+    if(!j.ok || !j.list){ $('memBox').innerHTML = '<span class="note">회원 목록을 불러오지 못했습니다.</span>'; return; }
+    if(!j.list.length){ $('memBox').innerHTML = '<span class="note">아직 이름을 등록한 회원이 없습니다.</span>'; return; }
+    $('memBox').innerHTML = j.list.map(function(m){
+      return '<div class="mem"><div class="nm"><b>' + esc(m.who) + '</b>' +
+        '<span class="note">' + (m.at ? esc(m.at.slice(0, 10)) + ' 등록 · ' : '') + '답 쓴 대본 ' + m.n + '개</span></div>' +
+        '<button class="btn sm" data-reset="' + esc(m.who) + '">비밀번호 초기화</button></div>';
+    }).join('');
+  }).catch(function(e){ $('memBox').innerHTML = '<span class="note">' + esc(e.message) + '</span>'; });
+}
+$('memBox').addEventListener('click', function(ev){
+  var b = ev.target.closest('[data-reset]'); if(!b) return;
+  var who = b.dataset.reset;
+  if(!confirm(who + ' 님의 비밀번호를 초기화할까요?\n다음에 넣는 네 자리가 새 비밀번호가 됩니다. 써 둔 답은 그대로 남습니다.')) return;
+  b.disabled = true;
+  callApi(creds({ action:'gp_resetpin', who:who })).then(function(j){
+    if(!j.ok) throw new Error(j.error || '초기화하지 못했습니다');
+    toast(who + ' 님의 비밀번호를 초기화했습니다');
+    loadMembers();
+  }).catch(function(e){ b.disabled = false; alert(e.message); });
+});
+
+$('btnSetPw').addEventListener('click', function(){
+  var np = $('inpNewPw').value.trim();
+  if(np && !/^\d{4}$/.test(np)){ $('pwMsg').textContent = '숫자 네 자리로 입력하세요.'; return; }
+  if(!np && !confirm('입장 코드를 없애면 주소를 아는 누구나 들어올 수 있습니다. 계속할까요?')) return;
+  callApi({ action:'setpw', admin: LS.get(K_ADMIN,''), newpw: np }).then(function(j){
+    if(!j.ok){ $('pwMsg').textContent = j.error === 'BAD_ADMIN' ? '관리자 비밀번호가 맞지 않습니다.' : '바꾸지 못했습니다.'; return; }
+    state.locked = !!j.locked; $('inpNewPw').value = '';
+    renderSetup(); toast(np ? '입장 코드를 ' + np + ' 로 바꿨습니다' : '잠금을 풀었습니다');
+  }).catch(function(e){ $('pwMsg').textContent = e.message; });
+});
+$('btnLogout').addEventListener('click', function(){
+  [K_ADMIN, K_DRAFT, K_CACHE + '.admin'].forEach(LS.del);
+  location.href = location.pathname;
+});
+
+/* ───────────────── 시작 ───────────────── */
+(function init(){
+  if(Q.has('logout')){
+    [K_PASS, K_ADMIN, K_CACHE, K_CACHE + '.admin', K_DRAFT, K_ME, K_PIN, K_ANS, K_UNDO].forEach(LS.del);
+    location.replace(location.pathname); return;
+  }
+  if(state.admin && !LS.get(K_ADMIN,'')){ askGate(true, ''); return; }
+  // 지난번에 받은 목록을 먼저 띄우고, 뒤에서 새로 받는다
+  var cached = readJson(cacheKey(), null);
+  if(cached && (state.admin || LS.get(K_PASS,'') || DEMO)){ state.lessons = cached; state.ready = true; }
+  route();
+  load();
 })();
 </script>
 </body>
