@@ -245,6 +245,7 @@
     <h1 id="viewTitle"></h1>
     <div class="viewbar">
       <button class="btn sm" id="btnAns" hidden>정답 보기</button>
+      <button class="btn sm" id="btnHide" hidden>내 답 가리기</button>
       <button class="btn sm" id="btnPrint">인쇄</button>
       <button class="btn sm" id="btnClear" hidden>내 답 모두 지우기</button>
       <button class="btn sm" id="btnUndo" hidden>되돌리기</button>
@@ -380,7 +381,7 @@
 var API = 'https://script.google.com/macros/s/AKfycbysvePf_fN3ABV1KNmamdaAmJxzpp2P_FG1WFxbDD8YAAAwM2p2H1SWeZ8xTwXpaBoR9g/exec';
 
 var K_PASS='gp.pass', K_ADMIN='gp.admin', K_CACHE='gp.cache', K_SRC='gp.source',
-    K_DRAFT='gp.draft', K_DEMO='gp.demo', K_ME='gp.me', K_PIN='gp.pin', K_ANS='gp.ans', K_UNDO='gp.undo', K_PARTS='gp.parts';
+    K_DRAFT='gp.draft', K_DEMO='gp.demo', K_ME='gp.me', K_PIN='gp.pin', K_ANS='gp.ans', K_UNDO='gp.undo', K_PARTS='gp.parts', K_HIDE='gp.hide';
 
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
@@ -877,7 +878,7 @@ function renderView(id){
   if(!state.admin){
     paintMe();
     $('meNote').textContent = '쓰는 대로 자동 저장됩니다. 몇 번이든 고칠 수 있습니다.';
-    $('btnClear').hidden = $('btnUndo').hidden = true;
+    $('btnClear').hidden = $('btnUndo').hidden = $('btnHide').hidden = true;
     if(!myName()){
       // 회원은 정답 공개 전이든 뒤든 이름과 비밀번호를 넣어야 대본이 열린다
       $('btnAns').hidden = true; $('btnPrint').hidden = true; $('selWho').hidden = true;
@@ -886,13 +887,21 @@ function renderView(id){
       return;
     }
   }
-  $('viewDock').hidden = !writing;
+  // 스터디 때는 써 둔 답을 가리고 빈칸만 본다 (즉석 영작). 답은 지워지지 않고 그대로 저장돼 있다.
+  var hide = writing && LS.get(K_HIDE, '') === '1';
+  $('viewDock').hidden = !writing || hide;
   $('selWho').hidden = !state.admin;
+  $('btnHide').hidden = !writing;
+  $('btnHide').textContent = hide ? '내 답 보기' : '내 답 가리기';
+  $('btnHide').classList.toggle('pri', hide);
   $('viewNote').textContent = state.admin ? (L.reveal ? '' : '회원에게는 아직 정답이 보이지 않습니다')
-    : '';
+    : (hide ? '내 답을 가렸습니다. 써 둔 답은 그대로 저장돼 있습니다.' : '');
 
   var o = { scene0: sceneStart(L.title, L.lines) };
-  if(writing){
+  if(writing && hide){
+    o.key = state.showAns;                        // 빈칸만. 정답 상자는 [정답 보기]를 눌렀을 때만
+    $('btnClear').hidden = $('btnUndo').hidden = true;
+  } else if(writing){
     // 빈칸은 늘 입력칸이고, 정답은 그 아래 상자에 따로 보여준다
     o.input = true; o.vals = myVals(id); o.key = state.showAns;
     $('btnClear').hidden = false;
@@ -904,7 +913,7 @@ function renderView(id){
     if(sub){ o.fill = sub.a; o.fillLabel = sub.who; }
   }
   $('viewBox').innerHTML = scriptHtml(lines, o);
-  if(writing){ growAll(); paintAnsInfo(); }
+  if(writing && !hide){ growAll(); paintAnsInfo(); }
   if(state.admin) loadSubs(id);
 }
 
@@ -1057,6 +1066,16 @@ function paintWho(id){
 }
 $('selWho').addEventListener('change', function(){ state.viewWho = this.value; renderView(state.viewId); });
 
+$('btnHide').addEventListener('click', function(){
+  var hiding = LS.get(K_HIDE, '') !== '1';
+  // 가리기 전에 아직 안 올라간 답이 있으면 먼저 올린다
+  clearTimeout(saveTimer);
+  var done = hiding && myName() && isDirty(state.viewId) ? submitAns(true) : Promise.resolve();
+  done.then(function(){
+    if(hiding){ LS.set(K_HIDE, '1'); state.showAns = false; } else LS.del(K_HIDE);
+    renderView(state.viewId);
+  });
+});
 $('btnAns').addEventListener('click', function(){ state.showAns = !state.showAns; renderView(state.viewId); });
 $('btnPrint').addEventListener('click', function(){ window.print(); });
 
@@ -1386,7 +1405,7 @@ $('btnLogout').addEventListener('click', function(){
 /* ───────────────── 시작 ───────────────── */
 (function init(){
   if(Q.has('logout')){
-    [K_PASS, K_ADMIN, K_CACHE, K_CACHE + '.admin', K_DRAFT, K_ME, K_PIN, K_ANS, K_UNDO].forEach(LS.del);
+    [K_PASS, K_ADMIN, K_CACHE, K_CACHE + '.admin', K_DRAFT, K_ME, K_PIN, K_ANS, K_UNDO, K_HIDE].forEach(LS.del);
     location.replace(location.pathname); return;
   }
   if(state.admin && !LS.get(K_ADMIN,'')){ askGate(true, ''); return; }
