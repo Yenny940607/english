@@ -96,6 +96,8 @@
   .chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;
     background:var(--surface-2);color:var(--text-2);margin-right:4px;vertical-align:middle}
   .chip.on{background:var(--ok-soft);color:var(--ok)}
+  .chip.warn{background:#FFF1E0;color:#B25E00}
+  @media (prefers-color-scheme:dark){ .chip.warn{background:#3A2A12;color:#F5B25E} }
   .chip.ans{background:var(--accent-soft);color:var(--accent)}
   .lesson .acts{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 
@@ -322,7 +324,7 @@
       <label class="field" for="inpTitle">제목</label>
       <input type="text" id="inpTitle" maxlength="50" placeholder="예: E01 ① · Everything is Fine">
       <label class="field" for="inpWhen" style="margin-top:12px">스터디 일정</label>
-      <input type="text" id="inpWhen" maxlength="26" placeholder="예: 11/8 오후 7시 스터디">
+      <input type="text" id="inpWhen" maxlength="22" placeholder="예: 11/8 오후 7시 스터디">
       <p class="note" style="margin:6px 0 0">언제 하는 스터디 분량인지 적어두면 회원 목록과 대본 위에 표시됩니다. 비워둬도 됩니다.</p>
       <div class="row" style="margin-top:10px">
         <button class="btn sm" id="btnAllOn">모든 문장 통째로 숨기기</button>
@@ -538,9 +540,16 @@ function sceneStart(title, lines){
 
 /* 스터디 일정은 제목 뒤에 " || 일정" 으로 붙여 저장한다 */
 var WHEN_SEP = ' || ';
-function nameOf(title){ var t = String(title || ''), at = t.indexOf(WHEN_SEP); return at < 0 ? t : t.slice(0, at); }
-function whenOf(title){ var t = String(title || ''), at = t.indexOf(WHEN_SEP); return at < 0 ? '' : t.slice(at + WHEN_SEP.length).trim(); }
-function joinTitle(name, when){ when = String(when || '').trim(); return when ? name + WHEN_SEP + when : name; }
+/* 모임장이 "회원 답 가리기"를 켠 대본은 제목 맨 끝에 " ##H" 가 붙는다 */
+var HIDE_MARK = ' ##H';
+function hiddenAll(title){ return String(title || '').slice(-HIDE_MARK.length) === HIDE_MARK; }
+function bare(title){ var t = String(title || ''); return hiddenAll(t) ? t.slice(0, -HIDE_MARK.length) : t; }
+function nameOf(title){ var t = bare(title), at = t.indexOf(WHEN_SEP); return at < 0 ? t : t.slice(0, at); }
+function whenOf(title){ var t = bare(title), at = t.indexOf(WHEN_SEP); return at < 0 ? '' : t.slice(at + WHEN_SEP.length).trim(); }
+function joinTitle(name, when, hide){
+  when = String(when || '').trim();
+  return (when ? name + WHEN_SEP + when : name) + (hide ? HIDE_MARK : '');
+}
 function whenChip(title){ var w = whenOf(title); return w ? '<div class="when">' + esc(w) + '</div>' : ''; }
 
 function sceneHead(n){ return '<div class="scn" id="scene' + n + '">장면 ' + n + '</div>'; }
@@ -719,7 +728,7 @@ function load(){
         : '중계기에 대본 기능이 아직 설치되지 않았습니다. (AppsScript_대본추가.gs)';
       state.needGate = false; route(); return;
     }
-    state.ready = true; state.needGate = false;
+    state.ready = true; state.needGate = false; state.loadedAt = Date.now();
     state.locked = !!j.locked;
     state.lessons = j.lessons;
     state.mine = j.mine || {};
@@ -781,11 +790,13 @@ function renderList(){
     return '<div class="lesson">' +
       whenChip(L.title) + '<div class="t">' + esc(nameOf(L.title)) + '</div>' +
       '<div class="m"><span class="chip' + (L.open ? ' on' : '') + '">' + (L.open ? '회원에게 보임' : '숨김') + '</span>' +
-        '<span class="chip' + (L.reveal ? ' ans' : '') + '">' + (L.reveal ? '정답 공개 중' : '정답 비공개') + '</span>' + meta + '</div>' +
+        '<span class="chip' + (L.reveal ? ' ans' : '') + '">' + (L.reveal ? '정답 공개 중' : '정답 비공개') + '</span>' +
+        (hiddenAll(L.title) ? '<span class="chip warn">회원 답 가림</span>' : '') + meta + '</div>' +
       '<div class="acts row">' +
         '<button class="btn sm" data-open="' + esc(L.id) + '">회원 화면 보기</button>' +
         '<button class="btn sm" data-edit="' + esc(L.id) + '">수정</button>' +
         '<button class="btn sm" data-reveal="' + esc(L.id) + '">' + (L.reveal ? '정답 다시 숨기기' : '정답 공개') + '</button>' +
+        '<button class="btn sm" data-hideall="' + esc(L.id) + '">' + (hiddenAll(L.title) ? '회원 답 다시 보이기' : '회원 답 가리기') + '</button>' +
         '<button class="btn sm" data-toggle="' + esc(L.id) + '">' + (L.open ? '회원에게 숨기기' : '회원에게 열기') + '</button>' +
         '<button class="btn sm danger" data-del="' + esc(L.id) + '">삭제</button>' +
       '</div></div>';
@@ -798,13 +809,17 @@ $('listBox').addEventListener('click', function(ev){
   if(d.open) return go('v/' + d.open);
   if(d.edit){
     var L = lessonById(d.edit); if(!L) return;
-    state.ed = JSON.parse(JSON.stringify({ id:L.id, title:nameOf(L.title), when:whenOf(L.title), lines:L.lines }));
+    state.ed = JSON.parse(JSON.stringify({ id:L.id, title:nameOf(L.title), when:whenOf(L.title), hideAll:hiddenAll(L.title), lines:L.lines }));
     state.edFromPick = false; saveDraft();
     return go('edit');
   }
-  var id = d.reveal || d.toggle || d.del, L2 = lessonById(id); if(!L2) return;
+  var id = d.reveal || d.toggle || d.del || d.hideall, L2 = lessonById(id); if(!L2) return;
   var req;
-  if(d.reveal){
+  if(d.hideall){
+    // 제목 끝의 표시만 바꿔 다시 저장한다 (대사와 공개 여부는 그대로)
+    var on = !hiddenAll(L2.title);
+    req = { action:'gp_save', lesson: { id:id, title: joinTitle(nameOf(L2.title), whenOf(L2.title), on), lines: L2.lines } };
+  } else if(d.reveal){
     if(!L2.reveal && !confirm('「' + nameOf(L2.title) + '」의 정답을 회원에게 공개할까요?')) return;
     req = { action:'gp_flag', id:id, reveal: !L2.reveal };
   } else if(d.toggle){
@@ -816,7 +831,7 @@ $('listBox').addEventListener('click', function(ev){
   b.disabled = true;
   callApi(creds(req)).then(function(j){
     if(!j.ok) throw new Error(j.error || '실패했습니다');
-    toast(d.del ? '삭제했습니다' : '바꿨습니다');
+    toast(d.del ? '삭제했습니다' : d.hideall ? (hiddenAll(req.lesson.title) ? '모든 회원의 답을 가렸습니다' : '회원 답을 다시 보이게 했습니다') : '바꿨습니다');
     return load();
   }).catch(function(e){ b.disabled = false; alert(e.message); });
 });
@@ -888,14 +903,16 @@ function renderView(id){
     }
   }
   // 스터디 때는 써 둔 답을 가리고 빈칸만 본다 (즉석 영작). 답은 지워지지 않고 그대로 저장돼 있다.
-  var hide = writing && LS.get(K_HIDE, '') === '1';
+  var forced = writing && hiddenAll(L.title);       // 모임장이 모든 회원의 답을 가렸다
+  var hide = writing && (forced || LS.get(K_HIDE, '') === '1');
   $('viewDock').hidden = !writing || hide;
   $('selWho').hidden = !state.admin;
-  $('btnHide').hidden = !writing;
+  $('btnHide').hidden = !writing || forced;
   $('btnHide').textContent = hide ? '내 답 보기' : '내 답 가리기';
   $('btnHide').classList.toggle('pri', hide);
   $('viewNote').textContent = state.admin ? (L.reveal ? '' : '회원에게는 아직 정답이 보이지 않습니다')
-    : (hide ? '내 답을 가렸습니다. 써 둔 답은 그대로 저장돼 있습니다.' : '');
+    : (forced ? '스터디 중이라 모임장이 답을 가렸습니다. 써 둔 답은 그대로 저장돼 있습니다.'
+              : hide ? '내 답을 가렸습니다. 써 둔 답은 그대로 저장돼 있습니다.' : '');
 
   var o = { scene0: sceneStart(L.title, L.lines) };
   if(writing && hide){
@@ -1210,7 +1227,7 @@ $('pickBox').addEventListener('click', function(ev){
   var parts = partsOf(ep), k = parts.length, p = parts[+b.dataset.part];
   var had = lessonOfPart(ep, p.i, k);
   if(had){
-    state.ed = JSON.parse(JSON.stringify({ id:had.id, title:nameOf(had.title), when:whenOf(had.title), lines:had.lines }));
+    state.ed = JSON.parse(JSON.stringify({ id:had.id, title:nameOf(had.title), when:whenOf(had.title), hideAll:hiddenAll(had.title), lines:had.lines }));
   } else {
     state.ed = { id:'', title: partTitle(ep, p.i, k), lines: ep.lines.slice(p.from, p.to + 1).map(function(ln, n){
       var r = { s:ln.s, ko:ln.ko, en:ln.en, b:[] }; if(ln.br && n) r.br = 1;
@@ -1341,11 +1358,11 @@ $('btnEditBack').addEventListener('click', function(){ go(state.edFromPick ? 'pi
 $('btnSave').addEventListener('click', function(){
   var ed = state.ed, btn = this;
   if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
-  ed.title = $('inpTitle').value.split(WHEN_SEP).join(' ').trim();
-  ed.when = $('inpWhen').value.split(WHEN_SEP).join(' ').trim();
+  ed.title = $('inpTitle').value.split(WHEN_SEP).join(' ').split('##').join(' ').trim();
+  ed.when = $('inpWhen').value.split(WHEN_SEP).join(' ').split('##').join(' ').trim();
   if(!ed.title){ $('inpTitle').focus(); return toast('제목을 적어주세요'); }
   if(!countBlanks(ed.lines) && !confirm('빈칸이 하나도 없습니다. 대본 전체가 그대로 보입니다. 등록할까요?')) return;
-  var lesson = { id: ed.id, title: joinTitle(ed.title, ed.when), lines: ed.lines };
+  var lesson = { id: ed.id, title: joinTitle(ed.title, ed.when, ed.hideAll), lines: ed.lines };
   if(!ed.id) lesson.open = true;                 // 새로 등록하면 바로 회원에게 보인다
   btn.disabled = true;
   callApi(creds({ action:'gp_save', lesson: lesson })).then(function(j){
@@ -1401,6 +1418,20 @@ $('btnLogout').addEventListener('click', function(){
   [K_ADMIN, K_DRAFT, K_CACHE + '.admin'].forEach(LS.del);
   location.href = location.pathname;
 });
+
+/* 회원이 대본을 보고 있는 동안 30초마다, 그리고 앱으로 돌아올 때 새로 받아 온다.
+   글자를 치는 중에는 건드리지 않는다. */
+function refreshIfIdle(minGap){
+  if(state.admin || state.needGate || $('scView').hidden || !myName()) return;
+  if(document.visibilityState !== 'visible') return;
+  var el = document.activeElement;
+  if(el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return;
+  if(saving || Date.now() - (state.loadedAt || 0) < minGap) return;
+  state.loadedAt = Date.now();
+  load();
+}
+setInterval(function(){ refreshIfIdle(30000); }, 5000);
+document.addEventListener('visibilitychange', function(){ refreshIfIdle(5000); });
 
 /* ───────────────── 시작 ───────────────── */
 (function init(){
