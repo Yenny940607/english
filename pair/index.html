@@ -126,6 +126,23 @@
     max-width:100%;line-height:1.5;outline:none;vertical-align:baseline}
   .ln .in:focus{background:var(--surface);box-shadow:0 0 0 2px var(--accent)}
   .ln textarea.in.wide{display:block;width:100%;resize:none;overflow:hidden;margin:6px 0}
+  .tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:var(--r);padding:4px;margin:12px 0 4px}
+  .tabs button{flex:1;border:none;background:none;border-radius:9px;padding:8px;font-weight:600;font-size:14px;color:var(--text-2)}
+  .tabs button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+  .sr{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+  .sr .n{flex:none;width:22px;font-size:12px;font-weight:700;color:var(--muted);padding-top:9px;font-variant-numeric:tabular-nums}
+  .sr .b{flex:1;min-width:0}
+  .sr textarea.in{display:block;width:100%;resize:none;overflow:hidden;font:inherit;font-size:16px;line-height:1.5;
+    color:var(--text);background:var(--surface-2);border:none;border-bottom:1.5px solid var(--line-2);
+    border-radius:6px 6px 0 0;padding:6px 9px;margin:0 0 6px;outline:none}
+  .sr textarea.in.en{background:var(--accent-soft);border-bottom-color:var(--accent)}
+  .sr textarea.in:focus{background:var(--surface);box-shadow:0 0 0 2px var(--accent)}
+  .sr .k{font-size:16px;line-height:1.6;word-break:keep-all}
+  .sr .e{font-size:15px;line-height:1.6;color:var(--accent);font-weight:600;margin-top:4px}
+  .sr .none{font-size:13px;color:var(--muted);margin-top:4px}
+  .sr .peek{margin-top:6px}
+  .peer{font-weight:800;font-size:13px;color:var(--accent);margin:16px 0 2px}
+  .peer:first-child{margin-top:0}
   .mem{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
   .mem .nm{flex:1;min-width:0}
   .mem .nm b{display:block}
@@ -245,6 +262,10 @@
     <button class="back" data-go="">← 목록</button>
     <div class="when" id="viewWhen" hidden></div>
     <h1 id="viewTitle"></h1>
+    <div class="tabs" id="viewTabs" hidden>
+      <button data-tab="script">대본</button>
+      <button data-tab="sent">일상 문장</button>
+    </div>
     <div class="viewbar">
       <button class="btn sm" id="btnAns" hidden>정답 보기</button>
       <button class="btn sm" id="btnHide" hidden>내 답 가리기</button>
@@ -271,6 +292,7 @@
       </div>
     </div>
     <div id="viewBox"></div>
+    <div id="sentBox" hidden></div>
     <div class="dock" id="viewDock" hidden>
       <div class="inner">
         <div class="info" id="ansInfo"></div>
@@ -407,6 +429,8 @@ var state = {
   showAns: false,
   mine: {},                  // 내가 등록한 답 {대본ID:{열쇠:답}}
   subs: {}, subsAt: {},      // 관리자: 회원들이 등록한 답
+  peers: {}, peersAt: {},    // 다른 회원들의 일상 문장
+  tab: 'script', quiz: false, sentRows: 0,
   viewWho: '',
   src: null,                 // 대본 원본 (관리자 기기에만)
   pick: { ep: '' },
@@ -632,6 +656,13 @@ function mockApi(p){
         mem[p.who] = String(p.pin);
         ans.forEach(function(x){ if(x.who === p.who) res.mine[x.id] = x.a; });
       }
+    } else if(p.action === 'gp_peers'){
+      var Lp = db.filter(function(x){ return x.id === p.id; })[0];
+      if(!pinOk && !isAdmin) res = { ok:false, error:'BAD_PIN' };
+      else if(!Lp || (!Lp.open && !isAdmin)) res = { ok:false, error:'NO_LESSON' };
+      else res = { ok:true, list: ans.filter(function(x){ return x.id === p.id; }).map(function(x){
+        return { who:x.who, s: sentsOf(x.a).map(function(y){ return [y.ko, y.en]; }) }; })
+        .filter(function(x){ return x.s.length; }) };
     } else if(p.action === 'gp_answer'){
       var Lx = db.filter(function(x){ return x.id === p.id; })[0];
       if(!p.who) res = { ok:false, error:'NO_NAME' };
@@ -844,6 +875,19 @@ document.addEventListener('click', function(ev){
 });
 
 /* ───────────────── 대본 보기 · 답 쓰기 ───────────────── */
+/* 일상 문장은 답안과 같은 곳에 저장한다. "9000:n" 한글, "9001:n" 영어 */
+var SENT_KO = 9000, SENT_EN = 9001, SENT_MIN = 10, SENT_MAX = 30;
+function isSentKey(k){ return +String(k).split(':')[0] >= SENT_KO; }
+/** 답 묶음에서 일상 문장만 뽑는다. [{i, ko, en}] (한글이나 영어가 있는 것만) */
+function sentsOf(a){
+  var out = [];
+  for(var i = 0; i < SENT_MAX; i++){
+    var ko = String((a || {})[SENT_KO + ':' + i] || '').trim(), en = String((a || {})[SENT_EN + ':' + i] || '').trim();
+    if(ko || en) out.push({ i:i, ko:ko, en:en });
+  }
+  return out;
+}
+
 function cleanAns(a){
   var out = {};
   Object.keys(a || {}).sort().forEach(function(k){ var v = String(a[k] || '').replace(/\s+/g, ' ').trim(); if(v) out[k] = v; });
@@ -864,7 +908,7 @@ function setLocal(id, vals){
   LS.set(K_ANS, JSON.stringify(all));
 }
 function growAll(){
-  Array.prototype.forEach.call($('viewBox').querySelectorAll('textarea.in'), function(el){
+  Array.prototype.forEach.call(document.querySelectorAll('#viewBox textarea.in, #sentBox textarea.in'), function(el){
     el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; });
 }
 
@@ -881,6 +925,7 @@ function renderView(id){
   var canAns = state.admin || L.reveal;
   // 정답이 공개된 대본은 열자마자 정답이 보인다 (버튼으로 다시 가릴 수 있다)
   if(state.viewId !== id || state.viewReveal !== !!L.reveal){ state.showAns = !!L.reveal; state.viewWho = ''; }
+  if(state.viewId !== id){ state.tab = 'script'; state.quiz = false; state.sentRows = 0; }
   state.viewReveal = !!L.reveal;
   if(!canAns) state.showAns = false;
   var writing = !state.admin;                       // 회원은 정답 공개 뒤에도 계속 고쳐 쓸 수 있다 (복습)
@@ -890,6 +935,8 @@ function renderView(id){
   $('btnAns').textContent = state.showAns ? '정답 가리기' : '정답 보기';
   $('meCard').hidden = state.admin;
   $('btnPrint').hidden = false;
+  $('viewTabs').hidden = true; $('sentBox').hidden = true; $('viewBox').hidden = false;
+  document.querySelector('#scView .viewbar').hidden = false;
   if(!state.admin){
     paintMe();
     $('meNote').textContent = '쓰는 대로 자동 저장됩니다. 몇 번이든 고칠 수 있습니다.';
@@ -932,18 +979,127 @@ function renderView(id){
   $('viewBox').innerHTML = scriptHtml(lines, o);
   if(writing && !hide){ growAll(); paintAnsInfo(); }
   if(state.admin) loadSubs(id);
+
+  // 탭: 대본 / 일상 문장
+  $('viewTabs').hidden = false;
+  Array.prototype.forEach.call($('viewTabs').querySelectorAll('button'), function(b){
+    b.classList.toggle('on', b.dataset.tab === (state.tab || 'script')); });
+  if(state.tab === 'sent'){
+    $('viewBox').hidden = true; $('sentBox').hidden = false;
+    document.querySelector('#scView .viewbar').hidden = true;
+    $('viewDock').hidden = state.admin;
+    renderSent(L);
+  }
 }
+
+/* ───────────────── 일상 문장 ───────────────── */
+function sentRowHtml(x, n, showEn){
+  return '<div class="sr"><span class="n">' + n + '</span><div class="b">' +
+    '<div class="k">' + (x.ko ? esc(x.ko) : '<span class="none">(한글 없음)</span>') + '</div>' +
+    (!x.en ? '<div class="none">영어는 아직 안 적었습니다</div>'
+      : showEn ? '<div class="e">' + esc(x.en) + '</div>'
+               : '<button class="btn sm peek" data-peek="' + esc(x.en) + '">영어 보기</button>') +
+    '</div></div>';
+}
+
+function renderSent(L){
+  var id = L.id, box = $('sentBox');
+  if(state.admin){
+    // 모임장: 모든 회원의 문장을 영어까지 한눈에
+    var subs = (state.subs[id] || []).map(function(x){ return { who:x.who, s:sentsOf(x.a) }; })
+                 .filter(function(x){ return x.s.length; });
+    box.innerHTML = '<div class="card"><b>회원들의 일상 문장</b>' +
+      '<p class="note" style="margin:4px 0 12px">이 회차에 회원들이 적어 둔 문장입니다.</p>' +
+      (subs.length ? subs.map(function(p){
+        return '<div class="peer">' + esc(p.who) + ' · ' + p.s.length + '문장</div>' +
+          p.s.map(function(x, n){ return sentRowHtml(x, n + 1, true); }).join(''); }).join('')
+        : '<span class="note">아직 문장을 적은 회원이 없습니다.</span>') + '</div>';
+    return;
+  }
+
+  var vals = myVals(id), mine = sentsOf(vals);
+  var top = mine.length ? mine[mine.length - 1].i + 1 : 0;
+  var rows = Math.min(SENT_MAX, Math.max(SENT_MIN, top, state.sentRows || 0));
+  var html = '<div class="card"><div class="row"><b style="flex:1">내 일상 문장</b>' +
+    '<button class="btn sm' + (state.quiz ? ' pri' : '') + '" id="btnQuiz">' + (state.quiz ? '다시 쓰기' : '문제 내기') + '</button></div>';
+  if(state.quiz){
+    html += '<p class="note" style="margin:4px 0 8px">한글만 보입니다. 그룹원에게 문제를 내고, [영어 보기]로 내가 쓴 영어를 확인하세요.</p>' +
+      (mine.length ? mine.map(function(x, n){ return sentRowHtml(x, n + 1, false); }).join('')
+                   : '<span class="note">아직 적은 문장이 없습니다.</span>');
+  } else {
+    html += '<p class="note" style="margin:4px 0 8px">평소 자주 쓰는 말을 한글로 최소 ' + SENT_MIN + '문장 적고, 영어로도 써 보세요. 쓰는 대로 자동 저장됩니다.</p>';
+    for(var i = 0; i < rows; i++){
+      html += '<div class="sr"><span class="n">' + (i + 1) + '</span><div class="b">' +
+        '<textarea class="in" rows="1" data-k="' + SENT_KO + ':' + i + '" placeholder="한글 문장"' + IN_ATTR + '>' + esc(vals[SENT_KO + ':' + i] || '') + '</textarea>' +
+        '<textarea class="in en" rows="1" data-k="' + SENT_EN + ':' + i + '" placeholder="영어로"' + IN_ATTR + '>' + esc(vals[SENT_EN + ':' + i] || '') + '</textarea>' +
+        '</div></div>';
+    }
+    if(rows < SENT_MAX) html += '<button class="btn sm" id="btnAddSent" style="margin-top:6px">+ 문장 추가</button>';
+  }
+  html += '</div><div class="card"><b>다른 회원의 문장</b>' +
+    '<p class="note" style="margin:4px 0 8px">한글을 보고 영어로 말해 보세요. [영어 보기]를 누르면 그 회원이 쓴 영어가 나옵니다.</p>' +
+    '<div id="peerBox">' + peersHtml(id) + '</div></div>';
+  box.innerHTML = html;
+  growAll(); paintAnsInfo();
+  loadPeers(id);
+}
+
+function peersHtml(id){
+  var got = state.peers[id];
+  if(!got) return '<span class="note">불러오는 중…</span>';
+  if(got.error) return '<span class="note">' + esc(got.error) + '</span>';
+  var others = got.list.filter(function(p){ return p.who !== myName() && p.s.length; });
+  if(!others.length) return '<span class="note">아직 문장을 올린 다른 회원이 없습니다.</span>';
+  return others.map(function(p){
+    return '<div class="peer">' + esc(p.who) + ' · ' + p.s.length + '문장</div>' +
+      p.s.map(function(x, n){ return sentRowHtml({ ko:x[0], en:x[1] }, n + 1, false); }).join('');
+  }).join('');
+}
+function loadPeers(id){
+  if(state.peersAt[id] && Date.now() - state.peersAt[id] < 20000) return;
+  state.peersAt[id] = Date.now();
+  callApi(creds({ action:'gp_peers', id:id, who:myName(), pin:LS.get(K_PIN,'') })).then(function(j){
+    state.peers[id] = (j.ok && j.list) ? { list:j.list }
+      : { error: '다른 회원의 문장은 아직 볼 수 없습니다. (모임장이 중계기를 업데이트하면 보입니다)' };
+    var pb = $('peerBox'); if(pb && state.viewId === id && state.tab === 'sent') pb.innerHTML = peersHtml(id);
+  }).catch(function(){ state.peersAt[id] = 0; });
+}
+
+$('viewTabs').addEventListener('click', function(ev){
+  var b = ev.target.closest('[data-tab]'); if(!b || state.tab === b.dataset.tab) return;
+  state.tab = b.dataset.tab;
+  renderView(state.viewId);
+  window.scrollTo(0, 0);
+});
+$('sentBox').addEventListener('click', function(ev){
+  var p = ev.target.closest('[data-peek]');
+  if(p){ var d = document.createElement('div'); d.className = 'e'; d.textContent = p.dataset.peek; p.replaceWith(d); return; }
+  if(ev.target.closest('#btnQuiz')){
+    var go2 = function(){ state.quiz = !state.quiz; renderView(state.viewId); };
+    clearTimeout(saveTimer);
+    if(!state.quiz && myName() && isDirty(state.viewId)) submitAns(true).then(go2); else go2();
+    return;
+  }
+  if(ev.target.closest('#btnAddSent')){
+    var shown = $('sentBox').querySelectorAll('textarea.in:not(.en)').length;
+    state.sentRows = Math.min(SENT_MAX, shown + 1);
+    renderView(state.viewId);
+    var all = $('sentBox').querySelectorAll('textarea.in:not(.en)'); if(all.length) all[all.length - 1].focus();
+  }
+});
 
 function paintAnsInfo(){
   var id = state.viewId, keys = blankKeys(state.viewLines), vals = cleanAns(myVals(id));
   var done = keys.filter(function(k){ return vals[k]; }).length;
   var saved = (state.mine || {})[id];
-  $('ansInfo').textContent = '빈칸 ' + keys.length + '개 중 ' + done + '개 작성 · ' +
+  var koN = sentsOf(vals).filter(function(x){ return x.ko; }).length;
+  $('ansInfo').textContent = (state.tab === 'sent' ? '일상 문장 ' + koN + '개 작성 (최소 ' + SENT_MIN + '개) · '
+                                                   : '빈칸 ' + keys.length + '개 중 ' + done + '개 작성 · ') +
     (isDirty(id) ? (LS.get(K_ME, '') ? '저장 중…' : '이름과 비밀번호를 넣으면 저장됩니다') : (saved && Object.keys(saved).length ? '저장됨' : '작성 전'));
   $('btnSubmit').textContent = '답 등록';
 }
 
-$('viewBox').addEventListener('input', function(ev){
+function onAnsInput(ev){
   var el = ev.target.closest('.in'); if(!el) return;
   if(el.tagName === 'TEXTAREA'){ el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
   var id = state.viewId, vals = JSON.parse(JSON.stringify(myVals(id)));
@@ -951,13 +1107,17 @@ $('viewBox').addEventListener('input', function(ev){
   setLocal(id, vals);
   paintAnsInfo();
   autoSaveSoon();
-});
-$('viewBox').addEventListener('keydown', function(ev){
+}
+function onAnsEnter(ev){
   if(ev.key !== 'Enter' || !ev.target.closest('.in')) return;
-  ev.preventDefault();                               // 줄바꿈 대신 다음 빈칸으로
-  var all = Array.prototype.slice.call($('viewBox').querySelectorAll('.in'));
+  ev.preventDefault();                               // 줄바꿈 대신 다음 칸으로
+  var all = Array.prototype.slice.call(this.querySelectorAll('.in'));
   var nx = all[all.indexOf(ev.target) + 1];
   if(nx) nx.focus(); else ev.target.blur();
+}
+['viewBox', 'sentBox'].forEach(function(b){
+  $(b).addEventListener('input', onAnsInput);
+  $(b).addEventListener('keydown', onAnsEnter);
 });
 function myName(){ return LS.get(K_ME, ''); }      // 비밀번호까지 확인된 이름
 
@@ -997,10 +1157,11 @@ function setUndo(id, vals){
   LS.set(K_UNDO, JSON.stringify(all));
 }
 $('btnClear').addEventListener('click', function(){
-  var id = state.viewId, cur = cleanAns(myVals(id));
-  if(!Object.keys(cur).length) return toast('지울 답이 없습니다');
-  setUndo(id, cur);
-  setLocal(id, {});
+  var id = state.viewId, cur = cleanAns(myVals(id)), blanks = {}, keep = {};
+  Object.keys(cur).forEach(function(k){ (isSentKey(k) ? keep : blanks)[k] = cur[k]; });
+  if(!Object.keys(blanks).length) return toast('지울 답이 없습니다');
+  setUndo(id, blanks);
+  setLocal(id, keep);
   renderView(id);
   autoSaveSoon();
   toast('모두 지웠습니다 — [되돌리기]로 살릴 수 있습니다');
@@ -1008,7 +1169,9 @@ $('btnClear').addEventListener('click', function(){
 $('btnUndo').addEventListener('click', function(){
   var id = state.viewId, old = readJson(K_UNDO, {})[id];
   if(!old) return;
-  setLocal(id, old);
+  var now = cleanAns(myVals(id));
+  Object.keys(old).forEach(function(k){ now[k] = old[k]; });
+  setLocal(id, now);
   setUndo(id, null);
   renderView(id);
   autoSaveSoon();
@@ -1072,6 +1235,7 @@ function loadSubs(id){
     if(!j.ok || !j.list) return;
     state.subs[id] = j.list;
     if(state.viewId === id) paintWho(id);
+    if(state.viewId === id && state.tab === 'sent' && !$('scView').hidden) renderSent(lessonById(id));
   }).catch(function(){});
 }
 function paintWho(id){
