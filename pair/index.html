@@ -514,11 +514,26 @@ function blankKeys(lines){
   return keys;
 }
 
+/** 이 대본의 첫 장면 번호. ②, ③ 회차는 앞 회차에 이어서 센다.
+ *  대본에 적혀 있으면(sc) 그 값을, 없으면 같은 에피소드의 앞 회차 장면 수를 더해 구한다. */
+function sceneStart(title, lines){
+  if(lines && lines[0] && lines[0].sc > 0) return +lines[0].sc;
+  var m = /^(E\d+) ([①②③])/.exec(title || '');
+  if(!m) return 1;
+  var mine = '①②③'.indexOf(m[2]), n = 1;
+  state.lessons.forEach(function(L){
+    var x = /^(E\d+) ([①②③])/.exec(L.title || '');
+    if(!x || x[1] !== m[1] || '①②③'.indexOf(x[2]) >= mine) return;
+    n += L.lines.filter(function(ln, i){ return i === 0 || ln.br; }).length;
+  });
+  return n;
+}
+
 function sceneHead(n){ return '<div class="scn" id="scene' + n + '">장면 ' + n + '</div>'; }
 
 function scriptHtml(lines, o){
   o = o || {};
-  var scene = 0;
+  var scene = (o.scene0 || 1) - 1;
   return lines.map(function(ln, i){
     return (ln.br || i === 0 ? sceneHead(++scene) : '') +
       '<div class="ln">' +
@@ -580,7 +595,7 @@ function mockApi(p){
         .map(function(L){
           if(isAdmin) return L;
           return { id:L.id, title:L.title, reveal:L.reveal, at:L.at, lines: L.lines.map(function(ln){
-            var r = { s:ln.s, ko:ln.ko, t: maskLine(ln.en, ln.b, L.reveal) }; if(ln.br) r.br = 1; return r; }) };
+            var r = { s:ln.s, ko:ln.ko, t: maskLine(ln.en, ln.b, L.reveal) }; if(ln.br) r.br = 1; if(ln.sc) r.sc = ln.sc; return r; }) };
         }), mine: {} };
       if(p.who && !isAdmin){
         if(pinOk) ans.forEach(function(x){ if(x.who === p.who) res.mine[x.id] = x.a; });
@@ -862,7 +877,7 @@ function renderView(id){
   $('viewNote').textContent = state.admin ? (L.reveal ? '' : '회원에게는 아직 정답이 보이지 않습니다')
     : '';
 
-  var o = {};
+  var o = { scene0: sceneStart(L.title, L.lines) };
   if(writing){
     // 빈칸은 늘 입력칸이고, 정답은 그 아래 상자에 따로 보여준다
     o.input = true; o.vals = myVals(id); o.key = state.showAns;
@@ -1165,7 +1180,9 @@ $('pickBox').addEventListener('click', function(ev){
     state.ed = JSON.parse(JSON.stringify({ id:had.id, title:had.title, lines:had.lines }));
   } else {
     state.ed = { id:'', title: partTitle(ep, p.i, k), lines: ep.lines.slice(p.from, p.to + 1).map(function(ln, n){
-      var r = { s:ln.s, ko:ln.ko, en:ln.en, b:[] }; if(ln.br && n) r.br = 1; return r; }) };
+      var r = { s:ln.s, ko:ln.ko, en:ln.en, b:[] }; if(ln.br && n) r.br = 1;
+      if(n === 0 && p.sceneFrom > 1) r.sc = p.sceneFrom;
+      return r; }) };
   }
   state.edFromPick = true; saveDraft();
   go('edit');
@@ -1182,7 +1199,7 @@ $('btnNew').addEventListener('click', function(){
 function saveDraft(){ if(state.ed) LS.set(K_DRAFT, JSON.stringify(state.ed)); }
 
 function sceneNo(i){
-  var n = 1;
+  var n = sceneStart(state.ed.title, state.ed.lines);
   for(var k = 1; k <= i; k++) if(state.ed.lines[k].br) n++;
   return n;
 }
@@ -1224,7 +1241,7 @@ function paintEdit(){
   $('btnPreview').textContent = state.preview ? '편집으로' : '미리보기';
   if(state.preview){
     $('editBox').innerHTML = '<div class="card">' + scriptHtml(ed.lines.map(function(ln){
-      return { s:ln.s, ko:ln.ko, br:ln.br, t: maskLine(ln.en, ln.b, false) }; })) + '</div>';
+      return { s:ln.s, ko:ln.ko, br:ln.br, t: maskLine(ln.en, ln.b, false) }; }), { scene0: sceneStart(ed.title, ed.lines) }) + '</div>';
   } else {
     $('editBox').innerHTML = ed.lines.map(edLineHtml).join('');
   }
