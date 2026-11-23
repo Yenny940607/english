@@ -99,6 +99,15 @@
   .chip.warn{background:#FFF1E0;color:#B25E00}
   @media (prefers-color-scheme:dark){ .chip.warn{background:#3A2A12;color:#F5B25E} }
   .chip.ans{background:var(--accent-soft);color:var(--accent)}
+  .hubcard{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 16px;margin-bottom:10px}
+  .hubcard:hover{border-color:var(--line-2);box-shadow:var(--shadow)}
+  .hubcard .ic{flex:none;width:42px;height:42px;border-radius:12px;background:var(--accent-soft);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+  .hubcard .b{flex:1;min-width:0}
+  .hubcard .t{font-weight:700;font-size:17px;line-height:1.35}
+  .hubcard .m{color:var(--muted);font-size:13px;margin-top:2px}
+  .hubcard .go{color:var(--muted);font-size:20px}
   .lesson .acts{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 
   /* 대본 */
@@ -258,8 +267,16 @@
   </section>
 
   <!-- 회차 보기 -->
+  <!-- 스터디 한 회: 대본과 일상 문장으로 들어가는 문 -->
+  <section id="scHub" hidden>
+    <button class="back" data-go="">← 스터디 목록</button>
+    <h1 id="hubTitle"></h1>
+    <p class="sub" id="hubSub"></p>
+    <div id="hubBox"></div>
+  </section>
+
   <section id="scView" hidden>
-    <button class="back" data-go="">← 목록</button>
+    <button class="back" id="btnViewBack">← 뒤로</button>
     <div class="when" id="viewWhen" hidden></div>
     <h1 id="viewTitle"></h1>
     <div class="tabs" id="viewTabs" hidden>
@@ -710,7 +727,7 @@ function mockApi(p){
 }
 
 /* ───────────────── 화면 전환 ───────────────── */
-var SCREENS = ['scGate','scList','scView','scPick','scEdit','scSetup'];
+var SCREENS = ['scGate','scList','scHub','scView','scPick','scEdit','scSetup'];
 function show(id, key){
   // 같은 화면을 다시 그릴 때(정답 보기, 지우기, 되돌리기 등)는 보던 자리에 그대로 둔다
   var same = !$(id).hidden && state.shownKey === (key || '');
@@ -737,7 +754,9 @@ function toast(msg){
 function route(){
   if(state.needGate){ show('scGate'); return; }
   var h = decodeURIComponent(location.hash.replace(/^#/, ''));
-  if(h.indexOf('v/') === 0) return renderView(h.slice(2));
+  if(h.indexOf('s/') === 0) return renderHub(h.slice(2));
+  if(h.indexOf('v/') === 0){ state.tab = 'script'; return renderView(h.slice(2)); }
+  if(h.indexOf('d/') === 0){ state.tab = 'sent';   return renderView(h.slice(2)); }
   if(state.admin && h === 'pick')  return renderPick();
   if(state.admin && h === 'edit')  return renderEdit();
   if(state.admin && h === 'setup') return renderSetup();
@@ -803,7 +822,7 @@ function renderList(){
   $('adminBar').hidden = !state.admin;
   $('listSub').textContent = state.admin
     ? '에피소드 대본을 올리고, 문제로 낼 문장을 고르고, 모임 날 정답을 공개합니다.'
-    : '한글 대사를 보고 빈칸의 영어를 직접 써 보세요.';
+    : '스터디를 누르면 그날의 대본과 일상 문장이 나옵니다.';
   var list = state.lessons.slice().reverse();          // 최근 회차가 위로
   if(!list.length){
     $('listBox').innerHTML = '<div class="empty">' + (state.ready
@@ -814,9 +833,10 @@ function renderList(){
   $('listBox').innerHTML = list.map(function(L){
     var meta = L.lines.length + '줄 · 빈칸 ' + countBlanks(L.lines) + '개' + (L.at ? ' · ' + esc(L.at.slice(5)) : '');
     if(!state.admin){
+      var w = whenOf(L.title);
       return '<button class="lesson" data-open="' + esc(L.id) + '">' +
-        whenChip(L.title) + '<div class="t">' + esc(nameOf(L.title)) + '</div>' +
-        '<div class="m">' + (L.reveal ? '<span class="chip ans">정답 공개</span>' : '') + meta + '</div></button>';
+        '<div class="t">' + esc(w || nameOf(L.title)) + '</div>' +
+        '<div class="m">' + (L.reveal ? '<span class="chip ans">정답 공개</span>' : '') + (w ? esc(nameOf(L.title)) : meta) + '</div></button>';
     }
     return '<div class="lesson">' +
       whenChip(L.title) + '<div class="t">' + esc(nameOf(L.title)) + '</div>' +
@@ -837,7 +857,7 @@ function renderList(){
 $('listBox').addEventListener('click', function(ev){
   var b = ev.target.closest('button'); if(!b) return;
   var d = b.dataset;
-  if(d.open) return go('v/' + d.open);
+  if(d.open) return go('s/' + d.open);
   if(d.edit){
     var L = lessonById(d.edit); if(!L) return;
     state.ed = JSON.parse(JSON.stringify({ id:L.id, title:nameOf(L.title), when:whenOf(L.title), hideAll:hiddenAll(L.title), lines:L.lines }));
@@ -873,6 +893,35 @@ $('btnSetup').addEventListener('click', function(){ go('setup'); });
 document.addEventListener('click', function(ev){
   var b = ev.target.closest('[data-go]'); if(b) go(b.dataset.go);
 });
+
+/* ───────────────── 스터디 한 회: 대본 / 일상 문장 ───────────────── */
+function renderHub(id){
+  var L = lessonById(id);
+  if(!L){ if(state.ready){ toast('없는 스터디입니다'); go(''); } else renderList(); return; }
+  show('scHub', id);
+  var w = whenOf(L.title), name = nameOf(L.title);
+  $('hubTitle').textContent = w || name;
+  $('hubSub').textContent = w ? name : '';
+  $('hubSub').hidden = !w;
+  var vals = cleanAns(myVals(id));
+  var blanks = L.lines[0] && L.lines[0].t ? blankKeys(L.lines) : null;
+  var done = blanks ? blanks.filter(function(k){ return vals[k]; }).length : 0;
+  var mineN = sentsOf(vals).filter(function(x){ return x.ko; }).length;
+  var scriptMeta = L.lines.length + '줄 · 빈칸 ' + countBlanks(L.lines) + '개' +
+    (!state.admin && myName() ? ' · 내가 쓴 답 ' + done + '개' : '') + (L.reveal ? ' · 정답 공개' : '');
+  var sentMeta = state.admin ? '회원들이 적어 둔 문장을 봅니다'
+    : (myName() ? '내 문장 ' + mineN + '개 작성 (최소 ' + SENT_MIN + '개)' : '자주 쓰는 말을 한글과 영어로 ' + SENT_MIN + '문장');
+  $('hubBox').innerHTML =
+    '<button class="hubcard" data-hub="v"><span class="ic">대본</span><span class="b">' +
+      '<div class="t">' + esc(name) + '</div><div class="m">' + scriptMeta + '</div></span><span class="go">›</span></button>' +
+    '<button class="hubcard" data-hub="d"><span class="ic">문장</span><span class="b">' +
+      '<div class="t">일상 문장</div><div class="m">' + sentMeta + '</div></span><span class="go">›</span></button>';
+  state.hubId = id;
+}
+$('hubBox').addEventListener('click', function(ev){
+  var b = ev.target.closest('[data-hub]'); if(b) go(b.dataset.hub + '/' + state.hubId);
+});
+$('btnViewBack').addEventListener('click', function(){ go('s/' + state.viewId); });
 
 /* ───────────────── 대본 보기 · 답 쓰기 ───────────────── */
 /* 일상 문장은 답안과 같은 곳에 저장한다. "9000:n" 한글, "9001:n" 영어 */
@@ -915,7 +964,7 @@ function growAll(){
 function renderView(id){
   var L = lessonById(id);
   if(!L){ if(state.ready){ toast('없는 대본입니다'); go(''); } else renderList(); return; }
-  show('scView', id);
+  show('scView', id + '/' + (state.tab || 'script'));
   $('viewTitle').textContent = nameOf(L.title);
   $('viewWhen').textContent = whenOf(L.title); $('viewWhen').hidden = !whenOf(L.title);
   // 관리자는 원문을 갖고 있으므로 같은 방식으로 가려서 보여준다
@@ -925,7 +974,7 @@ function renderView(id){
   var canAns = state.admin || L.reveal;
   // 정답이 공개된 대본은 열자마자 정답이 보인다 (버튼으로 다시 가릴 수 있다)
   if(state.viewId !== id || state.viewReveal !== !!L.reveal){ state.showAns = !!L.reveal; state.viewWho = ''; }
-  if(state.viewId !== id){ state.tab = 'script'; state.quiz = false; state.sentRows = 0; }
+  if(state.viewId !== id){ state.quiz = false; state.sentRows = 0; }
   state.viewReveal = !!L.reveal;
   if(!canAns) state.showAns = false;
   var writing = !state.admin;                       // 회원은 정답 공개 뒤에도 계속 고쳐 쓸 수 있다 (복습)
@@ -981,7 +1030,8 @@ function renderView(id){
   if(state.admin) loadSubs(id);
 
   // 탭: 대본 / 일상 문장
-  $('viewTabs').hidden = false;
+  $('viewTabs').hidden = true;                      // 대본과 일상 문장은 스터디 화면에서 따로 들어온다
+  if(state.tab === 'sent') $('viewTitle').textContent = '일상 문장';
   Array.prototype.forEach.call($('viewTabs').querySelectorAll('button'), function(b){
     b.classList.toggle('on', b.dataset.tab === (state.tab || 'script')); });
   if(state.tab === 'sent'){
